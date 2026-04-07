@@ -1,22 +1,24 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { useGetLeaderboard, useGetPlayerRank } from "@workspace/api-client-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Medal, Star } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 import { GAMES, getGameById } from "@/lib/games";
+import { generateMockLeaderboard } from "@/lib/mock-leaderboard";
 
 export default function Leaderboard() {
   const { username } = useAppState();
   const [period, setPeriod] = useState<"global" | "daily">("global");
   const [gameId, setGameId] = useState<string>("all");
 
-  const { data: leaderboardRaw, isLoading } = useGetLeaderboard({
+  const { data: leaderboardRaw, isLoading, isError } = useGetLeaderboard({
     period,
     gameId: gameId === "all" ? undefined : gameId,
     limit: 50
   }, { query: { queryKey: ["leaderboard", period, gameId] } });
-  const leaderboard = Array.isArray(leaderboardRaw) ? leaderboardRaw : [];
+  const mockLeaderboard = generateMockLeaderboard(50);
+  const leaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
 
   const { data: playerRank } = useGetPlayerRank(
     { username: username || "" },
