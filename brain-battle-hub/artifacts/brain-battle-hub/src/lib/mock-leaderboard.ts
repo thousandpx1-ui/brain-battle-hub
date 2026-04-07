@@ -25,8 +25,8 @@ export function generateMockLeaderboard(count: number = 50): MockLeaderboardEntr
   const baseDate = new Date();
   
   return Array.from({ length: count }, (_, i) => {
-    const baseScore = 10000 - (i * 180);
-    const randomVariation = Math.floor(Math.random() * 200) - 100;
+    const baseScore = 500 - (i * 9.8);
+    const randomVariation = Math.floor(Math.random() * 10) - 5;
     
     return {
       username: RANDOM_NAMES[i % RANDOM_NAMES.length],
