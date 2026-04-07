@@ -100,6 +100,8 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {leaderboard.length > 0 && (
           <div className="mt-4 bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg flex items-center gap-2">
