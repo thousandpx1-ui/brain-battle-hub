@@ -1,3 +1,8 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "brain-battle-hub"
 pages_build_output_dir = "artifacts/brain-battle-hub/dist/public"
+
+[vars]
+PORT = "3000"
+BASE_PATH = "/"
+NODE_ENV = "production"
