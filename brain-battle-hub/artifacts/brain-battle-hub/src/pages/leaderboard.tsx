@@ -70,6 +70,7 @@ export default function Leaderboard() {
   console.log("Final leaderboard:", filteredLeaderboard.length, "entries");
   const me = filteredLeaderboard.find(e => e.username === username);
   console.log("My entry in leaderboard:", me);
+  console.log("My score:", me?.score, "My rank:", me ? filteredLeaderboard.indexOf(me) + 1 : "not found");
 
   // Calculate player's rank for current tab
   const playerScores = localScores.filter(s => s.username === username);
@@ -133,6 +134,8 @@ export default function Leaderboard() {
               const medal = i === 0 ? <Trophy className="w-5 h-5 text-yellow-500 fill-yellow-500" /> : 
                             i === 1 ? <Medal className="w-5 h-5 text-gray-400" /> : 
                             i === 2 ? <Medal className="w-5 h-5 text-amber-600" /> : null;
+              
+              if (isMe) console.log("Rendering ME at rank", i + 1, "score:", entry.score);
 
               return (
                 <div
