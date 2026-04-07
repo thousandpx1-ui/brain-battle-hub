@@ -6,6 +6,7 @@ import { Trophy, Medal, Star } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 import { GAMES, getGameById } from "@/lib/games";
 import { generateMockLeaderboard } from "@/lib/mock-leaderboard";
+import { mergeLocalWithMock } from "@/lib/local-leaderboard";
 
 export default function Leaderboard() {
   const { username } = useAppState();
@@ -18,7 +19,8 @@ export default function Leaderboard() {
     limit: 50
   }, { query: { queryKey: ["leaderboard", period, gameId] } });
   const mockLeaderboard = generateMockLeaderboard(50);
-  const leaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
+  const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
+  const leaderboard = mergeLocalWithMock(rawLeaderboard);
 
   const { data: playerRank } = useGetPlayerRank(
     { username: username || "" },
@@ -95,11 +97,12 @@ export default function Leaderboard() {
               {leaderboard.map((entry, i) => {
                 const game = getGameById(entry.gameId);
                 const isMe = entry.username === username;
-                
+                const isLocalScore = entry.username === username;
+
                 return (
-                  <div 
+                  <div
                     key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
-                    className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10' : 'border-gray-100'}`}
+                    className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black mr-4 text-sm ${
                       i === 0 ? 'bg-yellow-100 text-yellow-600' :

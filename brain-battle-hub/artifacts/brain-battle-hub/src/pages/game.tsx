@@ -10,6 +10,7 @@ import { IllusionFinder } from "@/games/IllusionFinder";
 import { RiskOrSafe } from "@/games/RiskOrSafe";
 import { useSubmitScore } from "@workspace/api-client-react";
 import { useAppState } from "@/hooks/useAppState";
+import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { InterstitialAd } from "@/components/interstitial-ad";
 import { RewardAd } from "@/components/reward-ad";
 import { Trophy, RotateCcw, Play, ChevronLeft } from "lucide-react";
@@ -22,7 +23,8 @@ export default function Game() {
   const [gameState, setGameState] = useState<GameState>("start");
   const [score, setScore] = useState(0);
   const { username, gamesPlayedSession, incrementGamesPlayed, resetGamesPlayedSession } = useAppState();
-  
+  const addLocalScore = useLocalLeaderboard((s) => s.addScore);
+
   const submitScore = useSubmitScore();
 
   const [showInterstitial, setShowInterstitial] = useState(false);
@@ -36,7 +38,13 @@ export default function Game() {
     setScore(finalScore);
     setGameState("gameover");
     incrementGamesPlayed();
-    
+
+    // Always save to local leaderboard
+    if (username) {
+      addLocalScore({ gameId: game.id, username, score: finalScore });
+    }
+
+    // Try to submit to remote API if available
     if (username) {
       submitScore.mutate({ data: { gameId: game.id, username, score: finalScore } });
     }
@@ -60,6 +68,7 @@ export default function Game() {
     const doubled = score * 2;
     setScore(doubled);
     if (username) {
+      addLocalScore({ gameId: game.id, username, score: doubled });
       submitScore.mutate({ data: { gameId: game.id, username, score: doubled } });
     }
   };
