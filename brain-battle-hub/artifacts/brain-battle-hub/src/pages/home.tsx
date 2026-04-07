@@ -19,11 +19,21 @@ export default function Home() {
   const { data: leaderboardRaw, isError } = useGetLeaderboard({ period: "global", limit: 5 });
   const mockLeaderboard = generateMockLeaderboard(5);
   const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
-  const leaderboard = [...rawLeaderboard, ...localScores].sort((a, b) => b.score - a.score).slice(0, 5);
 
   // Calculate player rank
   const playerBestScore = username ? Math.max(...localScores.filter(s => s.username === username).map(s => s.score), 0) : 0;
-  const allScores = [...rawLeaderboard, ...localScores].sort((a, b) => b.score - a.score);
+
+  // Deduplicate: keep only best score per username
+  const allRawScores = [...rawLeaderboard, ...localScores];
+  const bestScoreMap = new Map<string, typeof rawLeaderboard[0]>();
+  for (const entry of allRawScores) {
+    const existing = bestScoreMap.get(entry.username);
+    if (!existing || entry.score > existing.score) {
+      bestScoreMap.set(entry.username, entry);
+    }
+  }
+  const allScores = Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score);
+  const leaderboard = allScores.slice(0, 5);
   const playerRank = playerBestScore > 0 ? allScores.findIndex(entry => entry.username === username && entry.score === playerBestScore) + 1 : 0;
   const totalPlayers = allScores.length;
 

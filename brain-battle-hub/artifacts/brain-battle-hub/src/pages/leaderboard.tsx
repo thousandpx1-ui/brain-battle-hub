@@ -50,10 +50,19 @@ export default function Leaderboard() {
   const mockLeaderboard = generateMockLeaderboard(50);
   const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
 
-  // Filter by period (daily = today only) - show ALL scores, not just best
-  const filteredLeaderboard: MockLeaderboardEntry[] = period === "daily"
-    ? [...rawLeaderboard, ...localScores].filter(entry => isToday(entry.createdAt)).sort((a, b) => b.score - a.score)
-    : [...rawLeaderboard, ...localScores].sort((a, b) => b.score - a.score);
+  // Filter by period and deduplicate: keep only best score per username
+  const allRawScores: MockLeaderboardEntry[] = period === "daily"
+    ? [...rawLeaderboard, ...localScores].filter(entry => isToday(entry.createdAt))
+    : [...rawLeaderboard, ...localScores];
+
+  const bestScoreMap = new Map<string, MockLeaderboardEntry>();
+  for (const entry of allRawScores) {
+    const existing = bestScoreMap.get(entry.username);
+    if (!existing || entry.score > existing.score) {
+      bestScoreMap.set(entry.username, entry);
+    }
+  }
+  const filteredLeaderboard = Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score);
 
   // Calculate player's rank for current tab (best score position)
   const playerScores = localScores.filter(s => s.username === username);
