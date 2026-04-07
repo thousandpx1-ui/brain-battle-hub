@@ -50,29 +50,19 @@ export default function Leaderboard() {
   const mockLeaderboard = generateMockLeaderboard(50);
   const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
 
-  // Filter by period (daily = today only) and deduplicate by username (keep best score)
-  const allScores: MockLeaderboardEntry[] = period === "daily"
-    ? [...rawLeaderboard, ...localScores].filter(entry => isToday(entry.createdAt))
-    : [...rawLeaderboard, ...localScores];
+  // Filter by period (daily = today only) - show ALL scores, not just best
+  const filteredLeaderboard: MockLeaderboardEntry[] = period === "daily"
+    ? [...rawLeaderboard, ...localScores].filter(entry => isToday(entry.createdAt)).sort((a, b) => b.score - a.score)
+    : [...rawLeaderboard, ...localScores].sort((a, b) => b.score - a.score);
 
-  // Deduplicate: keep only the best score per username
-  const bestScoreMap = new Map<string, MockLeaderboardEntry>();
-  for (const entry of allScores) {
-    const existing = bestScoreMap.get(entry.username);
-    if (!existing || entry.score > existing.score) {
-      bestScoreMap.set(entry.username, entry);
-    }
-  }
-  const filteredLeaderboard = Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score);
-
-  // Calculate player's rank for current tab
+  // Calculate player's rank for current tab (best score position)
   const playerScores = localScores.filter(s => s.username === username);
   const playerBestScore = period === "daily"
     ? Math.max(...playerScores.filter(s => isToday(s.createdAt)).map(s => s.score), 0)
     : Math.max(...playerScores.map(s => s.score), 0);
 
-  // Find rank by username, not by score
-  const playerRank = playerBestScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;
+  // Find rank by best score
+  const playerRank = playerBestScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username && entry.score === playerBestScore) + 1 : 0;
   const totalPlayers = filteredLeaderboard.length;
   const percentile = totalPlayers > 0 && playerRank > 0 ? ((totalPlayers - playerRank) / totalPlayers) * 100 : 0;
   const badge = percentile >= 90 ? "gold" : percentile >= 75 ? "silver" : "bronze";

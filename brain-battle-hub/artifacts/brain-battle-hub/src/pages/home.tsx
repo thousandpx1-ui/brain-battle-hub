@@ -8,7 +8,7 @@ import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
 import { useGetLeaderboard } from "@workspace/api-client-react";
 import { generateMockLeaderboard } from "@/lib/mock-leaderboard";
-import { mergeLocalWithMock, useLocalLeaderboard } from "@/lib/local-leaderboard";
+import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 export default function Home() {
   const { username, streak, updateStreak } = useAppState();
@@ -19,7 +19,13 @@ export default function Home() {
   const { data: leaderboardRaw, isError } = useGetLeaderboard({ period: "global", limit: 5 });
   const mockLeaderboard = generateMockLeaderboard(5);
   const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
-  const leaderboard = mergeLocalWithMock(rawLeaderboard, localScores).slice(0, 5);
+  const leaderboard = [...rawLeaderboard, ...localScores].sort((a, b) => b.score - a.score).slice(0, 5);
+
+  // Calculate player rank
+  const playerBestScore = username ? Math.max(...localScores.filter(s => s.username === username).map(s => s.score), 0) : 0;
+  const allScores = [...rawLeaderboard, ...localScores].sort((a, b) => b.score - a.score);
+  const playerRank = playerBestScore > 0 ? allScores.findIndex(entry => entry.username === username && entry.score === playerBestScore) + 1 : 0;
+  const totalPlayers = allScores.length;
 
   useEffect(() => {
     updateStreak();
@@ -78,7 +84,22 @@ export default function Home() {
           ))}
         </div>
 
-        {leaderboard && leaderboard.length > 0 && (
+        {playerBestScore > 0 && (
+          <div className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Your Rank</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-black">#{playerRank}</span>
+                  <span className="text-sm text-purple-100 mb-1.5">/ {totalPlayers}</span>
+                </div>
+              </div>
+              <div className="bg-white/20 backdrop-blur px-3 py-1.5 rounded-full">
+                <span className="text-sm font-bold">Best: {playerBestScore}</span>
+              </div>
+            </div>
+          </div>
+        )}
           <div className="mt-4 bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg flex items-center gap-2">
