@@ -51,6 +51,7 @@ export default function Leaderboard() {
   const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
 
   // Filter by period (daily = today only) and deduplicate by username (keep best score)
+  console.log("Leaderboard rendering, localScores:", localScores.length, localScores);
   const allScores: MockLeaderboardEntry[] = period === "daily"
     ? [...rawLeaderboard, ...localScores].filter(entry => isToday(entry.createdAt))
     : [...rawLeaderboard, ...localScores];
