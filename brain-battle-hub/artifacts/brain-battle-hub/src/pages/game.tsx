@@ -39,11 +39,8 @@ export default function Game() {
     setGameState("gameover");
     incrementGamesPlayed();
 
-    console.log("Game Over! Final score:", finalScore, "Username:", username);
-
     // Always save to local leaderboard
     if (username) {
-      console.log("Saving to local leaderboard:", { gameId: game.id, username, score: finalScore });
       addLocalScore({ gameId: game.id, username, score: finalScore });
     }
 
