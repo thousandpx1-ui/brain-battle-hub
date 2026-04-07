@@ -129,7 +129,7 @@ export default function Leaderboard() {
                     </div>
                     
                     <div className="font-black text-xl text-gray-900 ml-4">
-                      {entry.score.toLocaleString()}
+                      {Math.floor(entry.score).toLocaleString()}
                     </div>
                   </div>
                 );

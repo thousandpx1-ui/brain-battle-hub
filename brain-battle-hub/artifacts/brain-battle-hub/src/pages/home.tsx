@@ -107,7 +107,7 @@ export default function Home() {
                         </p>
                       </div>
                     </div>
-                    <div className="font-black text-sm">{entry.score.toLocaleString()}</div>
+                    <div className="font-black text-sm">{Math.floor(entry.score).toLocaleString()}</div>
                   </div>
                 );
               })}
