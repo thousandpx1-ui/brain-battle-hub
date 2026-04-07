@@ -1,19 +1,5 @@
 {
   "version": 1,
   "include": ["/*"],
-  "exclude": [],
-  "routes": [
-    {
-      "pattern": "^/assets/.*",
-      "serve": "/assets/:splat"
-    },
-    {
-      "pattern": "^.*\\..*$",
-      "serve": "/:splat"
-    },
-    {
-      "pattern": "^.*$",
-      "serve": "/index.html"
-    }
-  ]
+  "exclude": ["/assets/*", "/favicon.svg", "/opengraph.jpg"]
 }
