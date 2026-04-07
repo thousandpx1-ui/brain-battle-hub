@@ -11,25 +11,21 @@ export interface LocalScoreEntry {
 interface LocalLeaderboardState {
   scores: LocalScoreEntry[];
   addScore: (entry: Omit<LocalScoreEntry, "createdAt">) => void;
-  getScores: (gameId?: string) => LocalScoreEntry[];
+  clearScores: () => void;
 }
 
 export const useLocalLeaderboard = create<LocalLeaderboardState>()(
   persist(
     (set, get) => ({
       scores: [],
-      addScore: (entry) =>
-        set((state) => {
-          const newEntry = { ...entry, createdAt: new Date().toISOString() };
-          // Replace array reference to force reactivity
-          const newScores = [...state.scores, newEntry];
-          return { scores: newScores };
-        }),
-      getScores: (gameId) => {
-        const scores = get().scores;
-        const filtered = gameId ? scores.filter((s) => s.gameId === gameId) : scores;
-        return filtered.sort((a, b) => b.score - a.score);
+      addScore: (entry) => {
+        const newEntry: LocalScoreEntry = {
+          ...entry,
+          createdAt: new Date().toISOString(),
+        };
+        set({ scores: [...get().scores, newEntry] });
       },
+      clearScores: () => set({ scores: [] }),
     }),
     {
       name: "brain-battle-leaderboard",
