@@ -11,6 +11,7 @@ interface LocalScoreEntry {
 
 interface LocalLeaderboardState {
   scores: LocalScoreEntry[];
+  version: number;
   addScore: (entry: Omit<LocalScoreEntry, "createdAt">) => void;
   getScores: (gameId?: string) => LocalScoreEntry[];
 }
@@ -19,12 +20,14 @@ export const useLocalLeaderboard = create<LocalLeaderboardState>()(
   persist(
     (set, get) => ({
       scores: [],
+      version: 0,
       addScore: (entry) =>
         set((state) => ({
           scores: [
             ...state.scores,
             { ...entry, createdAt: new Date().toISOString() },
           ],
+          version: state.version + 1,
         })),
       getScores: (gameId) => {
         const scores = get().scores;

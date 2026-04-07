@@ -13,6 +13,7 @@ import { mergeLocalWithMock, useLocalLeaderboard } from "@/lib/local-leaderboard
 export default function Home() {
   const { username, streak, updateStreak } = useAppState();
   const localScores = useLocalLeaderboard((s) => s.scores);
+  const _version = useLocalLeaderboard((s) => s.version); // force re-render
   const [showUsername, setShowUsername] = useState(false);
 
   const { data: leaderboardRaw, isError } = useGetLeaderboard({ period: "global", limit: 5 });

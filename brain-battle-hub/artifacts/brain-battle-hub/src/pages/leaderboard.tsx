@@ -29,6 +29,7 @@ function isToday(dateStr: string): boolean {
 export default function Leaderboard() {
   const { username } = useAppState();
   const localScores = useLocalLeaderboard((s) => s.scores);
+  const _version = useLocalLeaderboard((s) => s.version); // force re-render
   const [period, setPeriod] = useState<"global" | "daily">("global");
   const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
   const [, setTick] = useState(0);
