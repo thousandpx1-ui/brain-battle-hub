@@ -68,6 +68,8 @@ export default function Leaderboard() {
   const filteredLeaderboard = Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score);
   
   console.log("Final leaderboard:", filteredLeaderboard.length, "entries");
+  const me = filteredLeaderboard.find(e => e.username === username);
+  console.log("My entry in leaderboard:", me);
 
   // Calculate player's rank for current tab
   const playerScores = localScores.filter(s => s.username === username);
