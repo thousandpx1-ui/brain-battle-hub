@@ -8,16 +8,17 @@ import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
 import { useGetLeaderboard } from "@workspace/api-client-react";
 import { generateMockLeaderboard } from "@/lib/mock-leaderboard";
-import { mergeLocalWithMock } from "@/lib/local-leaderboard";
+import { mergeLocalWithMock, useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 export default function Home() {
   const { username, streak, updateStreak } = useAppState();
+  const localScores = useLocalLeaderboard((s) => s.scores);
   const [showUsername, setShowUsername] = useState(false);
 
   const { data: leaderboardRaw, isError } = useGetLeaderboard({ period: "global", limit: 5 });
   const mockLeaderboard = generateMockLeaderboard(5);
   const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
-  const leaderboard = mergeLocalWithMock(rawLeaderboard).slice(0, 5);
+  const leaderboard = mergeLocalWithMock(rawLeaderboard, localScores).slice(0, 5);
 
   useEffect(() => {
     updateStreak();
