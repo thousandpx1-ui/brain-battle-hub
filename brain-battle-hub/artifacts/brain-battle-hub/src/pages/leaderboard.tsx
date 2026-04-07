@@ -2,15 +2,13 @@ import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { useGetLeaderboard } from "@workspace/api-client-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Medal, Star } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 import { GAMES, getGameById } from "@/lib/games";
 import { generateMockLeaderboard } from "@/lib/mock-leaderboard";
-import { mergeLocalWithMock, useLocalLeaderboard } from "@/lib/local-leaderboard";
+import { mergeLocalWithMock } from "@/lib/local-leaderboard";
 
 export default function Leaderboard() {
   const { username } = useAppState();
-  const localScores = useLocalLeaderboard((s) => s.scores);
   const [period, setPeriod] = useState<"global" | "daily">("global");
   const [gameId, setGameId] = useState<string>("all");
 
@@ -22,15 +20,6 @@ export default function Leaderboard() {
   const mockLeaderboard = generateMockLeaderboard(50);
   const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
   const leaderboard = mergeLocalWithMock(rawLeaderboard);
-
-  // Calculate player's rank from local leaderboard
-  const playerBestScore = username
-    ? Math.max(...localScores.filter(s => s.username === username).map(s => s.score), 0)
-    : 0;
-  const playerRank = leaderboard.findIndex(entry => entry.score === playerBestScore) + 1;
-  const totalPlayers = leaderboard.length;
-  const percentile = totalPlayers > 0 ? ((totalPlayers - playerRank) / totalPlayers) * 100 : 0;
-  const badge = percentile >= 90 ? "gold" : percentile >= 75 ? "silver" : "bronze";
 
   return (
     <Layout>
@@ -67,29 +56,6 @@ export default function Leaderboard() {
               </button>
             ))}
           </div>
-
-          {username && playerBestScore > 0 && (
-            <div className="mt-6 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Your Rank</p>
-                  <div className="flex items-end gap-2">
-                    <span className="text-3xl font-black">#{playerRank}</span>
-                    <span className="text-sm text-purple-100 mb-1.5">/ {totalPlayers}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="bg-white/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                    {badge === "gold" && <Trophy className="w-4 h-4 text-yellow-400" />}
-                    {badge === "silver" && <Medal className="w-4 h-4 text-gray-300" />}
-                    {badge === "bronze" && <Star className="w-4 h-4 text-orange-400" />}
-                    <span className="text-sm font-bold capitalize">{badge}</span>
-                  </div>
-                  <p className="text-xs text-purple-100 mt-2 font-medium">Top {Math.round(percentile)}%</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
