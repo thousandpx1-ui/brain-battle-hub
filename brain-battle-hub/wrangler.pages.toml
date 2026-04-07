@@ -1,0 +1,15 @@
+# Cloudflare Pages Configuration
+# This file configures Cloudflare Pages builds for the frontend app
+
+[build]
+# Command to build the frontend
+command = "pnpm install && pnpm --filter @workspace/brain-battle-hub run build"
+# Output directory from the frontend build
+output_directory = "artifacts/brain-battle-hub/dist/public"
+# Node.js version
+node_version = "24"
+
+[build.environment]
+# Set environment variables for the build
+NODE_VERSION = "24"
+PNPM_VERSION = "latest"

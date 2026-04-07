@@ -1,0 +1,20 @@
+# Cloudflare Worker Configuration for API Server
+# This file configures the API server for deployment to Cloudflare Workers
+
+name = "brain-battle-hub-api"
+main = "artifacts/api-server/src/index.ts"
+compatibility_date = "2024-12-01"
+node_compat = true
+
+[build]
+command = "pnpm install && pnpm --filter @workspace/api-server run build"
+
+[vars]
+NODE_ENV = "production"
+
+# Environment variables (configure these in Cloudflare dashboard or with wrangler secret)
+# DATABASE_URL = "postgresql://..."
+
+[[services]]
+binding = "API"
+service = "brain-battle-hub-api"
