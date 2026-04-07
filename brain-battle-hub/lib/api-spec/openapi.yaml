@@ -1,0 +1,220 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Brain Battle Hub API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: scores
+    description: Score operations
+  - name: leaderboard
+    description: Leaderboard operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /scores:
+    post:
+      operationId: submitScore
+      tags: [scores]
+      summary: Submit a score after a game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitScoreBody"
+      responses:
+        "201":
+          description: Score submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Score"
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get the global leaderboard
+      parameters:
+        - name: gameId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [global, daily]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /leaderboard/stats:
+    get:
+      operationId: getLeaderboardStats
+      tags: [leaderboard]
+      summary: Get top-level stats (total players, top score, games played today)
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardStats"
+
+  /leaderboard/rank:
+    get:
+      operationId: getPlayerRank
+      tags: [leaderboard]
+      summary: Get rank info for a player by username
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player rank info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerRank"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    SubmitScoreBody:
+      type: object
+      properties:
+        username:
+          type: string
+        gameId:
+          type: string
+        score:
+          type: integer
+      required:
+        - username
+        - gameId
+        - score
+
+    Score:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        gameId:
+          type: string
+        score:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - username
+        - gameId
+        - score
+        - createdAt
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        username:
+          type: string
+        gameId:
+          type: string
+        score:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - rank
+        - username
+        - gameId
+        - score
+        - createdAt
+
+    LeaderboardStats:
+      type: object
+      properties:
+        totalPlayers:
+          type: integer
+        topScore:
+          type: integer
+        gamesToday:
+          type: integer
+        topGame:
+          type: string
+      required:
+        - totalPlayers
+        - topScore
+        - gamesToday
+        - topGame
+
+    PlayerRank:
+      type: object
+      properties:
+        username:
+          type: string
+        rank:
+          type: integer
+        totalPlayers:
+          type: integer
+        percentile:
+          type: number
+        badge:
+          type: string
+          enum: [bronze, silver, gold]
+        bestScore:
+          type: integer
+        gamesPlayed:
+          type: integer
+      required:
+        - username
+        - rank
+        - totalPlayers
+        - percentile
+        - badge
+        - bestScore
+        - gamesPlayed

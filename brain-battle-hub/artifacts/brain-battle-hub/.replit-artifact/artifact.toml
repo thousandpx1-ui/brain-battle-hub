@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Brain Battle Hub"
+version = "1.0.0"
+id = "artifacts/brain-battle-hub"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21720
+
+[services.development]
+run = "pnpm --filter @workspace/brain-battle-hub run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/brain-battle-hub", "run", "build" ]
+publicDir = "artifacts/brain-battle-hub/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21720"
+BASE_PATH = "/"

@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "UCrA9eK4DlyOm0mq7-Lnd"
+uri = "file://brain-battle-hub.zip"
+type = "unspecified"
+title = "brain-battle-hub.zip"
