@@ -10,7 +10,8 @@ const RANDOM_NAMES = [
   "EmberGlow", "FluxMaster", "GhostRider", "HyperionX", "IonStorm",
   "JetStream", "KrakenEye", "LaserBeam", "MeteorX", "NebulaDrift",
   "OmegaPulse", "PhantomX", "QuantumLeap", "RapidFire", "SolarFlare",
-  "ThunderBolt", "VortexX", "WarriorX", "XtremeGamer", "ZenithPro"
+  "ThunderBolt", "VortexX", "WarriorX", "XtremeGamer", "ZenithPro",
+  "AlphaStrike", "BetaWave", "CosmicRay"
 ];
 
 export interface MockLeaderboardEntry {
