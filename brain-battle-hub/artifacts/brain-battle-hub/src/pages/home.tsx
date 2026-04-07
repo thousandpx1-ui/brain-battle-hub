@@ -12,7 +12,8 @@ export default function Home() {
   const { username, streak, updateStreak } = useAppState();
   const [showUsername, setShowUsername] = useState(false);
 
-  const { data: leaderboard } = useGetLeaderboard({ period: "global", limit: 5 });
+  const { data: leaderboardRaw } = useGetLeaderboard({ period: "global", limit: 5 });
+  const leaderboard = Array.isArray(leaderboardRaw) ? leaderboardRaw : [];
 
   useEffect(() => {
     updateStreak();

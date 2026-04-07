@@ -11,11 +11,12 @@ export default function Leaderboard() {
   const [period, setPeriod] = useState<"global" | "daily">("global");
   const [gameId, setGameId] = useState<string>("all");
 
-  const { data: leaderboard, isLoading } = useGetLeaderboard({ 
-    period, 
+  const { data: leaderboardRaw, isLoading } = useGetLeaderboard({
+    period,
     gameId: gameId === "all" ? undefined : gameId,
     limit: 50
   }, { query: { queryKey: ["leaderboard", period, gameId] } });
+  const leaderboard = Array.isArray(leaderboardRaw) ? leaderboardRaw : [];
 
   const { data: playerRank } = useGetPlayerRank(
     { username: username || "" },
@@ -89,7 +90,7 @@ export default function Leaderboard() {
             </div>
           ) : (
             <div className="flex flex-col gap-3 pb-8">
-              {leaderboard?.map((entry, i) => {
+              {leaderboard.map((entry, i) => {
                 const game = getGameById(entry.gameId);
                 const isMe = entry.username === username;
                 
@@ -124,7 +125,7 @@ export default function Leaderboard() {
                 );
               })}
               
-              {leaderboard?.length === 0 && (
+              {leaderboard.length === 0 && (
                 <div className="text-center py-10 text-gray-400 font-medium">
                   No scores yet. Be the first!
                 </div>
