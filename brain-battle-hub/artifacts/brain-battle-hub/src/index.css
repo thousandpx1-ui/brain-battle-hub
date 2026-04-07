@@ -130,6 +130,4 @@
 
 .game-gradient-1 { background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%); }
 .game-gradient-2 { background: linear-gradient(135deg, #9d4edd 0%, #c77dff 100%); }
-.game-gradient-3 { background: linear-gradient(135deg, #00b4d8 0%, #48cae4 100%); }
-.game-gradient-4 { background: linear-gradient(135deg, #ff9f1c 0%, #ffbf69 100%); }
-.game-gradient-5 { background: linear-gradient(135deg, #06d6a0 0%, #48bfe3 100%); }
+.game-gradient-3 { background: linear-gradient(135deg, #06d6a0 0%, #48bfe3 100%); }

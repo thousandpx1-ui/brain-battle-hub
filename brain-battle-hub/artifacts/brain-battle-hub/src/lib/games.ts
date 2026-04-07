@@ -1,4 +1,4 @@
-import { Brain, Eye, MousePointerClick, Lightbulb, Coins } from "lucide-react";
+import { Brain, Eye, Coins } from "lucide-react";
 
 export const GAMES = [
   {
@@ -16,24 +16,10 @@ export const GAMES = [
     icon: Eye,
   },
   {
-    id: "taptrap",
-    name: "Fake Tap Trap",
-    description: "Find and tap the real button among the fakes.",
-    gradient: "game-gradient-3",
-    icon: MousePointerClick,
-  },
-  {
-    id: "illusion",
-    name: "Illusion Finder",
-    description: "Solve visual riddles before time runs out.",
-    gradient: "game-gradient-4",
-    icon: Lightbulb,
-  },
-  {
     id: "risk",
     name: "Risk or Safe",
     description: "Bank your points or risk it all for double.",
-    gradient: "game-gradient-5",
+    gradient: "game-gradient-3",
     icon: Coins,
   },
 ];
