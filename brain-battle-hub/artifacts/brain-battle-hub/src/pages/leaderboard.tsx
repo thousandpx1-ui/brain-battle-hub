@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout";
 import { useGetLeaderboard } from "@workspace/api-client-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star } from "lucide-react";
+import { Trophy, Star, Medal } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 import { generateMockLeaderboard, MockLeaderboardEntry } from "@/lib/mock-leaderboard";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
@@ -112,19 +112,24 @@ export default function Leaderboard() {
           <div className="flex flex-col gap-3 pb-8">
             {filteredLeaderboard.map((entry, i) => {
               const isMe = entry.username === username;
+              const medal = i === 0 ? <Trophy className="w-5 h-5 text-yellow-500 fill-yellow-500" /> : 
+                            i === 1 ? <Medal className="w-5 h-5 text-gray-400" /> : 
+                            i === 2 ? <Medal className="w-5 h-5 text-amber-600" /> : null;
 
               return (
                 <div
                   key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black mr-4 text-sm ${
-                    i === 0 ? 'bg-yellow-100 text-yellow-600' :
-                    i === 1 ? 'bg-gray-100 text-gray-500' :
-                    i === 2 ? 'bg-orange-100 text-orange-600' :
-                    'bg-gray-50 text-gray-400'
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${
+                    i === 0 ? 'bg-yellow-100' :
+                    i === 1 ? 'bg-gray-100' :
+                    i === 2 ? 'bg-amber-100' :
+                    'bg-gray-50'
                   }`}>
-                    {i + 1}
+                    {medal || (
+                      <span className="font-black text-sm text-gray-400">{i + 1}</span>
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Layout } from "@/components/layout";
 import { GAMES, getGameById } from "@/lib/games";
 import { useAppState } from "@/hooks/useAppState";
-import { Flame, Play, Sparkles, Trophy } from "lucide-react";
+import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
 import { useGetLeaderboard } from "@workspace/api-client-react";
 import { generateMockLeaderboard } from "@/lib/mock-leaderboard";
@@ -88,23 +88,24 @@ export default function Home() {
             <div className="flex flex-col gap-3">
               {leaderboard.map((entry, i) => {
                 const game = getGameById(entry.gameId);
+                const medal = i === 0 ? <Trophy className="w-4 h-4 text-yellow-500 fill-yellow-500" /> : 
+                              i === 1 ? <Medal className="w-4 h-4 text-gray-400" /> : 
+                              i === 2 ? <Medal className="w-4 h-4 text-amber-600" /> : null;
                 return (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        i === 0 ? 'bg-yellow-100 text-yellow-600' :
-                        i === 1 ? 'bg-gray-100 text-gray-600' :
-                        i === 2 ? 'bg-orange-100 text-orange-600' :
-                        'bg-gray-50 text-gray-400'
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        i === 0 ? 'bg-yellow-100' :
+                        i === 1 ? 'bg-gray-100' :
+                        i === 2 ? 'bg-amber-100' :
+                        'bg-gray-50'
                       }`}>
-                        {i + 1}
+                        {medal || (
+                          <span className="font-black text-xs text-gray-400">{i + 1}</span>
+                        )}
                       </div>
                       <div>
                         <p className="font-bold text-sm text-gray-900">{entry.username}</p>
-                        <p className="text-[10px] text-gray-400 font-medium flex items-center gap-1">
-                          {game && <game.icon className="w-3 h-3" />}
-                          {game?.name || entry.gameId}
-                        </p>
                       </div>
                     </div>
                     <div className="font-black text-sm">{Math.floor(entry.score).toLocaleString()}</div>
