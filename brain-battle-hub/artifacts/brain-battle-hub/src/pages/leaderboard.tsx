@@ -1,34 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout";
 import { useGetLeaderboard } from "@workspace/api-client-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
-import { GAMES, getGameById } from "@/lib/games";
-import { generateMockLeaderboard } from "@/lib/mock-leaderboard";
-import { mergeLocalWithMock, useLocalLeaderboard } from "@/lib/local-leaderboard";
+import { generateMockLeaderboard, MockLeaderboardEntry } from "@/lib/mock-leaderboard";
+import { useLocalLeaderboard } from "@/lib/local-leaderboard";
+
+function getTimeUntilMidnight(): string {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  const diff = midnight.getTime() - now.getTime();
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function isToday(dateStr: string): boolean {
+  const date = new Date(dateStr);
+  const now = new Date();
+  return date.toDateString() === now.toDateString();
+}
 
 export default function Leaderboard() {
   const { username } = useAppState();
   const localScores = useLocalLeaderboard((s) => s.scores);
   const [period, setPeriod] = useState<"global" | "daily">("global");
-  const [gameId, setGameId] = useState<string>("all");
+  const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
+  const [, setTick] = useState(0);
 
-  const { data: leaderboardRaw, isLoading, isError } = useGetLeaderboard({
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(getTimeUntilMidnight());
+      setTick(t => t + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const { data: leaderboardRaw, isError } = useGetLeaderboard({
     period,
-    gameId: gameId === "all" ? undefined : gameId,
-    limit: 50
-  }, { query: { queryKey: ["leaderboard", period, gameId] } });
+    limit: 100
+  }, { query: { queryKey: ["leaderboard", period] } });
+
   const mockLeaderboard = generateMockLeaderboard(50);
   const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
-  const leaderboard = mergeLocalWithMock(rawLeaderboard);
 
-  // Calculate player's rank from local leaderboard
-  const playerBestScore = username
-    ? Math.max(...localScores.filter(s => s.username === username).map(s => s.score), 0)
-    : 0;
-  const playerRank = playerBestScore > 0 ? leaderboard.findIndex(entry => entry.score === playerBestScore) + 1 : 0;
-  const totalPlayers = leaderboard.length;
+  // Filter by period (daily = today only)
+  const filteredLeaderboard: MockLeaderboardEntry[] = period === "daily" 
+    ? [...rawLeaderboard, ...localScores].filter(entry => isToday(entry.createdAt)).sort((a, b) => b.score - a.score)
+    : [...rawLeaderboard, ...localScores].sort((a, b) => b.score - a.score);
+
+  // Calculate player's rank for current tab
+  const playerScores = localScores.filter(s => s.username === username);
+  const playerBestScore = period === "daily"
+    ? Math.max(...playerScores.filter(s => isToday(s.createdAt)).map(s => s.score), 0)
+    : Math.max(...playerScores.map(s => s.score), 0);
+  
+  const playerRank = playerBestScore > 0 ? filteredLeaderboard.findIndex(entry => entry.score === playerBestScore) + 1 : 0;
+  const totalPlayers = filteredLeaderboard.length;
   const percentile = totalPlayers > 0 && playerRank > 0 ? ((totalPlayers - playerRank) / totalPlayers) * 100 : 0;
   const badge = percentile >= 90 ? "gold" : percentile >= 75 ? "silver" : "bronze";
 
@@ -37,39 +70,22 @@ export default function Leaderboard() {
       <div className="flex-1 bg-gray-50 flex flex-col">
         <div className="bg-white px-6 pt-10 pb-6 rounded-b-[32px] shadow-sm z-10 relative">
           <h1 className="text-3xl font-black text-gray-900 mb-6">Leaderboard</h1>
-          
+
           <Tabs value={period} onValueChange={(v) => setPeriod(v as "global" | "daily")} className="w-full">
-            <TabsList className="w-full h-12 bg-gray-100 rounded-2xl p-1 mb-4">
+            <TabsList className="w-full h-12 bg-gray-100 rounded-2xl p-1 mb-2">
               <TabsTrigger value="global" className="flex-1 rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">All Time</TabsTrigger>
               <TabsTrigger value="daily" className="flex-1 rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">Today</TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 hide-scrollbar">
-            <button
-              onClick={() => setGameId("all")}
-              className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
-                gameId === "all" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              All Games
-            </button>
-            {GAMES.map(g => (
-              <button
-                key={g.id}
-                onClick={() => setGameId(g.id)}
-                className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap flex items-center gap-1.5 transition-colors ${
-                  gameId === g.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500"
-                }`}
-              >
-                <g.icon className="w-3.5 h-3.5" />
-                {g.name}
-              </button>
-            ))}
-          </div>
+          {period === "daily" && (
+            <div className="text-center text-xs text-gray-500 font-medium mb-4">
+              Resets in <span className="font-mono font-bold text-primary">{timeLeft}</span>
+            </div>
+          )}
 
           {username && playerBestScore > 0 && (
-            <div className="mt-6 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
+            <div className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Your Rank</p>
@@ -93,55 +109,43 @@ export default function Leaderboard() {
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3 pb-8">
-              {leaderboard.map((entry, i) => {
-                const game = getGameById(entry.gameId);
-                const isMe = entry.username === username;
-                const isLocalScore = entry.username === username;
+          <div className="flex flex-col gap-3 pb-8">
+            {filteredLeaderboard.map((entry, i) => {
+              const isMe = entry.username === username;
 
-                return (
-                  <div
-                    key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
-                    className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
-                  >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black mr-4 text-sm ${
-                      i === 0 ? 'bg-yellow-100 text-yellow-600' :
-                      i === 1 ? 'bg-gray-100 text-gray-500' :
-                      i === 2 ? 'bg-orange-100 text-orange-600' :
-                      'bg-gray-50 text-gray-400'
-                    }`}>
-                      {i + 1}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>
-                        {entry.username} {isMe && "(You)"}
-                      </p>
-                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                        {game && <game.icon className="w-3 h-3" />}
-                        {game?.name || entry.gameId}
-                      </p>
-                    </div>
-                    
-                    <div className="font-black text-xl text-gray-900 ml-4">
-                      {Math.floor(entry.score).toLocaleString()}
-                    </div>
+              return (
+                <div
+                  key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
+                  className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black mr-4 text-sm ${
+                    i === 0 ? 'bg-yellow-100 text-yellow-600' :
+                    i === 1 ? 'bg-gray-100 text-gray-500' :
+                    i === 2 ? 'bg-orange-100 text-orange-600' :
+                    'bg-gray-50 text-gray-400'
+                  }`}>
+                    {i + 1}
                   </div>
-                );
-              })}
-              
-              {leaderboard.length === 0 && (
-                <div className="text-center py-10 text-gray-400 font-medium">
-                  No scores yet. Be the first!
+
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>
+                      {entry.username} {isMe && "(You)"}
+                    </p>
+                  </div>
+
+                  <div className="font-black text-xl text-gray-900 ml-4">
+                    {Math.floor(entry.score).toLocaleString()}
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+              );
+            })}
+
+            {filteredLeaderboard.length === 0 && (
+              <div className="text-center py-10 text-gray-400 font-medium">
+                No scores yet. Be the first!
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Layout>
