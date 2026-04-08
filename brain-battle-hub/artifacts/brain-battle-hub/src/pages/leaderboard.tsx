@@ -25,6 +25,31 @@ function isToday(dateStr: string): boolean {
   return date.toDateString() === now.toDateString();
 }
 
+function formatScore(score: number): string {
+  const num = Math.floor(score);
+
+  if (num >= 1000000000) {
+    return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  }
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  }
+
+  return num.toString();
+}
+
+// Test cases for formatScore:
+// formatScore(500) = "500"
+// formatScore(1000) = "1k"
+// formatScore(1200) = "1.2k"
+// formatScore(1500) = "1.5k"
+// formatScore(1000000) = "1M"
+// formatScore(1200000) = "1.2M"
+// formatScore(1000000000) = "1B"
+
 export default function Leaderboard() {
   const { username } = useAppState();
   const [leaderboard, setLeaderboard] = useState([]);
@@ -169,7 +194,7 @@ export default function Leaderboard() {
                   </div>
 
                   <div className="font-black text-xl text-gray-900 ml-4">
-                    {Math.floor(entry.score).toLocaleString()}
+                    {formatScore(entry.score)}
                   </div>
                 </div>
               );

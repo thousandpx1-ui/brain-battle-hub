@@ -2,60 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { Layout } from "@/components/layout";
-import { GAMES, getGameById } from "@/lib/games";
+import { GAMES } from "@/lib/games";
 import { useAppState } from "@/hooks/useAppState";
-import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
+import { Flame, Play, Sparkles } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
-import { getFullLeaderboard } from "@/lib/appwrite.js";
-import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 export default function Home() {
   const { username, streak, updateStreak } = useAppState();
-  const [leaderboardHome, setLeaderboardHome] = useState([]);
-  const [homeLoading, setHomeLoading] = useState(true);
-  const localScores = useLocalLeaderboard((s) => s.scores); // Fallback
-  const _version = useLocalLeaderboard((s) => s.version);
   const [showUsername, setShowUsername] = useState(false);
-
-  // Fetch top leaderboard for home
-  useEffect(() => {
-    const fetchHomeLeaderboard = async () => {
-      setHomeLoading(true);
-      try {
-        const data = await getFullLeaderboard('global');
-        const top5 = data.slice(0, 5);
-        setLeaderboardHome(top5);
-      } catch (error) {
-        console.error('Home leaderboard fetch failed:', error);
-        // Fallback
-        const bestScoreMap = new Map();
-        for (const entry of localScores) {
-          const existing = bestScoreMap.get(entry.username);
-          if (!existing || entry.score > existing.score) {
-            bestScoreMap.set(entry.username, entry);
-          }
-        }
-        setLeaderboardHome(Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score).slice(0, 5));
-      } finally {
-        setHomeLoading(false);
-      }
-    };
-
-    fetchHomeLeaderboard();
-  }, [_version]);
-
-  // Use local scores only for player best
-  const allScores = username
-    ? localScores.filter(s => s.username === username)
-    : [];
-  const playerBestScore = allScores.length > 0 ? Math.max(...allScores.map(s => s.score), 0) : 0;
-
-  // Find rank by looking up player's best score in the deduplicated leaderboard
-  const playerRank = playerBestScore > 0
-    ? leaderboardHome.findIndex(entry => entry.username === username) + 1
-    : 0;
-  const totalPlayers = leaderboardHome.length;
-  const leaderboard = leaderboardHome;
 
   useEffect(() => {
     updateStreak();
@@ -113,65 +67,8 @@ export default function Home() {
             </motion.div>
           ))}
         </div>
-
-        {playerBestScore > 0 && (
-          <div className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Your Rank</p>
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-black">#{playerRank}</span>
-                  <span className="text-sm text-purple-100 mb-1.5">/ {totalPlayers}</span>
-                </div>
-              </div>
-              <div className="bg-white/20 backdrop-blur px-3 py-1.5 rounded-full">
-                <span className="text-sm font-bold">Best: {playerBestScore}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {leaderboard.length > 0 && (
-          <div className="mt-4 bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                Top Players
-              </h3>
-              <Link href="/leaderboard" className="text-sm font-bold text-primary">View All</Link>
-            </div>
-            <div className="flex flex-col gap-3">
-              {leaderboard.map((entry, i) => {
-                const game = getGameById(entry.gameId);
-                const medal = i === 0 ? <Trophy className="w-4 h-4 text-yellow-500 fill-yellow-500" /> : 
-                              i === 1 ? <Medal className="w-4 h-4 text-gray-400" /> : 
-                              i === 2 ? <Medal className="w-4 h-4 text-amber-600" /> : null;
-                return (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        i === 0 ? 'bg-yellow-100' :
-                        i === 1 ? 'bg-gray-100' :
-                        i === 2 ? 'bg-amber-100' :
-                        'bg-gray-50'
-                      }`}>
-                        {medal || (
-                          <span className="font-black text-xs text-gray-400">{i + 1}</span>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm text-gray-900">{entry.username}</p>
-                      </div>
-                    </div>
-                    <div className="font-black text-sm">{Math.floor(entry.score).toLocaleString()}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
-      
+
       <UsernameModal open={showUsername} onOpenChange={setShowUsername} />
     </Layout>
   );
