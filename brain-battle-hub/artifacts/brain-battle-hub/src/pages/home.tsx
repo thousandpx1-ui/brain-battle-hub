@@ -6,35 +6,56 @@ import { GAMES, getGameById } from "@/lib/games";
 import { useAppState } from "@/hooks/useAppState";
 import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
+import { getFullLeaderboard } from "@/lib/appwrite.js";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 export default function Home() {
   const { username, streak, updateStreak } = useAppState();
-  const localScores = useLocalLeaderboard((s) => s.scores);
-  const _version = useLocalLeaderboard((s) => s.version); // force re-render
+  const [leaderboardHome, setLeaderboardHome] = useState([]);
+  const [homeLoading, setHomeLoading] = useState(true);
+  const localScores = useLocalLeaderboard((s) => s.scores); // Fallback
+  const _version = useLocalLeaderboard((s) => s.version);
   const [showUsername, setShowUsername] = useState(false);
 
-  // Use local scores only
+  // Fetch top leaderboard for home
+  useEffect(() => {
+    const fetchHomeLeaderboard = async () => {
+      setHomeLoading(true);
+      try {
+        const data = await getFullLeaderboard('global');
+        const top5 = data.slice(0, 5);
+        setLeaderboardHome(top5);
+      } catch (error) {
+        console.error('Home leaderboard fetch failed:', error);
+        // Fallback
+        const bestScoreMap = new Map();
+        for (const entry of localScores) {
+          const existing = bestScoreMap.get(entry.username);
+          if (!existing || entry.score > existing.score) {
+            bestScoreMap.set(entry.username, entry);
+          }
+        }
+        setLeaderboardHome(Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score).slice(0, 5));
+      } finally {
+        setHomeLoading(false);
+      }
+    };
+
+    fetchHomeLeaderboard();
+  }, [_version]);
+
+  // Use local scores only for player best
   const allScores = username
     ? localScores.filter(s => s.username === username)
     : [];
   const playerBestScore = allScores.length > 0 ? Math.max(...allScores.map(s => s.score), 0) : 0;
 
-  // Deduplicate: keep only best score per username
-  const bestScoreMap = new Map<string, typeof localScores[0]>();
-  for (const entry of localScores) {
-    const existing = bestScoreMap.get(entry.username);
-    if (!existing || entry.score > existing.score) {
-      bestScoreMap.set(entry.username, entry);
-    }
-  }
-  const leaderboard = Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score).slice(0, 5);
-
   // Find rank by looking up player's best score in the deduplicated leaderboard
   const playerRank = playerBestScore > 0
-    ? leaderboard.findIndex(entry => entry.username === username) + 1
+    ? leaderboardHome.findIndex(entry => entry.username === username) + 1
     : 0;
-  const totalPlayers = leaderboard.length;
+  const totalPlayers = leaderboardHome.length;
+  const leaderboard = leaderboardHome;
 
   useEffect(() => {
     updateStreak();

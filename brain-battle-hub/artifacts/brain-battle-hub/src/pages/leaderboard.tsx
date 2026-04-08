@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star, Medal } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
+import { getFullLeaderboard } from "@/lib/appwrite.js";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 function getTimeUntilMidnight(): string {
@@ -26,11 +27,45 @@ function isToday(dateStr: string): boolean {
 
 export default function Leaderboard() {
   const { username } = useAppState();
-  const localScores = useLocalLeaderboard((s) => s.scores);
-  const _version = useLocalLeaderboard((s) => s.version); // force re-render
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const localScores = useLocalLeaderboard((s) => s.scores); // Fallback
+  const _version = useLocalLeaderboard((s) => s.version);
   const [period, setPeriod] = useState<"global" | "daily">("global");
   const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
   const [, setTick] = useState(0);
+
+  // Fetch leaderboard from Appwrite
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      setLoading(true);
+      try {
+        const data = await getFullLeaderboard(period);
+        setLeaderboard(data);
+      } catch (error) {
+        console.error('Appwrite fetch failed, using local:', error);
+        // Fallback to local (existing logic)
+        const allRawScores = period === "daily"
+          ? localScores.filter(entry => isToday(entry.createdAt))
+          : [...localScores];
+
+        const bestScoreMap = new Map();
+        for (const entry of allRawScores) {
+          const existing = bestScoreMap.get(entry.username);
+          if (!existing || entry.score > existing.score) {
+            bestScoreMap.set(entry.username, entry);
+          }
+        }
+        setLeaderboard(Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (username) {
+      fetchLeaderboard();
+    }
+  }, [period, username, _version]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -38,29 +73,16 @@ export default function Leaderboard() {
       setTick(t => t + 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, []); 
 
-  // Filter by period and deduplicate: keep only best score per username
-  const allRawScores = period === "daily"
-    ? localScores.filter(entry => isToday(entry.createdAt))
-    : [...localScores];
+  const filteredLeaderboard = leaderboard;
 
-  const bestScoreMap = new Map<string, typeof localScores[0]>();
-  for (const entry of allRawScores) {
-    const existing = bestScoreMap.get(entry.username);
-    if (!existing || entry.score > existing.score) {
-      bestScoreMap.set(entry.username, entry);
-    }
-  }
-  const filteredLeaderboard = Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score);
-
-  // Calculate player's rank for current tab (best score position)
-  const playerScores = localScores.filter(s => s.username === username);
+  // Player rank from remote/local data
+  const playerScores = localScores.filter(s => s.username === username); // Local for player best
   const playerBestScore = period === "daily"
     ? (playerScores.filter(s => isToday(s.createdAt)).length > 0 ? Math.max(...playerScores.filter(s => isToday(s.createdAt)).map(s => s.score), 0) : 0)
     : (playerScores.length > 0 ? Math.max(...playerScores.map(s => s.score), 0) : 0);
 
-  // Find rank by looking up player's best score in the filtered leaderboard
   const playerRank = playerBestScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;
   const totalPlayers = filteredLeaderboard.length;
   const percentile = totalPlayers > 0 && playerRank > 0 ? ((totalPlayers - playerRank) / totalPlayers) * 100 : 0;
@@ -146,7 +168,11 @@ export default function Leaderboard() {
               );
             })}
 
-            {filteredLeaderboard.length === 0 && (
+{loading ? (
+              <div className="flex items-center justify-center h-32 text-gray-400">
+                Loading leaderboard...
+              </div>
+            ) : filteredLeaderboard.length === 0 && (
               <div className="text-center py-10 text-gray-400 font-medium">
                 No scores yet. Be the first!
               </div>

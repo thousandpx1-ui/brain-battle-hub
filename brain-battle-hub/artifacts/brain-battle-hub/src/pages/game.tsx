@@ -8,7 +8,7 @@ import { DontBlink } from "@/games/DontBlink";
 import { FakeTapTrap } from "@/games/FakeTapTrap";
 import { IllusionFinder } from "@/games/IllusionFinder";
 import { RiskOrSafe } from "@/games/RiskOrSafe";
-import { saveScore } from "@/lib/appwrite.js";
+import { saveScore, submitScoreFull } from "@/lib/appwrite.js";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { InterstitialAd } from "@/components/interstitial-ad";
@@ -42,8 +42,12 @@ export default function Game() {
       addLocalScore({ gameId: game.id, username, score: finalScore });
     }
 
-    // Save to Appwrite database
+    // Save personal best to Appwrite (legacy)
     await saveScore(finalScore, game.name);
+    // Save full score for leaderboard
+    if (username) {
+      await submitScoreFull(username, game.id, finalScore, game.name);
+    }
 
     if (gamesPlayedSession > 0 && gamesPlayedSession % 3 === 0) {
       setShowInterstitial(true);
@@ -66,6 +70,10 @@ export default function Game() {
     if (username) {
       addLocalScore({ gameId: game.id, username, score: doubled });
       await saveScore(doubled, game.name);
+      // Save full score for leaderboard
+      if (username) {
+        await submitScoreFull(username, game.id, doubled, game.name);
+      }
     }
   };
 
