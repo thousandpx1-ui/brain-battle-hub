@@ -66,16 +66,21 @@ export default function Leaderboard() {
       setLoading(true);
       try {
         // Try to seed first (will skip if already seeded)
+        console.log('🌱 Attempting to seed leaderboard...');
         await seedLeaderboard();
-        
+
+        console.log('📊 Fetching leaderboard data...');
         const data = await getFullLeaderboard(period);
+        console.log(`✅ Got ${data.length} leaderboard entries`);
         setLeaderboard(data);
       } catch (error) {
-        console.error('Appwrite fetch failed, using local:', error);
+        console.error('❌ Appwrite fetch failed, using local:', error);
         // Fallback to local (cumulative scoring logic)
         const allRawScores = period === "daily"
           ? localScores.filter(entry => isToday(entry.createdAt))
           : [...localScores];
+
+        console.log(`📱 Using ${allRawScores.length} local scores as fallback`);
 
         const totalScoreMap = new Map();
         for (const entry of allRawScores) {
@@ -86,16 +91,16 @@ export default function Leaderboard() {
             totalScoreMap.set(entry.username, { ...entry });
           }
         }
-        setLeaderboard(Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score));
+        const localLeaderboard = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+        console.log(`🏠 Local leaderboard has ${localLeaderboard.length} players`);
+        setLeaderboard(localLeaderboard);
       } finally {
         setLoading(false);
       }
     };
 
-    if (username) {
-      fetchLeaderboard();
-    }
-  }, [period, username, _version]);
+    fetchLeaderboard(); // Remove username check for debugging
+  }, [period, _version]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -162,6 +167,14 @@ export default function Leaderboard() {
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
+          {/* Debug info - remove after testing */}
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Debug:</strong> Leaderboard has {leaderboard.length} players.
+              {leaderboard.length === 0 && " Check console for seeding errors."}
+            </p>
+          </div>
+
           <div className="flex flex-col gap-3 pb-8">
             {filteredLeaderboard.map((entry, i) => {
               const isMe = entry.username === username;

@@ -118,12 +118,15 @@ function generateFakePlayers() {
 
 // Seed the leaderboard with 51 fake players (RUN ONLY ONCE)
 async function seedLeaderboard() {
-  // Check if already seeded with new format (version 2)
-  const seededVersion = localStorage.getItem("leaderboard_seeded_version");
-  if (seededVersion === "2") {
-    console.log("⏭️ Leaderboard already seeded with latest format, skipping");
-    return;
-  }
+  // TEMPORARILY FORCE RESEEDING FOR DEBUGGING
+  console.log("🔄 Force reseeding leaderboard with 51 players for debugging...");
+
+  // Uncomment below to restore normal seeding check:
+  // const seededVersion = localStorage.getItem("leaderboard_seeded_version");
+  // if (seededVersion === "2") {
+  //   console.log("⏭️ Leaderboard already seeded with latest format, skipping");
+  //   return;
+  // }
 
   try {
     const scoreEntries = generateFakePlayers();
@@ -174,6 +177,8 @@ async function getAllTimeLeaderboard() {
       Query.limit(10000)
     ]);
 
+    console.log(`📊 Found ${res.documents.length} total score entries in database`);
+
     // Group by username and sum scores for cumulative leaderboard
     const userTotals = new Map();
     for (const doc of res.documents) {
@@ -183,7 +188,9 @@ async function getAllTimeLeaderboard() {
       userTotals.set(doc.username, current);
     }
 
-    return Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
+    const result = Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
+    console.log(`🏆 Returning ${result.length} unique players on leaderboard`);
+    return result;
   } catch (error) {
     console.error("❌ Error fetching all-time leaderboard:", error);
     return [];
@@ -230,25 +237,24 @@ async function getLeaderboard() {
   return getAllTimeLeaderboard();
 }
 
-// Medal helper
-function getMedal(index) {
-  if (index === 0) return "🥇";
-  if (index === 1) return "🥈";
-  if (index === 2) return "🥉";
-  return "";
+// Reset seeding flag (for debugging/testing)
+function resetLeaderboardSeeding() {
+  localStorage.removeItem("leaderboard_seeded_version");
+  console.log("🔄 Leaderboard seeding flag reset - will reseed on next leaderboard load");
 }
 
-export { 
-  client, 
-  databases, 
-  ID, 
-  saveScore, 
-  getLeaderboard, 
+export {
+  client,
+  databases,
+  ID,
+  saveScore,
+  getLeaderboard,
   getFullLeaderboard,
   getAllTimeLeaderboard,
   getTodayLeaderboard,
   seedLeaderboard,
+  resetLeaderboardSeeding,
   getMedal,
-  DATABASE_ID, 
-  COLLECTION_ID 
+  DATABASE_ID,
+  COLLECTION_ID
 };
