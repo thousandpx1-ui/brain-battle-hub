@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,16 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
   const [result, setResult] = useState<"win" | "lose" | null>(null);
   const [multiplier, setMultiplier] = useState(2.0);
   const [consecutiveWins, setConsecutiveWins] = useState(0); // Track win streak for bonus
+  const [safeUsedToday, setSafeUsedToday] = useState(false);
+
+  // Check if safe was used today
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const lastSafeDate = localStorage.getItem('riskorsafe_safe_used');
+    if (lastSafeDate === today) {
+      setSafeUsedToday(true);
+    }
+  }, []);
 
   const getWinChance = () => {
     return WIN_CHANCES[Math.floor(Math.random() * WIN_CHANCES.length)];
@@ -23,6 +33,11 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
   };
 
   const handleSafe = () => {
+    // Record that safe was used today
+    const today = new Date().toDateString();
+    localStorage.setItem('riskorsafe_safe_used', today);
+    setSafeUsedToday(true);
+
     onGameOver(bank);
   };
 
@@ -136,13 +151,15 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
       <div className="grid grid-cols-2 gap-4 w-full">
         <Button
           onClick={handleSafe}
-          disabled={flipping || result !== null}
+          disabled={flipping || result !== null || safeUsedToday}
           variant="outline"
-          className="h-16 text-lg font-bold border-2"
+          className={`h-16 text-lg font-bold border-2 ${safeUsedToday ? 'opacity-50' : ''}`}
         >
           SAFE
           <br/>
-          <span className="text-xs font-normal text-gray-500">Keep {bank}</span>
+          <span className="text-xs font-normal text-gray-500">
+            {safeUsedToday ? 'Used today' : `Keep ${bank}`}
+          </span>
         </Button>
         <Button
           onClick={handleRisk}

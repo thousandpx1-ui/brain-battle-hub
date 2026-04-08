@@ -11,7 +11,7 @@ const COLLECTION_ID = "scores";
 
 const databases = new Databases(client);
 
-// 52 fake player names for seeding
+// 51 fake player names for seeding
 const FAKE_PLAYER_NAMES = [
   "ShadowNinja", "PixelPro", "GameMaster", "SpeedRunner", "BrainKing",
   "PuzzleQueen", "QuickThinker", "FirePlayer", "IceWizard", "StormBreaker",
@@ -22,42 +22,124 @@ const FAKE_PLAYER_NAMES = [
   "QuantumX", "ZenMaster", "GhostRider", "SkyWalker", "InfernoX",
   "CrystalMind", "MegaPlayer", "UltraThink", "HyperNova", "MindBender",
   "BrainStorm", "GameWizard", "PixelHero", "ElitePlayer", "FastFinger",
-  "LuckyShot", "ProGamer", "AcePlayer", "TopScorer", "LegendX",
-  "MasterMind", "FinalBoss"
+  "LuckyShot", "ProGamer", "AcePlayer", "TopScorer", "LegendX"
 ];
 
-// Generate fake players with scores between 500-1000
+// Generate multiple score entries for fake players
 function generateFakePlayers() {
-  return FAKE_PLAYER_NAMES.map(name => ({
-    userId: name,
-    username: name,
-    score: Math.floor(Math.random() * 500) + 500, // 500-1000
-    createdAt: new Date().toISOString()
-  }));
+  const allEntries = [];
+  const gameIds = ["memory", "blink", "taptrap", "illusion", "risk"];
+
+  FAKE_PLAYER_NAMES.forEach(name => {
+    // Generate all-time total score (up to 10k)
+    const totalScore = Math.floor(Math.random() * 9000) + 1000; // 1000-10000
+
+    // Generate daily score (up to 2k)
+    const dailyScore = Math.floor(Math.random() * 1800) + 200; // 200-2000
+
+    // Create historical entries (total - daily)
+    const historicalScore = totalScore - dailyScore;
+    const numHistoricalGames = Math.floor(Math.random() * 15) + 5; // 5-20 games
+
+    // Distribute historical scores
+    let remainingHistorical = historicalScore;
+    for (let i = 0; i < numHistoricalGames - 1; i++) {
+      const gameScore = Math.floor(Math.random() * Math.min(remainingHistorical, 500)) + 10;
+      const randomDaysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
+      const gameDate = new Date();
+      gameDate.setDate(gameDate.getDate() - randomDaysAgo);
+
+      allEntries.push({
+        userId: name,
+        username: name,
+        score: gameScore,
+        gameId: gameIds[Math.floor(Math.random() * gameIds.length)],
+        createdAt: gameDate.toISOString()
+      });
+
+      remainingHistorical -= gameScore;
+    }
+
+    // Add the remaining historical score
+    if (remainingHistorical > 0) {
+      const randomDaysAgo = Math.floor(Math.random() * 30) + 1;
+      const gameDate = new Date();
+      gameDate.setDate(gameDate.getDate() - randomDaysAgo);
+
+      allEntries.push({
+        userId: name,
+        username: name,
+        score: remainingHistorical,
+        gameId: gameIds[Math.floor(Math.random() * gameIds.length)],
+        createdAt: gameDate.toISOString()
+      });
+    }
+
+    // Create today's entries summing to dailyScore
+    const numTodayGames = Math.floor(Math.random() * 5) + 1; // 1-5 games today
+    let remainingDaily = dailyScore;
+
+    for (let i = 0; i < numTodayGames - 1; i++) {
+      const gameScore = Math.floor(Math.random() * Math.min(remainingDaily, 800)) + 10;
+      const today = new Date();
+      // Random time today
+      today.setHours(Math.floor(Math.random() * 24));
+      today.setMinutes(Math.floor(Math.random() * 60));
+
+      allEntries.push({
+        userId: name,
+        username: name,
+        score: gameScore,
+        gameId: gameIds[Math.floor(Math.random() * gameIds.length)],
+        createdAt: today.toISOString()
+      });
+
+      remainingDaily -= gameScore;
+    }
+
+    // Add the remaining daily score
+    if (remainingDaily > 0) {
+      const today = new Date();
+      today.setHours(Math.floor(Math.random() * 24));
+      today.setMinutes(Math.floor(Math.random() * 60));
+
+      allEntries.push({
+        userId: name,
+        username: name,
+        score: remainingDaily,
+        gameId: gameIds[Math.floor(Math.random() * gameIds.length)],
+        createdAt: today.toISOString()
+      });
+    }
+  });
+
+  return allEntries;
 }
 
-// Seed the leaderboard with 52 fake players (RUN ONLY ONCE)
+// Seed the leaderboard with 51 fake players (RUN ONLY ONCE)
 async function seedLeaderboard() {
-  // Check if already seeded
-  if (localStorage.getItem("leaderboard_seeded") === "true") {
-    console.log("⏭️ Leaderboard already seeded, skipping");
+  // Check if already seeded with new format (version 2)
+  const seededVersion = localStorage.getItem("leaderboard_seeded_version");
+  if (seededVersion === "2") {
+    console.log("⏭️ Leaderboard already seeded with latest format, skipping");
     return;
   }
 
   try {
-    const players = generateFakePlayers();
+    const scoreEntries = generateFakePlayers();
+    console.log(`📊 Generated ${scoreEntries.length} score entries for ${FAKE_PLAYER_NAMES.length} players`);
 
-    for (let player of players) {
+    for (let entry of scoreEntries) {
       await databases.createDocument(
         DATABASE_ID,
         COLLECTION_ID,
         ID.unique(),
-        player
+        entry
       );
     }
 
-    localStorage.setItem("leaderboard_seeded", "true");
-    console.log("✅ 52 fake players added to leaderboard");
+    localStorage.setItem("leaderboard_seeded_version", "2");
+    console.log(`✅ ${FAKE_PLAYER_NAMES.length} fake players seeded with ${scoreEntries.length} total score entries`);
   } catch (error) {
     console.error("❌ Error seeding leaderboard:", error);
     throw error;
