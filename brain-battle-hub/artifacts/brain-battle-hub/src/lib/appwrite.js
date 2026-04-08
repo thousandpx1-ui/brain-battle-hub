@@ -11,148 +11,13 @@ const COLLECTION_ID = "scores";
 
 const databases = new Databases(client);
 
-// Test with random player names for debugging
-const FAKE_PLAYER_NAMES = [
-  "AlexGamer", "SarahPro", "MikeChamp", "EmmaWinner", "JakeMaster"
-];
 
-// Generate multiple score entries for fake players
-function generateFakePlayers() {
-  const allEntries = [];
-  const gameIds = ["memory", "blink", "taptrap", "illusion", "risk"];
 
-  console.log(`🎮 Generating fake data for ${FAKE_PLAYER_NAMES.length} players`);
-
-  FAKE_PLAYER_NAMES.forEach((name, index) => {
-    // Generate all-time total score (up to 10k)
-    const totalScore = Math.floor(Math.random() * 9000) + 1000; // 1000-10000
-
-    // Generate daily score (up to 2k)
-    const dailyScore = Math.floor(Math.random() * 1800) + 200; // 200-2000
-
-    // Create historical entries (total - daily)
-    const historicalScore = totalScore - dailyScore;
-    const numHistoricalGames = Math.floor(Math.random() * 3) + 1; // 1-3 games for testing
-
-    // Distribute historical scores
-    let remainingHistorical = historicalScore;
-    for (let i = 0; i < numHistoricalGames - 1; i++) {
-      const gameScore = Math.floor(Math.random() * Math.min(remainingHistorical, 500)) + 10;
-      const randomDaysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
-      const gameDate = new Date();
-      gameDate.setDate(gameDate.getDate() - randomDaysAgo);
-
-      allEntries.push({
-        userId: name,
-        username: name,
-        score: gameScore,
-        gameId: gameIds[Math.floor(Math.random() * gameIds.length)],
-        createdAt: gameDate.toISOString()
-      });
-
-      remainingHistorical -= gameScore;
-    }
-
-    // Add the remaining historical score
-    if (remainingHistorical > 0) {
-      const randomDaysAgo = Math.floor(Math.random() * 30) + 1;
-      const gameDate = new Date();
-      gameDate.setDate(gameDate.getDate() - randomDaysAgo);
-
-      allEntries.push({
-        userId: name,
-        username: name,
-        score: remainingHistorical,
-        gameId: gameIds[Math.floor(Math.random() * gameIds.length)],
-        createdAt: gameDate.toISOString()
-      });
-    }
-
-    // Create today's entries summing to dailyScore
-    const numTodayGames = Math.floor(Math.random() * 2) + 1; // 1-2 games today for testing
-    let remainingDaily = dailyScore;
-
-    for (let i = 0; i < numTodayGames - 1; i++) {
-      const gameScore = Math.floor(Math.random() * Math.min(remainingDaily, 800)) + 10;
-      const today = new Date();
-      // Random time today
-      today.setHours(Math.floor(Math.random() * 24));
-      today.setMinutes(Math.floor(Math.random() * 60));
-
-      allEntries.push({
-        userId: name,
-        username: name,
-        score: gameScore,
-        gameId: gameIds[Math.floor(Math.random() * gameIds.length)],
-        createdAt: today.toISOString()
-      });
-
-      remainingDaily -= gameScore;
-    }
-
-    // Add the remaining daily score
-    if (remainingDaily > 0) {
-      const today = new Date();
-      today.setHours(Math.floor(Math.random() * 24));
-      today.setMinutes(Math.floor(Math.random() * 60));
-
-      allEntries.push({
-        userId: name,
-        username: name,
-        score: remainingDaily,
-        gameId: gameIds[Math.floor(Math.random() * gameIds.length)],
-        createdAt: today.toISOString()
-      });
-    }
-  });
-
-  console.log(`📊 Generated ${allEntries.length} total score entries across ${FAKE_PLAYER_NAMES.length} players`);
-  return allEntries;
-}
-
-// Seed the leaderboard with 51 fake players (RUN ONLY ONCE)
+// Seed the leaderboard - DISABLED (no fake players)
 async function seedLeaderboard() {
-  // Check if already seeded with new format (version 2)
-  const seededVersion = localStorage.getItem("leaderboard_seeded_version");
-  if (seededVersion === "2") {
-    console.log("⏭️ Leaderboard already seeded with latest format, skipping");
-    return;
-  }
-
-  console.log("🔄 Starting leaderboard seeding with 51 players...");
-
-  try {
-    const scoreEntries = generateFakePlayers();
-    console.log(`📊 Generated ${scoreEntries.length} score entries for ${FAKE_PLAYER_NAMES.length} players`);
-
-    let successCount = 0;
-    for (let i = 0; i < scoreEntries.length; i++) {
-      const entry = scoreEntries[i];
-      try {
-        const result = await databases.createDocument(
-          DATABASE_ID,
-          COLLECTION_ID,
-          ID.unique(),
-          entry
-        );
-        successCount++;
-        if (i < 5) { // Log first few successes
-          console.log(`✅ Created document ${i + 1}:`, result.$id);
-        }
-      } catch (docError) {
-        console.error(`❌ Failed to create document ${i}:`, docError);
-        // Stop after first failure to avoid spam
-        if (successCount === 0) break;
-      }
-    }
-
-    localStorage.setItem("leaderboard_seeded_version", "2");
-    console.log(`✅ Successfully created ${successCount}/${scoreEntries.length} score entries`);
-  } catch (error) {
-    console.error("❌ Error seeding leaderboard:", error);
-    // Don't throw error to prevent app from crashing
-    console.log("🔄 Continuing without seeding...");
-  }
+  // Disabled: No longer seeding fake players
+  console.log("🚫 Fake player seeding disabled - only real players will appear");
+  return;
 }
 
 // Save score for real users
@@ -211,7 +76,7 @@ async function getAllTimeLeaderboard() {
     }
 
     const result = Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
-    console.log(`🏆 All-time leaderboard: ${result.length} unique players`);
+    console.log(`🏆 All-time leaderboard: ${result.length} real players (fake players disabled)`);
     return result;
   } catch (error) {
     console.error("❌ Error fetching all-time leaderboard:", error);
@@ -258,7 +123,7 @@ async function getTodayLeaderboard() {
     }
 
     const result = Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
-    console.log(`🏆 getTodayLeaderboard: Returning ${result.length} players with daily scores`);
+    console.log(`🏆 getTodayLeaderboard: Returning ${result.length} real players with daily scores`);
     result.slice(0, 3).forEach((player, i) => {
       console.log(`🥇 Top ${i+1}: ${player.username} - ${player.score} points`);
     });
@@ -282,10 +147,10 @@ async function getLeaderboard() {
   return getAllTimeLeaderboard();
 }
 
-// Reset seeding flag (for debugging/testing)
+// Reset seeding flag (for clearing any existing fake data)
 function resetLeaderboardSeeding() {
   localStorage.removeItem("leaderboard_seeded_version");
-  console.log("🔄 Leaderboard seeding flag reset - will reseed on next leaderboard load");
+  console.log("🔄 Leaderboard seeding flag cleared - fake players removed");
 }
 
 // Test Appwrite connection

@@ -40,7 +40,7 @@ export default function Home() {
       console.log('🏠 Fetching daily leaderboard for home page...');
       try {
         const data = await getFullLeaderboard('daily');
-        console.log('🏠 Daily leaderboard data:', data.length, 'players');
+        console.log('🏠 Daily leaderboard data:', data.length, 'players - only real players');
         const top5 = data.slice(0, 5);
         console.log('🏠 Top 5 daily players:', top5.map(p => `${p.username}: ${p.score}`));
         setDailyLeaderboard(top5);

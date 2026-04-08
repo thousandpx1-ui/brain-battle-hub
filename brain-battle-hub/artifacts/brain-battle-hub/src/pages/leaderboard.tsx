@@ -66,9 +66,6 @@ export default function Leaderboard() {
       setLoading(true);
       console.log('🏆 Starting leaderboard fetch for period:', period);
       try {
-        // Try to seed first (will skip if already seeded)
-        await seedLeaderboard();
-
         const data = await getFullLeaderboard(period);
         console.log('📊 Leaderboard data received:', data.length, 'players');
         setLeaderboard(data);
