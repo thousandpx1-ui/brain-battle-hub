@@ -40,7 +40,7 @@ export default function Home() {
       console.log('🏠 Fetching daily leaderboard for home page...');
       try {
         const data = await getFullLeaderboard('daily');
-        console.log('🏠 Daily leaderboard data:', data.length, 'players - only real players');
+        console.log('🏠 Daily leaderboard data:', data.length, 'real players (fake players disabled)');
         const top5 = data.slice(0, 5);
         console.log('🏠 Top 5 daily players:', top5.map(p => `${p.username}: ${p.score}`));
         setDailyLeaderboard(top5);
@@ -133,7 +133,7 @@ export default function Home() {
 
 
 
-        {dailyLeaderboard.length > 0 && (
+        {dailyLeaderboard.length > 0 ? (
           <div className="mt-4 bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg flex items-center gap-2">
@@ -169,6 +169,12 @@ export default function Home() {
                 );
               })}
             </div>
+          </div>
+        ) : (
+          <div className="mt-4 bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-center">
+            <Trophy className="w-8 h-8 text-primary mx-auto mb-2 opacity-50" />
+            <p className="text-gray-500 font-medium">No games played today yet</p>
+            <p className="text-gray-400 text-sm mt-1">Top players will appear here after games are completed</p>
           </div>
         )}
 

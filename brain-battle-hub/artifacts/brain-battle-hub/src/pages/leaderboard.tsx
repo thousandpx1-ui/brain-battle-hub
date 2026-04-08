@@ -3,7 +3,7 @@ import { Layout } from "@/components/layout";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star, Medal } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
-import { getFullLeaderboard, seedLeaderboard } from "@/lib/appwrite.js";
+import { getFullLeaderboard, saveScore } from "@/lib/appwrite.js";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 function getTimeUntilMidnight(): string {
@@ -96,7 +96,7 @@ export default function Leaderboard() {
     };
 
     fetchLeaderboard();
-  }, [period, username]); // Refetch when period or user changes
+  }, [period, username, _version]); // Refetch when period, user, or local scores change
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -163,6 +163,44 @@ export default function Leaderboard() {
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
+          {/* Debug info */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Debug ({period}):</strong> {leaderboard.length} players, {localScores.length} local scores
+              {loading && " (Loading...)"}
+            </p>
+            {leaderboard.length > 0 && (
+              <div className="mt-2 text-xs text-blue-700">
+                Top player: {leaderboard[0].username} ({formatScore(leaderboard[0].score)})
+              </div>
+            )}
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+              >
+                Refresh Data
+              </button>
+              <button
+                onClick={async () => {
+                  if (username) {
+                    console.log('🧪 Adding test score for debugging...');
+                    try {
+                      await saveScore(500, 'memory');
+                      console.log('✅ Test score added');
+                      window.location.reload();
+                    } catch (error) {
+                      console.error('❌ Failed to add test score:', error);
+                    }
+                  }
+                }}
+                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+              >
+                Add Test Score
+              </button>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-3 pb-8">
             {filteredLeaderboard.map((entry, i) => {
               const isMe = entry.username === username;
@@ -207,10 +245,10 @@ export default function Leaderboard() {
               </div>
             ) : filteredLeaderboard.length === 0 ? (
               <div className="text-center py-10 text-gray-400 font-medium">
-                No scores yet. Be the first!
+                No scores yet. Play some games to see your ranking!
                 <br />
                 <small className="text-gray-300 mt-2 block">
-                  If seeded players aren't showing, check the console for errors.
+                  Scores will appear here after you complete games.
                 </small>
               </div>
             ) : null}
