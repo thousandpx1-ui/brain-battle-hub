@@ -53,18 +53,9 @@ async function saveScore(score, username) {
 // All-time leaderboard
 async function getAllTimeLeaderboard() {
   try {
-    console.log("🏆 Fetching all-time leaderboard...");
     const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [
       Query.limit(10000)
     ]);
-
-    console.log(`📊 Found ${res.documents.length} total documents in database`);
-
-    // Log some recent documents for debugging
-    const recentDocs = res.documents.slice(0, 3);
-    recentDocs.forEach((doc, i) => {
-      console.log(`📄 Recent doc ${i+1}: ${doc.username} - ${doc.score} points (${doc.createdAt})`);
-    });
 
     // Group by username and sum scores for cumulative leaderboard
     const userTotals = new Map();
@@ -75,11 +66,9 @@ async function getAllTimeLeaderboard() {
       userTotals.set(doc.username, current);
     }
 
-    const result = Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
-    console.log(`🏆 All-time leaderboard: ${result.length} real players (fake players disabled)`);
-    return result;
+    return Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
   } catch (error) {
-    console.error("❌ Error fetching all-time leaderboard:", error);
+    console.error("Error fetching all-time leaderboard:", error);
     return [];
   }
 }
@@ -91,18 +80,26 @@ async function getTodayLeaderboard() {
       Query.limit(10000)
     ]);
 
-    console.log(`📊 getTodayLeaderboard: Found ${res.documents.length} total documents`);
-
     const today = new Date().toDateString();
-    console.log(`📅 Today's date string: ${today}`);
 
     // Filter today's games and group by username for cumulative scores
-    const todayDocs = res.documents.filter(p => {
-      const docDate = new Date(p.createdAt).toDateString();
-      const isToday = docDate === today;
-      if (isToday && p.username) {
-        console.log(`📅 Today's doc: ${p.username} - ${p.score} points (${p.createdAt})`);
-      }
+    const todayDocs = res.documents.filter(p => new Date(p.createdAt).toDateString() === today);
+
+    const userTotals = new Map();
+
+    for (const doc of todayDocs) {
+      if (!doc.username) continue;
+      const current = userTotals.get(doc.username) || { score: 0, username: doc.username, gameId: doc.gameId, createdAt: doc.createdAt };
+      current.score += doc.score;
+      userTotals.set(doc.username, current);
+    }
+
+    return Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
+  } catch (error) {
+    console.error("Error fetching today's leaderboard:", error);
+    return [];
+  }
+}
       return isToday;
     });
 

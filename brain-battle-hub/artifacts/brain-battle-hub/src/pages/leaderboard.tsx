@@ -22,10 +22,7 @@ function getTimeUntilMidnight(): string {
 function isToday(dateStr: string): boolean {
   const date = new Date(dateStr);
   const now = new Date();
-  const dateStrResult = date.toDateString();
-  const nowStrResult = now.toDateString();
-  console.log('📅 isToday check:', { dateStr, parsedDate: dateStrResult, today: nowStrResult, isToday: dateStrResult === nowStrResult });
-  return dateStrResult === nowStrResult;
+  return date.toDateString() === now.toDateString();
 }
 
 function formatScore(score: number): string {
@@ -60,13 +57,7 @@ export default function Leaderboard() {
   const localScores = useLocalLeaderboard((s) => s.scores); // Fallback
   const _version = useLocalLeaderboard((s) => s.version);
 
-  // Debug local scores
-  useEffect(() => {
-    console.log('🏠 Local scores available:', localScores.length);
-    localScores.forEach((score, i) => {
-      console.log(`🏠 Local score ${i+1}:`, score.username, score.score, score.createdAt, score.gameId);
-    });
-  }, [localScores]);
+
   const [period, setPeriod] = useState<"global" | "daily">("global");
   const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
   const [, setTick] = useState(0);
@@ -75,10 +66,8 @@ export default function Leaderboard() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
-      console.log('🏆 Starting leaderboard fetch for period:', period);
       try {
         const data = await getFullLeaderboard(period);
-        console.log('📊 Leaderboard data received:', data.length, 'players');
 
         // Always check local data as well and combine
         const allRawScores = period === "daily"
@@ -92,7 +81,7 @@ export default function Leaderboard() {
           totalScoreMap.set(entry.username, { ...entry });
         }
 
-        // Add local data (will overwrite if user exists in both)
+        // Add local data (will combine if user exists in both)
         for (const entry of allRawScores) {
           const existing = totalScoreMap.get(entry.username);
           if (existing) {
@@ -103,20 +92,13 @@ export default function Leaderboard() {
         }
 
         const combinedData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-        console.log('📊 Combined leaderboard data:', combinedData.length, 'players');
         setLeaderboard(combinedData);
       } catch (error) {
-        console.error('❌ Appwrite fetch failed, falling back to local only:', error);
+        console.error('Appwrite fetch failed, using local only:', error);
         // Fallback to local only if database completely fails
         const allRawScores = period === "daily"
-          ? localScores.filter(entry => {
-              const isTodayResult = isToday(entry.createdAt);
-              console.log('📅 Checking local score:', entry.username, entry.score, entry.createdAt, 'isToday:', isTodayResult);
-              return isTodayResult;
-            })
+          ? localScores.filter(entry => isToday(entry.createdAt))
           : [...localScores];
-
-        console.log('🏠 Using local scores only:', allRawScores.length, 'entries after filtering');
 
         const totalScoreMap = new Map();
         for (const entry of allRawScores) {
@@ -128,7 +110,6 @@ export default function Leaderboard() {
           }
         }
         const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-        console.log(`🏠 Local leaderboard has ${localData.length} players:`, localData);
         setLeaderboard(localData);
       } finally {
         setLoading(false);
@@ -136,7 +117,7 @@ export default function Leaderboard() {
     };
 
     fetchLeaderboard();
-  }, [period, username, _version]); // Refetch when period, user, or local scores change
+  }, [period, username, _version]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -203,71 +184,6 @@ export default function Leaderboard() {
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
-          {/* Debug info */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Debug ({period}):</strong> {leaderboard.length} players, {localScores.length} local scores
-              {loading && " (Loading...)"}
-            </p>
-            {leaderboard.length > 0 && (
-              <div className="mt-2 text-xs text-blue-700">
-                Top player: {leaderboard[0].username} ({formatScore(leaderboard[0].score)})
-              </div>
-            )}
-            <div className="mt-2 flex gap-2 flex-wrap">
-              <button
-                onClick={() => window.location.reload()}
-                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-              >
-                Refresh Data
-              </button>
-              <button
-                onClick={async () => {
-                  if (username) {
-                    console.log('🧪 Adding test score for debugging...');
-                    try {
-                      await saveScore(500, 'memory');
-                      console.log('✅ Test score added');
-                      window.location.reload();
-                    } catch (error) {
-                      console.error('❌ Failed to add test score:', error);
-                    }
-                  }
-                }}
-                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-              >
-                Add Test Score
-              </button>
-              <button
-                onClick={() => {
-                  console.log('🔍 Manual local data processing...');
-                  const allRawScores = period === "daily"
-                    ? localScores.filter(entry => isToday(entry.createdAt))
-                    : [...localScores];
-
-                  console.log('📊 Manual processing found:', allRawScores.length, 'scores');
-
-                  const totalScoreMap = new Map();
-                  for (const entry of allRawScores) {
-                    const existing = totalScoreMap.get(entry.username);
-                    if (existing) {
-                      existing.score += entry.score;
-                    } else {
-                      totalScoreMap.set(entry.username, { ...entry });
-                    }
-                  }
-                  const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-                  console.log('📊 Manual result:', localData.length, 'players', localData);
-                  setLeaderboard(localData); // Actually update the leaderboard
-                  setLoading(false);
-                }}
-                className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
-              >
-                Force Local Data
-              </button>
-            </div>
-          </div>
-
           <div className="flex flex-col gap-3 pb-8">
             {filteredLeaderboard.map((entry, i) => {
               const isMe = entry.username === username;
