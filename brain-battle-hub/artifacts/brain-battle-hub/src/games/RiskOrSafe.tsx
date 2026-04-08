@@ -32,17 +32,21 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
 
   // Save current progress to leaderboard
   const saveProgress = async (currentScore: number) => {
-    if (!username) return;
+    if (!username) {
+      console.log('⚠️ RiskOrSafe: No username, skipping save');
+      return;
+    }
 
     try {
-      console.log('💾 RiskOrSafe: Saving progress score:', currentScore);
+      console.log('💾 RiskOrSafe: Saving progress score:', currentScore, 'for user:', username);
       // Save to local leaderboard
       addLocalScore({ gameId: 'risk', username, score: currentScore });
+      console.log('✅ RiskOrSafe: Saved to local leaderboard');
       // Save to Appwrite database
       await saveScore(currentScore, 'RiskOrSafe');
-      console.log('✅ RiskOrSafe progress saved');
+      console.log('✅ RiskOrSafe: Saved to database');
     } catch (error) {
-      console.error('❌ Failed to save RiskOrSafe progress:', error);
+      console.error('❌ RiskOrSafe: Failed to save progress:', error);
     }
   };
 

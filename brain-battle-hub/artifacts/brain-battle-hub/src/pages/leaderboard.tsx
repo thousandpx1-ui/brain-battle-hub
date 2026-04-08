@@ -71,36 +71,7 @@ export default function Leaderboard() {
 
         const data = await getFullLeaderboard(period);
         console.log('📊 Leaderboard data received:', data.length, 'players');
-
-        // If no data from database, create mock data for testing
-        if (data.length === 0) {
-          console.log('📊 No leaderboard data found, creating mock data for testing...');
-
-          // Random player names for testing
-          const randomNames = [
-            'AlexGamer', 'SarahPro', 'MikeChamp', 'EmmaWinner', 'JakeMaster',
-            'LilyQueen', 'TomLegend', 'AnnaStar', 'RyanBoss', 'ZoeHero',
-            'MaxPower', 'SophieAce', 'LucasKing', 'MiaPro', 'EthanElite'
-          ];
-
-          let mockData;
-          if (period === 'daily') {
-            mockData = [
-              { username: randomNames[0], score: 2500, gameId: 'memory' },
-              { username: randomNames[1], score: 2100, gameId: 'blink' },
-              { username: randomNames[2], score: 1800, gameId: 'taptrap' },
-              { username: randomNames[3], score: 1500, gameId: 'illusion' },
-              { username: randomNames[4], score: 1200, gameId: 'risk' }
-            ];
-          } else {
-            mockData = [
-              { username: randomNames[5], score: 15000, gameId: 'memory' },
-              { username: randomNames[6], score: 12500, gameId: 'blink' },
-              { username: randomNames[7], score: 10000, gameId: 'taptrap' },
-              { username: randomNames[8], score: 8500, gameId: 'illusion' },
-              { username: randomNames[9], score: 7000, gameId: 'risk' }
-            ];
-          }
+        setLeaderboard(data);
           console.log(`📊 Using mock ${period} data:`, mockData.length, 'players');
           setLeaderboard(mockData);
         } else {
@@ -126,31 +97,14 @@ export default function Leaderboard() {
         }
         const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
         console.log(`🏠 Local leaderboard has ${localData.length} players`);
-
-        // If no local data either, use mock data
-        if (localData.length === 0) {
-          console.log('🏠 No local data either, using mock data...');
-          const randomNames = ['AlexGamer', 'SarahPro', 'MikeChamp', 'EmmaWinner', 'JakeMaster'];
-          const mockData = period === 'daily' ? [
-            { username: randomNames[0], score: 800, gameId: 'memory' },
-            { username: randomNames[1], score: 650, gameId: 'blink' },
-            { username: randomNames[2], score: 500, gameId: 'taptrap' }
-          ] : [
-            { username: randomNames[3], score: 5000, gameId: 'memory' },
-            { username: randomNames[4], score: 4200, gameId: 'blink' },
-            { username: 'TomLegend', score: 3800, gameId: 'taptrap' }
-          ];
-          setLeaderboard(mockData);
-        } else {
-          setLeaderboard(localData);
-        }
+        setLeaderboard(localData);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLeaderboard(); // Always fetch for debugging
-  }, [period, _version]);
+    fetchLeaderboard();
+  }, [period, username]); // Refetch when period or user changes
 
   useEffect(() => {
     const timer = setInterval(() => {

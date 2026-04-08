@@ -43,23 +43,7 @@ export default function Home() {
         console.log('🏠 Daily leaderboard data:', data.length, 'players');
         const top5 = data.slice(0, 5);
         console.log('🏠 Top 5 daily players:', top5.map(p => `${p.username}: ${p.score}`));
-
-        // If no data from database, create mock data for testing
-        if (top5.length === 0) {
-          console.log('🏠 No daily data found, creating mock data for testing...');
-          const randomNames = ['AlexGamer', 'SarahPro', 'MikeChamp', 'EmmaWinner', 'JakeMaster'];
-          const mockData = [
-            { username: randomNames[0], score: 2500, gameId: 'memory' },
-            { username: randomNames[1], score: 2100, gameId: 'blink' },
-            { username: randomNames[2], score: 1800, gameId: 'taptrap' },
-            { username: randomNames[3], score: 1500, gameId: 'illusion' },
-            { username: randomNames[4], score: 1200, gameId: 'risk' }
-          ];
-          console.log('🏠 Using mock daily data:', mockData.length, 'players');
-          setDailyLeaderboard(mockData);
-        } else {
-          setDailyLeaderboard(top5);
-        }
+        setDailyLeaderboard(top5);
       } catch (error) {
         console.error('❌ Daily leaderboard fetch failed:', error);
         // Fallback to local daily scores
@@ -81,27 +65,14 @@ export default function Home() {
         }
         const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
         console.log('🏠 Local daily leaderboard:', localData.length, 'players');
-
-        // If no local data either, use mock data
-        if (localData.length === 0) {
-          console.log('🏠 No local data either, using mock data...');
-          const randomNames = ['AlexGamer', 'SarahPro', 'MikeChamp'];
-          const mockData = [
-            { username: randomNames[0], score: 800, gameId: 'memory' },
-            { username: randomNames[1], score: 650, gameId: 'blink' },
-            { username: randomNames[2], score: 500, gameId: 'taptrap' }
-          ];
-          setDailyLeaderboard(mockData);
-        } else {
-          setDailyLeaderboard(localData);
-        }
+        setDailyLeaderboard(localData);
       } finally {
         setDailyLoading(false);
       }
     };
 
     fetchDailyLeaderboard();
-  }, []); // Fetch once on mount
+  }, [username]); // Refetch when user changes (after playing games)
 
   useEffect(() => {
     updateStreak();

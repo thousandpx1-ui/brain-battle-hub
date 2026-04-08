@@ -112,22 +112,14 @@ function generateFakePlayers() {
 
 // Seed the leaderboard with 51 fake players (RUN ONLY ONCE)
 async function seedLeaderboard() {
-  // TEMPORARY: Force reseeding for debugging
-  console.log("🔄 Force reseeding leaderboard with 51 players for debugging...");
-
-  // Test connection first
-  const connected = await testAppwriteConnection();
-  if (!connected) {
-    console.log("❌ Cannot seed - Appwrite connection failed");
+  // Check if already seeded with new format (version 2)
+  const seededVersion = localStorage.getItem("leaderboard_seeded_version");
+  if (seededVersion === "2") {
+    console.log("⏭️ Leaderboard already seeded with latest format, skipping");
     return;
   }
 
-  console.log("📍 Appwrite Config:", {
-    endpoint: client.config.endpoint,
-    project: client.config.project,
-    database: DATABASE_ID,
-    collection: COLLECTION_ID
-  });
+  console.log("🔄 Starting leaderboard seeding with 51 players...");
 
   try {
     const scoreEntries = generateFakePlayers();
@@ -165,21 +157,30 @@ async function seedLeaderboard() {
 
 // Save score for real users
 async function saveScore(score, username) {
+  console.log("💾 saveScore called with:", { score, username });
+
   try {
-    await databases.createDocument(
+    const docData = {
+      userId: username || "guest_" + Date.now(),
+      username: username || "guest_" + Date.now(),
+      score: score,
+      gameId: 'unknown', // Add gameId field
+      createdAt: new Date().toISOString()
+    };
+
+    console.log("📄 Creating document with data:", docData);
+
+    const result = await databases.createDocument(
       DATABASE_ID,
       COLLECTION_ID,
       ID.unique(),
-      {
-        userId: username || "guest_" + Date.now(),
-        username: username || "guest_" + Date.now(),
-        score: score,
-        createdAt: new Date().toISOString()
-      }
+      docData
     );
-    console.log("✅ Score saved:", score, "for", username);
+
+    console.log("✅ Score saved successfully:", result.$id, "for", username, "with score", score);
   } catch (error) {
     console.error("❌ Error saving score:", error);
+    console.error("❌ Error details:", error.message);
     throw error;
   }
 }
@@ -187,9 +188,18 @@ async function saveScore(score, username) {
 // All-time leaderboard
 async function getAllTimeLeaderboard() {
   try {
+    console.log("🏆 Fetching all-time leaderboard...");
     const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [
       Query.limit(10000)
     ]);
+
+    console.log(`📊 Found ${res.documents.length} total documents in database`);
+
+    // Log some recent documents for debugging
+    const recentDocs = res.documents.slice(0, 3);
+    recentDocs.forEach((doc, i) => {
+      console.log(`📄 Recent doc ${i+1}: ${doc.username} - ${doc.score} points (${doc.createdAt})`);
+    });
 
     // Group by username and sum scores for cumulative leaderboard
     const userTotals = new Map();
@@ -200,7 +210,9 @@ async function getAllTimeLeaderboard() {
       userTotals.set(doc.username, current);
     }
 
-    return Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
+    const result = Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
+    console.log(`🏆 All-time leaderboard: ${result.length} unique players`);
+    return result;
   } catch (error) {
     console.error("❌ Error fetching all-time leaderboard:", error);
     return [];
@@ -231,6 +243,11 @@ async function getTodayLeaderboard() {
 
     console.log(`📊 getTodayLeaderboard: Filtered to ${todayDocs.length} today's documents`);
 
+    // Log today's documents for debugging
+    todayDocs.slice(0, 3).forEach((doc, i) => {
+      console.log(`📅 Today's doc ${i+1}: ${doc.username} - ${doc.score} points (${doc.createdAt})`);
+    });
+
     const userTotals = new Map();
 
     for (const doc of todayDocs) {
@@ -242,6 +259,9 @@ async function getTodayLeaderboard() {
 
     const result = Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
     console.log(`🏆 getTodayLeaderboard: Returning ${result.length} players with daily scores`);
+    result.slice(0, 3).forEach((player, i) => {
+      console.log(`🥇 Top ${i+1}: ${player.username} - ${player.score} points`);
+    });
     return result;
   } catch (error) {
     console.error("❌ Error fetching today's leaderboard:", error);

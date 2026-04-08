@@ -42,15 +42,17 @@ export default function Game() {
     if (username) {
       console.log('💾 Saving to local leaderboard:', { gameId: game.id, username, score: finalScore });
       addLocalScore({ gameId: game.id, username, score: finalScore });
+      console.log('✅ Saved to local leaderboard');
     }
 
     // Save to Appwrite database
     try {
-      console.log('💾 Saving to Appwrite database...');
+      console.log('💾 Attempting to save to Appwrite database...');
       await saveScore(finalScore, game.name);
-      console.log('✅ Score saved successfully');
+      console.log('✅ Score saved to database successfully');
     } catch (error) {
       console.error('❌ Failed to save score to database:', error);
+      console.log('🔄 Score will only appear in local leaderboard');
     }
 
     if (gamesPlayedSession > 0 && gamesPlayedSession % 3 === 0) {
