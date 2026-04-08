@@ -101,18 +101,6 @@ async function getTodayLeaderboard() {
   }
 }
 
-    const result = Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
-    console.log(`🏆 getTodayLeaderboard: Returning ${result.length} real players with daily scores`);
-    result.slice(0, 3).forEach((player, i) => {
-      console.log(`🥇 Top ${i+1}: ${player.username} - ${player.score} points`);
-    });
-    return result;
-  } catch (error) {
-    console.error("❌ Error fetching today's leaderboard:", error);
-    return [];
-  }
-}
-
 // Unified leaderboard function (backward compatible)
 async function getFullLeaderboard(period) {
   if (period === "daily") {
