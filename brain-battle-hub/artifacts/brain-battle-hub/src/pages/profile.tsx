@@ -4,17 +4,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAppState } from "@/hooks/useAppState";
+import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { Camera, User } from "lucide-react";
+
+function formatScore(score: number): string {
+  const num = Math.floor(score);
+
+  if (num >= 1000000000) {
+    return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  }
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  }
+
+  return num.toString();
+}
 
 export default function Profile() {
   const { username, setUsername, profileImage, setProfileImage } = useAppState();
+  const { scores, updateUsername } = useLocalLeaderboard();
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (tempName.trim().length > 2) {
-      setUsername(tempName.trim());
+    if (tempName.trim().length > 2 && username) {
+      const oldName = username;
+      const newName = tempName.trim();
+      setUsername(newName);
+      updateUsername(oldName, newName);
       setEditingName(false);
     }
   };
@@ -33,6 +54,11 @@ export default function Profile() {
   const removeImage = () => {
     setProfileImage(null);
   };
+
+  // Calculate stats
+  const userScores = scores.filter(score => score.username === username);
+  const totalGamesPlayed = userScores.length;
+  const totalScore = userScores.reduce((sum, score) => sum + score.score, 0);
 
   return (
     <Layout>
@@ -122,11 +148,11 @@ export default function Profile() {
               <h3 className="text-lg font-semibold mb-3">Game Stats</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">0</div>
+                  <div className="text-2xl font-bold text-primary">{totalGamesPlayed}</div>
                   <div className="text-sm text-gray-600">Games Played</div>
                 </div>
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">0</div>
+                  <div className="text-2xl font-bold text-primary">{formatScore(totalScore)}</div>
                   <div className="text-sm text-gray-600">Total Score</div>
                 </div>
               </div>

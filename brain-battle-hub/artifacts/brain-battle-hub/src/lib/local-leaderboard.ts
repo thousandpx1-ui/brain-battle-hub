@@ -12,6 +12,7 @@ interface LocalLeaderboardState {
   scores: LocalScoreEntry[];
   version: number;
   addScore: (entry: Omit<LocalScoreEntry, "createdAt">) => void;
+  updateUsername: (oldUsername: string, newUsername: string) => void;
   clearScores: () => void;
 }
 
@@ -51,6 +52,14 @@ export const useLocalLeaderboard = create<LocalLeaderboardState>()(
             version: state.version + 1
           };
         });
+      },
+      updateUsername: (oldUsername, newUsername) => {
+        set((state) => ({
+          scores: state.scores.map(score =>
+            score.username === oldUsername ? { ...score, username: newUsername } : score
+          ),
+          version: state.version + 1
+        }));
       },
       clearScores: () => set({ scores: [], version: 0 }),
     }),

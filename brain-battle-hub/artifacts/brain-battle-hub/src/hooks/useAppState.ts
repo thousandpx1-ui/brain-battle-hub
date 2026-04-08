@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { differenceInDays, startOfDay } from "date-fns";
+import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 interface AppState {
   username: string | null;
   setUsername: (name: string) => void;
+  updateUsername: (newName: string) => void;
 
   profileImage: string | null;
   setProfileImage: (image: string | null) => void;
@@ -23,6 +25,7 @@ export const useAppState = create<AppState>()(
     (set, get) => ({
       username: null,
       setUsername: (name) => set({ username: name }),
+      updateUsername: (newName) => set({ username: newName }),
 
       profileImage: null,
       setProfileImage: (image) => set({ profileImage: image }),
