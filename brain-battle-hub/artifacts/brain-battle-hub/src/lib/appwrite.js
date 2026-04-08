@@ -100,24 +100,6 @@ async function getTodayLeaderboard() {
     return [];
   }
 }
-      return isToday;
-    });
-
-    console.log(`📊 getTodayLeaderboard: Filtered to ${todayDocs.length} today's documents`);
-
-    // Log today's documents for debugging
-    todayDocs.slice(0, 3).forEach((doc, i) => {
-      console.log(`📅 Today's doc ${i+1}: ${doc.username} - ${doc.score} points (${doc.createdAt})`);
-    });
-
-    const userTotals = new Map();
-
-    for (const doc of todayDocs) {
-      if (!doc.username) continue;
-      const current = userTotals.get(doc.username) || { score: 0, username: doc.username, gameId: doc.gameId, createdAt: doc.createdAt };
-      current.score += doc.score;
-      userTotals.set(doc.username, current);
-    }
 
     const result = Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
     console.log(`🏆 getTodayLeaderboard: Returning ${result.length} real players with daily scores`);
