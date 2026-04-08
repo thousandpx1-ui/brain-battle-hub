@@ -11,9 +11,9 @@ const COLLECTION_ID = "scores";
 
 const databases = new Databases(client);
 
-// Test with just 5 players first for debugging
+// Test with random player names for debugging
 const FAKE_PLAYER_NAMES = [
-  "TestPlayer1", "TestPlayer2", "TestPlayer3", "TestPlayer4", "TestPlayer5"
+  "AlexGamer", "SarahPro", "MikeChamp", "EmmaWinner", "JakeMaster"
 ];
 
 // Generate multiple score entries for fake players

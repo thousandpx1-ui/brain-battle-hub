@@ -47,12 +47,13 @@ export default function Home() {
         // If no data from database, create mock data for testing
         if (top5.length === 0) {
           console.log('🏠 No daily data found, creating mock data for testing...');
+          const randomNames = ['AlexGamer', 'SarahPro', 'MikeChamp', 'EmmaWinner', 'JakeMaster'];
           const mockData = [
-            { username: 'TestPlayer1', score: 2500, gameId: 'memory' },
-            { username: 'TestPlayer2', score: 2100, gameId: 'blink' },
-            { username: 'TestPlayer3', score: 1800, gameId: 'taptrap' },
-            { username: 'TestPlayer4', score: 1500, gameId: 'illusion' },
-            { username: 'TestPlayer5', score: 1200, gameId: 'risk' }
+            { username: randomNames[0], score: 2500, gameId: 'memory' },
+            { username: randomNames[1], score: 2100, gameId: 'blink' },
+            { username: randomNames[2], score: 1800, gameId: 'taptrap' },
+            { username: randomNames[3], score: 1500, gameId: 'illusion' },
+            { username: randomNames[4], score: 1200, gameId: 'risk' }
           ];
           console.log('🏠 Using mock daily data:', mockData.length, 'players');
           setDailyLeaderboard(mockData);
@@ -84,10 +85,11 @@ export default function Home() {
         // If no local data either, use mock data
         if (localData.length === 0) {
           console.log('🏠 No local data either, using mock data...');
+          const randomNames = ['AlexGamer', 'SarahPro', 'MikeChamp'];
           const mockData = [
-            { username: 'DailyPlayer1', score: 800, gameId: 'memory' },
-            { username: 'DailyPlayer2', score: 650, gameId: 'blink' },
-            { username: 'DailyPlayer3', score: 500, gameId: 'taptrap' }
+            { username: randomNames[0], score: 800, gameId: 'memory' },
+            { username: randomNames[1], score: 650, gameId: 'blink' },
+            { username: randomNames[2], score: 500, gameId: 'taptrap' }
           ];
           setDailyLeaderboard(mockData);
         } else {
@@ -158,21 +160,7 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Debug info for daily leaderboard */}
-        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-800">
-            <strong>Daily Leaderboard Debug:</strong> {dailyLeaderboard.length} players loaded
-            {dailyLoading && " (Loading...)"}
-            {!dailyLoading && dailyLeaderboard.length === 0 && " - No daily scores found"}
-            {dailyLeaderboard.length > 0 && ` - Top: ${dailyLeaderboard[0]?.username} (${formatScore(dailyLeaderboard[0]?.score)})`}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-          >
-            Refresh Page
-          </button>
-        </div>
+
 
         {dailyLeaderboard.length > 0 && (
           <div className="mt-4 bg-white rounded-3xl p-5 shadow-sm border border-gray-100">

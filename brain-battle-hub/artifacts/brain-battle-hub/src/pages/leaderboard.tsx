@@ -75,22 +75,30 @@ export default function Leaderboard() {
         // If no data from database, create mock data for testing
         if (data.length === 0) {
           console.log('📊 No leaderboard data found, creating mock data for testing...');
+
+          // Random player names for testing
+          const randomNames = [
+            'AlexGamer', 'SarahPro', 'MikeChamp', 'EmmaWinner', 'JakeMaster',
+            'LilyQueen', 'TomLegend', 'AnnaStar', 'RyanBoss', 'ZoeHero',
+            'MaxPower', 'SophieAce', 'LucasKing', 'MiaPro', 'EthanElite'
+          ];
+
           let mockData;
           if (period === 'daily') {
             mockData = [
-              { username: 'DailyTest1', score: 2500, gameId: 'memory' },
-              { username: 'DailyTest2', score: 2100, gameId: 'blink' },
-              { username: 'DailyTest3', score: 1800, gameId: 'taptrap' },
-              { username: 'DailyTest4', score: 1500, gameId: 'illusion' },
-              { username: 'DailyTest5', score: 1200, gameId: 'risk' }
+              { username: randomNames[0], score: 2500, gameId: 'memory' },
+              { username: randomNames[1], score: 2100, gameId: 'blink' },
+              { username: randomNames[2], score: 1800, gameId: 'taptrap' },
+              { username: randomNames[3], score: 1500, gameId: 'illusion' },
+              { username: randomNames[4], score: 1200, gameId: 'risk' }
             ];
           } else {
             mockData = [
-              { username: 'AllTimeTest1', score: 15000, gameId: 'memory' },
-              { username: 'AllTimeTest2', score: 12500, gameId: 'blink' },
-              { username: 'AllTimeTest3', score: 10000, gameId: 'taptrap' },
-              { username: 'AllTimeTest4', score: 8500, gameId: 'illusion' },
-              { username: 'AllTimeTest5', score: 7000, gameId: 'risk' }
+              { username: randomNames[5], score: 15000, gameId: 'memory' },
+              { username: randomNames[6], score: 12500, gameId: 'blink' },
+              { username: randomNames[7], score: 10000, gameId: 'taptrap' },
+              { username: randomNames[8], score: 8500, gameId: 'illusion' },
+              { username: randomNames[9], score: 7000, gameId: 'risk' }
             ];
           }
           console.log(`📊 Using mock ${period} data:`, mockData.length, 'players');
@@ -122,14 +130,15 @@ export default function Leaderboard() {
         // If no local data either, use mock data
         if (localData.length === 0) {
           console.log('🏠 No local data either, using mock data...');
+          const randomNames = ['AlexGamer', 'SarahPro', 'MikeChamp', 'EmmaWinner', 'JakeMaster'];
           const mockData = period === 'daily' ? [
-            { username: 'LocalDaily1', score: 800, gameId: 'memory' },
-            { username: 'LocalDaily2', score: 650, gameId: 'blink' },
-            { username: 'LocalDaily3', score: 500, gameId: 'taptrap' }
+            { username: randomNames[0], score: 800, gameId: 'memory' },
+            { username: randomNames[1], score: 650, gameId: 'blink' },
+            { username: randomNames[2], score: 500, gameId: 'taptrap' }
           ] : [
-            { username: 'LocalAllTime1', score: 5000, gameId: 'memory' },
-            { username: 'LocalAllTime2', score: 4200, gameId: 'blink' },
-            { username: 'LocalAllTime3', score: 3800, gameId: 'taptrap' }
+            { username: randomNames[3], score: 5000, gameId: 'memory' },
+            { username: randomNames[4], score: 4200, gameId: 'blink' },
+            { username: 'TomLegend', score: 3800, gameId: 'taptrap' }
           ];
           setLeaderboard(mockData);
         } else {
@@ -208,16 +217,6 @@ export default function Leaderboard() {
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
-          {/* Debug info */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Leaderboard Debug ({period}):</strong> {leaderboard.length} players loaded
-              {loading && " (Loading...)"}
-              {!loading && leaderboard.length === 0 && " - No players found - check console for errors."}
-              {leaderboard.length > 0 && ` - Top: ${leaderboard[0]?.username} (${formatScore(leaderboard[0]?.score)})`}
-            </p>
-          </div>
-
           <div className="flex flex-col gap-3 pb-8">
             {filteredLeaderboard.map((entry, i) => {
               const isMe = entry.username === username;
