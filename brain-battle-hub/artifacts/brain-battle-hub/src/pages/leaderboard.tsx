@@ -64,18 +64,22 @@ export default function Leaderboard() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
+      console.log('🏆 Starting leaderboard fetch for period:', period);
       try {
         // Try to seed first (will skip if already seeded)
         await seedLeaderboard();
 
         const data = await getFullLeaderboard(period);
+        console.log('📊 Leaderboard data received:', data.length, 'players');
         setLeaderboard(data);
       } catch (error) {
-        console.error('Appwrite fetch failed, using local:', error);
+        console.error('❌ Appwrite fetch failed, using local:', error);
         // Fallback to local (cumulative scoring logic)
         const allRawScores = period === "daily"
           ? localScores.filter(entry => isToday(entry.createdAt))
           : [...localScores];
+
+        console.log('🏠 Using local scores:', allRawScores.length, 'entries');
 
         const totalScoreMap = new Map();
         for (const entry of allRawScores) {
@@ -86,16 +90,16 @@ export default function Leaderboard() {
             totalScoreMap.set(entry.username, { ...entry });
           }
         }
-        setLeaderboard(Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score));
+        const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+        console.log('🏠 Local leaderboard:', localData.length, 'players');
+        setLeaderboard(localData);
       } finally {
         setLoading(false);
       }
     };
 
-    if (username) {
-      fetchLeaderboard();
-    }
-  }, [period, username, _version]);
+    fetchLeaderboard(); // Always fetch for debugging
+  }, [period, _version]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -162,6 +166,15 @@ export default function Leaderboard() {
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto">
+          {/* Debug info */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Debug:</strong> Showing {leaderboard.length} players.
+              {loading && " Loading..."}
+              {!loading && leaderboard.length === 0 && " No players found - check console for errors."}
+            </p>
+          </div>
+
           <div className="flex flex-col gap-3 pb-8">
             {filteredLeaderboard.map((entry, i) => {
               const isMe = entry.username === username;
@@ -204,11 +217,15 @@ export default function Leaderboard() {
               <div className="flex items-center justify-center h-32 text-gray-400">
                 Loading leaderboard...
               </div>
-            ) : filteredLeaderboard.length === 0 && (
+            ) : filteredLeaderboard.length === 0 ? (
               <div className="text-center py-10 text-gray-400 font-medium">
                 No scores yet. Be the first!
+                <br />
+                <small className="text-gray-300 mt-2 block">
+                  If seeded players aren't showing, check the console for errors.
+                </small>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

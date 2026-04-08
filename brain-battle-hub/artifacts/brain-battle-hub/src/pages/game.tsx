@@ -33,17 +33,25 @@ export default function Game() {
   const handleStart = () => setGameState("playing");
 
   const handleGameOver = async (finalScore: number) => {
+    console.log('💾 Game Over - Saving score:', finalScore, 'for game:', game.name, 'user:', username);
     setScore(finalScore);
     setGameState("gameover");
     incrementGamesPlayed();
 
     // Always save to local leaderboard
     if (username) {
+      console.log('💾 Saving to local leaderboard:', { gameId: game.id, username, score: finalScore });
       addLocalScore({ gameId: game.id, username, score: finalScore });
     }
 
     // Save to Appwrite database
-    await saveScore(finalScore, game.name);
+    try {
+      console.log('💾 Saving to Appwrite database...');
+      await saveScore(finalScore, game.name);
+      console.log('✅ Score saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save score to database:', error);
+    }
 
     if (gamesPlayedSession > 0 && gamesPlayedSession % 3 === 0) {
       setShowInterstitial(true);

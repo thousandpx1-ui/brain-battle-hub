@@ -2,11 +2,17 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { saveScore } from "@/lib/appwrite.js";
+import { useAppState } from "@/hooks/useAppState";
+import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 const MULTIPLIERS = [1.3, 1.5, 1.8, 2.0, 2.5, 3.0, 0.8, 1.0, 1.2]; // Better odds, fewer losses
 const WIN_CHANCES = [0.55, 0.60, 0.65, 0.70, 0.75]; // Higher win rates
 
 export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void }) {
+  const { username } = useAppState();
+  const addLocalScore = useLocalLeaderboard((s) => s.addScore);
+
   const [bank, setBank] = useState(100);
   const [round, setRound] = useState(1);
   const [flipping, setFlipping] = useState(false);
@@ -24,6 +30,22 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
     }
   }, []);
 
+  // Save current progress to leaderboard
+  const saveProgress = async (currentScore: number) => {
+    if (!username) return;
+
+    try {
+      console.log('💾 RiskOrSafe: Saving progress score:', currentScore);
+      // Save to local leaderboard
+      addLocalScore({ gameId: 'risk', username, score: currentScore });
+      // Save to Appwrite database
+      await saveScore(currentScore, 'RiskOrSafe');
+      console.log('✅ RiskOrSafe progress saved');
+    } catch (error) {
+      console.error('❌ Failed to save RiskOrSafe progress:', error);
+    }
+  };
+
   const getWinChance = () => {
     return WIN_CHANCES[Math.floor(Math.random() * WIN_CHANCES.length)];
   };
@@ -32,11 +54,16 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
     return MULTIPLIERS[Math.floor(Math.random() * MULTIPLIERS.length)];
   };
 
-  const handleSafe = () => {
+  const handleSafe = async () => {
     // Record that safe was used today
     const today = new Date().toDateString();
     localStorage.setItem('riskorsafe_safe_used', today);
     setSafeUsedToday(true);
+
+    console.log('🛡️ RiskOrSafe: Using SAFE option with score:', bank);
+
+    // Save the safe choice result
+    await saveProgress(bank);
 
     onGameOver(bank);
   };
@@ -62,13 +89,18 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
         setResult("win");
         setConsecutiveWins(c => c + 1);
 
-        setTimeout(() => {
+        setTimeout(async () => {
           setBank(finalBank);
           setResult(null);
 
+          // Save progress after each successful risk for real-time leaderboard updates
+          await saveProgress(finalBank);
+
           if (round >= 8) {
+            console.log('🎯 RiskOrSafe: Game completed with final score:', finalBank);
             onGameOver(finalBank);
           } else {
+            console.log('🎲 RiskOrSafe: Round', round + 1, 'completed, current bank:', finalBank);
             setRound(r => r + 1);
           }
         }, 1000);
@@ -76,9 +108,14 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
         setResult("lose");
         setConsecutiveWins(0);
 
-        setTimeout(() => {
+        setTimeout(async () => {
           // Don't lose everything - lose 50% instead
           const remainingBank = Math.floor(bank * 0.5);
+          console.log('💥 RiskOrSafe: Game lost, final score:', remainingBank);
+
+          // Save the loss result
+          await saveProgress(remainingBank);
+
           onGameOver(remainingBank);
         }, 1000);
       }

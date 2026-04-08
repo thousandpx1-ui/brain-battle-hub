@@ -37,17 +37,22 @@ export default function Home() {
   useEffect(() => {
     const fetchDailyLeaderboard = async () => {
       setDailyLoading(true);
+      console.log('🏠 Fetching daily leaderboard for home page...');
       try {
         const data = await getFullLeaderboard('daily');
+        console.log('🏠 Daily leaderboard data:', data.length, 'players');
         const top5 = data.slice(0, 5);
+        console.log('🏠 Top 5 daily players:', top5.map(p => `${p.username}: ${p.score}`));
         setDailyLeaderboard(top5);
       } catch (error) {
-        console.error('Daily leaderboard fetch failed:', error);
+        console.error('❌ Daily leaderboard fetch failed:', error);
         // Fallback to local daily scores
         const today = new Date().toDateString();
+        console.log('🏠 Falling back to local scores for date:', today);
         const todayScores = localScores.filter(entry =>
           new Date(entry.createdAt).toDateString() === today
         );
+        console.log('🏠 Found local today scores:', todayScores.length, 'entries');
 
         const totalScoreMap = new Map();
         for (const entry of todayScores) {
@@ -58,14 +63,16 @@ export default function Home() {
             totalScoreMap.set(entry.username, { ...entry });
           }
         }
-        setDailyLeaderboard(Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score).slice(0, 5));
+        const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+        console.log('🏠 Local daily leaderboard:', localData.length, 'players');
+        setDailyLeaderboard(localData);
       } finally {
         setDailyLoading(false);
       }
     };
 
     fetchDailyLeaderboard();
-  }, [_version]);
+  }, []); // Fetch once on mount
 
   useEffect(() => {
     updateStreak();
@@ -122,6 +129,28 @@ export default function Home() {
               </Link>
             </motion.div>
           ))}
+        </div>
+
+        {/* Debug info for daily leaderboard */}
+        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm text-green-800">
+            <strong>Daily Leaderboard Debug:</strong> {dailyLeaderboard.length} players loaded
+            {dailyLoading && " (Loading...)"}
+            {!dailyLoading && dailyLeaderboard.length === 0 && " - No daily scores found"}
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+            >
+              Refresh Page
+            </button>
+            {dailyLeaderboard.length > 0 && (
+              <div className="text-xs text-green-700">
+                Top: {dailyLeaderboard[0]?.username} ({formatScore(dailyLeaderboard[0]?.score)})
+              </div>
+            )}
+          </div>
         </div>
 
         {dailyLeaderboard.length > 0 && (
