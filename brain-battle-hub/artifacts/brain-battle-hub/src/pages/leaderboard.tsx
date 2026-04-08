@@ -72,11 +72,6 @@ export default function Leaderboard() {
         const data = await getFullLeaderboard(period);
         console.log('📊 Leaderboard data received:', data.length, 'players');
         setLeaderboard(data);
-          console.log(`📊 Using mock ${period} data:`, mockData.length, 'players');
-          setLeaderboard(mockData);
-        } else {
-          setLeaderboard(data);
-        }
       } catch (error) {
         console.error('❌ Appwrite fetch failed, using local:', error);
         // Fallback to local (cumulative scoring logic)
