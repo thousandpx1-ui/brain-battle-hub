@@ -1,4 +1,4 @@
-import { Client, Databases, ID } from "appwrite";
+import { Client, Databases, ID, Query } from "appwrite";
 
 const client = new Client();
 
@@ -88,8 +88,10 @@ async function saveScore(score, username) {
 // All-time leaderboard
 async function getAllTimeLeaderboard() {
   try {
-    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
-    
+    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [
+      Query.limit(10000)
+    ]);
+
     return res.documents.sort((a, b) => b.score - a.score);
   } catch (error) {
     console.error("❌ Error fetching all-time leaderboard:", error);
@@ -100,10 +102,12 @@ async function getAllTimeLeaderboard() {
 // Today's leaderboard
 async function getTodayLeaderboard() {
   try {
-    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
-    
+    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [
+      Query.limit(10000)
+    ]);
+
     const today = new Date().toDateString();
-    
+
     return res.documents
       .filter(p => new Date(p.createdAt).toDateString() === today)
       .sort((a, b) => b.score - a.score);
