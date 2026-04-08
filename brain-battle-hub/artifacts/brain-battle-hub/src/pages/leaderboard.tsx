@@ -47,19 +47,21 @@ export default function Leaderboard() {
         setLeaderboard(data);
       } catch (error) {
         console.error('Appwrite fetch failed, using local:', error);
-        // Fallback to local (existing logic)
+        // Fallback to local (cumulative scoring logic)
         const allRawScores = period === "daily"
           ? localScores.filter(entry => isToday(entry.createdAt))
           : [...localScores];
 
-        const bestScoreMap = new Map();
+        const totalScoreMap = new Map();
         for (const entry of allRawScores) {
-          const existing = bestScoreMap.get(entry.username);
-          if (!existing || entry.score > existing.score) {
-            bestScoreMap.set(entry.username, entry);
+          const existing = totalScoreMap.get(entry.username);
+          if (existing) {
+            existing.score += entry.score;
+          } else {
+            totalScoreMap.set(entry.username, { ...entry });
           }
         }
-        setLeaderboard(Array.from(bestScoreMap.values()).sort((a, b) => b.score - a.score));
+        setLeaderboard(Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score));
       } finally {
         setLoading(false);
       }
@@ -80,13 +82,13 @@ export default function Leaderboard() {
 
   const filteredLeaderboard = leaderboard;
 
-  // Player rank from remote/local data
-  const playerScores = localScores.filter(s => s.username === username); // Local for player best
-  const playerBestScore = period === "daily"
-    ? (playerScores.filter(s => isToday(s.createdAt)).length > 0 ? Math.max(...playerScores.filter(s => isToday(s.createdAt)).map(s => s.score), 0) : 0)
-    : (playerScores.length > 0 ? Math.max(...playerScores.map(s => s.score), 0) : 0);
+  // Player rank from remote/local data (cumulative scoring)
+  const playerScores = localScores.filter(s => s.username === username);
+  const playerTotalScore = period === "daily"
+    ? playerScores.filter(s => isToday(s.createdAt)).reduce((sum, s) => sum + s.score, 0)
+    : playerScores.reduce((sum, s) => sum + s.score, 0);
 
-  const playerRank = playerBestScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;
+  const playerRank = playerTotalScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;
   const totalPlayers = filteredLeaderboard.length;
   const percentile = totalPlayers > 0 && playerRank > 0 ? ((totalPlayers - playerRank) / totalPlayers) * 100 : 0;
   const badge = percentile >= 90 ? "gold" : percentile >= 75 ? "silver" : "bronze";
@@ -110,7 +112,7 @@ export default function Leaderboard() {
             </div>
           )}
 
-          {username && playerBestScore > 0 && (
+          {username && playerTotalScore > 0 && (
             <div className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
               <div className="flex items-center justify-between">
                 <div>

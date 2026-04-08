@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, bigint, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -6,7 +6,7 @@ export const scoresTable = pgTable("scores", {
   id: serial("id").primaryKey(),
   username: text("username").notNull(),
   gameId: text("game_id").notNull(),
-  score: integer("score").notNull(),
+  score: bigint("score", { mode: "number" }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

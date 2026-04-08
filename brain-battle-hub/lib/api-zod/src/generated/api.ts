@@ -20,7 +20,7 @@ export const HealthCheckResponse = zod.object({
 export const SubmitScoreBody = zod.object({
   username: zod.string(),
   gameId: zod.string(),
-  score: zod.number(),
+  score: zod.number().max(99999999999, "Score cannot exceed 99,999,999,999"),
 });
 
 /**

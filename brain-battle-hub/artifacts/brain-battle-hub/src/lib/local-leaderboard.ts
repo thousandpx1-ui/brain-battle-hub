@@ -71,16 +71,18 @@ export const useLocalLeaderboard = create<LocalLeaderboardState>()(
 );
 
 export function mergeLocalWithMock(mockEntries: LocalScoreEntry[], localScores: LocalScoreEntry[]): LocalScoreEntry[] {
-  // Group local scores by username and keep only best score
-  const bestScores = new Map<string, LocalScoreEntry>();
+  // Group local scores by username and sum scores (cumulative)
+  const totalScores = new Map<string, LocalScoreEntry>();
   for (const score of localScores) {
-    const existing = bestScores.get(score.username);
-    if (!existing || score.score > existing.score) {
-      bestScores.set(score.username, score);
+    const existing = totalScores.get(score.username);
+    if (existing) {
+      existing.score += score.score;
+    } else {
+      totalScores.set(score.username, { ...score });
     }
   }
 
-  const uniqueLocalScores = Array.from(bestScores.values());
-  const combined = [...mockEntries, ...uniqueLocalScores];
+  const localTotalScores = Array.from(totalScores.values());
+  const combined = [...mockEntries, ...localTotalScores];
   return combined.sort((a, b) => b.score - a.score);
 }

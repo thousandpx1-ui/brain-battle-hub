@@ -92,7 +92,16 @@ async function getAllTimeLeaderboard() {
       Query.limit(10000)
     ]);
 
-    return res.documents.sort((a, b) => b.score - a.score);
+    // Group by username and sum scores for cumulative leaderboard
+    const userTotals = new Map();
+    for (const doc of res.documents) {
+      if (!doc.username) continue;
+      const current = userTotals.get(doc.username) || { score: 0, username: doc.username, gameId: doc.gameId, createdAt: doc.createdAt };
+      current.score += doc.score;
+      userTotals.set(doc.username, current);
+    }
+
+    return Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
   } catch (error) {
     console.error("❌ Error fetching all-time leaderboard:", error);
     return [];
@@ -108,9 +117,18 @@ async function getTodayLeaderboard() {
 
     const today = new Date().toDateString();
 
-    return res.documents
-      .filter(p => new Date(p.createdAt).toDateString() === today)
-      .sort((a, b) => b.score - a.score);
+    // Filter today's games and group by username for cumulative scores
+    const todayDocs = res.documents.filter(p => new Date(p.createdAt).toDateString() === today);
+    const userTotals = new Map();
+
+    for (const doc of todayDocs) {
+      if (!doc.username) continue;
+      const current = userTotals.get(doc.username) || { score: 0, username: doc.username, gameId: doc.gameId, createdAt: doc.createdAt };
+      current.score += doc.score;
+      userTotals.set(doc.username, current);
+    }
+
+    return Array.from(userTotals.values()).sort((a, b) => b.score - a.score);
   } catch (error) {
     console.error("❌ Error fetching today's leaderboard:", error);
     return [];

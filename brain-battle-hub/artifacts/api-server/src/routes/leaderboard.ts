@@ -15,14 +15,15 @@ router.get("/leaderboard", async (req, res) => {
   // Use a very high default limit to show all scores
   const limitVal = limitParam ?? 10000;
 
-  let query = db
+  let baseQuery = db
     .select({
       username: scoresTable.username,
-      gameId: scoresTable.gameId,
-      score: scoresTable.score,
-      createdAt: scoresTable.createdAt,
+      totalScore: sql<number>`sum(${scoresTable.score})`,
+      latestGameId: scoresTable.gameId,
+      latestCreatedAt: sql<string>`max(${scoresTable.createdAt})`,
     })
     .from(scoresTable)
+    .groupBy(scoresTable.username)
     .$dynamic();
 
   const conditions = [];
@@ -33,17 +34,17 @@ router.get("/leaderboard", async (req, res) => {
     conditions.push(gte(scoresTable.createdAt, today));
   }
   if (conditions.length > 0) {
-    query = query.where(and(...conditions));
+    baseQuery = baseQuery.where(and(...conditions));
   }
 
-  const rows = await query.orderBy(desc(scoresTable.score)).limit(limitVal);
+  const rows = await baseQuery.orderBy(desc(sql`sum(${scoresTable.score})`)).limit(limitVal);
 
   const entries = rows.map((r, i) => ({
     rank: i + 1,
     username: r.username,
-    gameId: r.gameId,
-    score: r.score,
-    createdAt: r.createdAt.toISOString(),
+    gameId: r.latestGameId,
+    score: Number(r.totalScore),
+    createdAt: r.latestCreatedAt.toISOString(),
   }));
 
   res.json(entries);
@@ -56,8 +57,11 @@ router.get("/leaderboard/stats", async (_req, res) => {
   const totalPlayers = Number(totalResult[0]?.total ?? 0);
 
   const topScoreResult = await db
-    .select({ top: sql<number>`max(score)` })
-    .from(scoresTable);
+    .select({ top: sql<number>`max(total_score)` })
+    .from(db.select({
+      username: scoresTable.username,
+      total_score: sql<number>`sum(${scoresTable.score})`
+    }).from(scoresTable).groupBy(scoresTable.username).as('user_totals'));
   const topScore = Number(topScoreResult[0]?.top ?? 0);
 
   const today = new Date();
@@ -87,11 +91,11 @@ router.get("/leaderboard/rank", async (req, res) => {
   }
   const { username } = parsed.data;
 
-  const bestScoreResult = await db
-    .select({ score: sql<number>`max(score)` })
+  const totalScoreResult = await db
+    .select({ totalScore: sql<number>`sum(score)` })
     .from(scoresTable)
     .where(eq(scoresTable.username, username));
-  const bestScore = Number(bestScoreResult[0]?.score ?? 0);
+  const totalScore = Number(totalScoreResult[0]?.totalScore ?? 0);
 
   const gamesPlayedResult = await db
     .select({ cnt: count() })
@@ -99,16 +103,19 @@ router.get("/leaderboard/rank", async (req, res) => {
     .where(eq(scoresTable.username, username));
   const gamesPlayed = Number(gamesPlayedResult[0]?.cnt ?? 0);
 
-  const aboveResult = await db
-    .select({ cnt: sql<number>`count(distinct username)` })
+  // Count users with higher total scores
+  const userTotalsQuery = db
+    .select({
+      username: scoresTable.username,
+      totalScore: sql<number>`sum(${scoresTable.score})`,
+    })
     .from(scoresTable)
-    .where(sql`score > ${bestScore}`);
-  const aboveCount = Number(aboveResult[0]?.cnt ?? 0);
+    .groupBy(scoresTable.username);
 
-  const totalResult = await db
-    .select({ total: sql<number>`count(distinct username)` })
-    .from(scoresTable);
-  const totalPlayers = Number(totalResult[0]?.total ?? 1);
+  const allUserTotals = await userTotalsQuery;
+  const aboveCount = allUserTotals.filter(user => user.totalScore > totalScore).length;
+
+  const totalPlayers = allUserTotals.length;
 
   const rank = aboveCount + 1;
   const percentile = totalPlayers > 0 ? ((totalPlayers - rank + 1) / totalPlayers) * 100 : 100;
@@ -123,7 +130,7 @@ router.get("/leaderboard/rank", async (req, res) => {
     totalPlayers,
     percentile: Math.round(percentile),
     badge,
-    bestScore,
+    bestScore: totalScore, // Changed from bestScore to totalScore
     gamesPlayed,
   });
 });
