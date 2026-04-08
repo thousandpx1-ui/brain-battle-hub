@@ -5,7 +5,10 @@ import { differenceInDays, startOfDay } from "date-fns";
 interface AppState {
   username: string | null;
   setUsername: (name: string) => void;
-  
+
+  profileImage: string | null;
+  setProfileImage: (image: string | null) => void;
+
   streak: number;
   lastPlayedDate: string | null;
   updateStreak: () => void;
@@ -20,6 +23,9 @@ export const useAppState = create<AppState>()(
     (set, get) => ({
       username: null,
       setUsername: (name) => set({ username: name }),
+
+      profileImage: null,
+      setProfileImage: (image) => set({ profileImage: image }),
 
       streak: 0,
       lastPlayedDate: null,

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Gamepad2, Trophy } from "lucide-react";
+import { Home, Gamepad2, Trophy, User } from "lucide-react";
 import { AdBanner } from "./ad-banner";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -18,10 +18,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Home className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium">Home</span>
           </Link>
-          <div className="flex flex-col items-center justify-center w-full h-full text-gray-400">
-            <Gamepad2 className="w-6 h-6 mb-1" />
-            <span className="text-[10px] font-medium">Games</span>
-          </div>
+          <Link href="/profile" className={`flex flex-col items-center justify-center w-full h-full ${location === "/profile" ? "text-primary" : "text-gray-400"}`}>
+            <User className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium">Profile</span>
+          </Link>
           <Link href="/leaderboard" className={`flex flex-col items-center justify-center w-full h-full ${location === "/leaderboard" ? "text-primary" : "text-gray-400"}`}>
             <Trophy className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium">Rank</span>

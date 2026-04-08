@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star, Medal } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Trophy, Star, Medal, User } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 import { getFullLeaderboard, saveScore } from "@/lib/appwrite.js";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
@@ -51,7 +52,7 @@ function formatScore(score: number): string {
 // formatScore(1000000000) = "1B"
 
 export default function Leaderboard() {
-  const { username } = useAppState();
+  const { username, profileImage } = useAppState();
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const localScores = useLocalLeaderboard((s) => s.scores); // Fallback
@@ -196,18 +197,27 @@ export default function Leaderboard() {
                   key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${
-                    i === 0 ? 'bg-yellow-100' :
-                    i === 1 ? 'bg-gray-100' :
-                    i === 2 ? 'bg-amber-100' :
-                    'bg-gray-50'
-                  }`}>
-                    {medalEmoji ? (
-                      <span className="text-2xl">{medalEmoji}</span>
-                    ) : (
-                      <span className="font-black text-sm text-gray-400">{i + 1}</span>
-                    )}
-                  </div>
+                  {isMe && profileImage ? (
+                    <Avatar className="w-10 h-10 mr-4">
+                      <AvatarImage src={profileImage} alt={username || "User"} />
+                      <AvatarFallback>
+                        <User className="w-5 h-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${
+                      i === 0 ? 'bg-yellow-100' :
+                      i === 1 ? 'bg-gray-100' :
+                      i === 2 ? 'bg-amber-100' :
+                      'bg-gray-50'
+                    }`}>
+                      {medalEmoji ? (
+                        <span className="text-2xl">{medalEmoji}</span>
+                      ) : (
+                        <span className="font-black text-sm text-gray-400">{i + 1}</span>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex-1 min-w-0">
                     <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>
