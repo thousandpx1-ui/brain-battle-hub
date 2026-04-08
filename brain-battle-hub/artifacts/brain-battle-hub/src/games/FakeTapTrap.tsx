@@ -108,7 +108,10 @@ export function FakeTapTrap({ onGameOver }: { onGameOver: (score: number) => voi
       if (doneRef.current) return;
 
       if (btn.isReal) {
-        const next = scoreRef.current + 1;
+        // Give more points as score increases (scaling reward)
+        const basePoints = 5;
+        const streakBonus = Math.floor(scoreRef.current / 10) * 2; // Bonus every 10 taps
+        const next = scoreRef.current + basePoints + streakBonus;
         scoreRef.current = next;
         setScore(next);
         // Spawn fresh round right away
@@ -127,7 +130,7 @@ export function FakeTapTrap({ onGameOver }: { onGameOver: (score: number) => voi
       {/* Score */}
       <div className="mb-3 text-center shrink-0">
         <h2 className="text-4xl font-black tabular-nums">{score}</h2>
-        <p className="text-sm text-gray-500 mt-0.5">Tap the green button — avoid the fakes!</p>
+        <p className="text-sm text-gray-500 mt-0.5">Tap the green button — +5 base points per tap!</p>
       </div>
 
       {/* Game area */}

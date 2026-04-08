@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, PersistStorage } from "zustand/middleware";
 
 export interface LocalScoreEntry {
   username: string;
@@ -10,25 +10,62 @@ export interface LocalScoreEntry {
 
 interface LocalLeaderboardState {
   scores: LocalScoreEntry[];
+  version: number;
   addScore: (entry: Omit<LocalScoreEntry, "createdAt">) => void;
   clearScores: () => void;
 }
 
+// Create a custom storage that ensures synchronous writes
+const createSyncStorage = (): PersistStorage<LocalLeaderboardState> => {
+  return {
+    getItem: (name) => {
+      const str = localStorage.getItem(name);
+      if (!str) return null;
+      return JSON.parse(str);
+    },
+    setItem: (name, value) => {
+      localStorage.setItem(name, JSON.stringify(value));
+    },
+    removeItem: (name) => {
+      localStorage.removeItem(name);
+    },
+  };
+};
+
 export const useLocalLeaderboard = create<LocalLeaderboardState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       scores: [],
+      version: 0,
       addScore: (entry) => {
         const newEntry: LocalScoreEntry = {
           ...entry,
           createdAt: new Date().toISOString(),
         };
-        set({ scores: [...get().scores, newEntry] });
+        // Use functional update to ensure we always work with latest state
+        set((state) => {
+          const newScores = [...state.scores, newEntry];
+          console.log('[LocalLeaderboard] Adding score:', entry.username, entry.score, '| Total scores:', newScores.length);
+          return {
+            scores: newScores,
+            version: state.version + 1
+          };
+        });
       },
-      clearScores: () => set({ scores: [] }),
+      clearScores: () => set({ scores: [], version: 0 }),
     }),
     {
       name: "brain-battle-leaderboard",
+      storage: createSyncStorage(),
+      migrate: (persisted: any) => {
+        // Add version field to existing state if missing
+        if (persisted && persisted.state) {
+          if (typeof persisted.state.version !== "number") {
+            persisted.state.version = 0;
+          }
+        }
+        return persisted?.state || {};
+      },
     }
   )
 );

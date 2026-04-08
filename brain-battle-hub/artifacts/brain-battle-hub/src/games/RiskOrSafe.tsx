@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const MULTIPLIERS = [1.5, 1.8, 2.0, 2.5, 3.0, 0.5, 0.8, 1.0];
-const WIN_CHANCES = [0.4, 0.45, 0.5, 0.55, 0.6];
+const MULTIPLIERS = [1.3, 1.5, 1.8, 2.0, 2.5, 3.0, 0.8, 1.0, 1.2]; // Better odds, fewer losses
+const WIN_CHANCES = [0.55, 0.60, 0.65, 0.70, 0.75]; // Higher win rates
 
 export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void }) {
   const [bank, setBank] = useState(100);
@@ -12,6 +12,7 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
   const [flipping, setFlipping] = useState(false);
   const [result, setResult] = useState<"win" | "lose" | null>(null);
   const [multiplier, setMultiplier] = useState(2.0);
+  const [consecutiveWins, setConsecutiveWins] = useState(0); // Track win streak for bonus
 
   const getWinChance = () => {
     return WIN_CHANCES[Math.floor(Math.random() * WIN_CHANCES.length)];
@@ -40,23 +41,30 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
 
       if (isWin) {
         const newBank = Math.floor(bank * newMultiplier);
-        setResult("win");
+        const winStreakBonus = Math.floor((consecutiveWins + 1) / 3) * 20; // Bonus every 3 consecutive wins
+        const finalBank = newBank + winStreakBonus;
         
+        setResult("win");
+        setConsecutiveWins(c => c + 1);
+
         setTimeout(() => {
-          setBank(newBank);
+          setBank(finalBank);
           setResult(null);
-          
+
           if (round >= 8) {
-            onGameOver(newBank);
+            onGameOver(finalBank);
           } else {
             setRound(r => r + 1);
           }
         }, 1000);
       } else {
         setResult("lose");
-        
+        setConsecutiveWins(0);
+
         setTimeout(() => {
-          onGameOver(0);
+          // Don't lose everything - lose 50% instead
+          const remainingBank = Math.floor(bank * 0.5);
+          onGameOver(remainingBank);
         }, 1000);
       }
     }, 1500);
@@ -68,6 +76,9 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
         <p className="text-gray-500 font-bold uppercase tracking-widest text-sm mb-2">Round {round} / 8</p>
         <h2 className="text-5xl font-black text-primary">{bank}</h2>
         <p className="text-gray-400 mt-2 font-medium">Banked Points</p>
+        {consecutiveWins > 0 && (
+          <p className="text-orange-500 font-bold mt-1">🔥 {consecutiveWins} win streak!</p>
+        )}
       </div>
 
       <div className="h-40 flex items-center justify-center mb-10">

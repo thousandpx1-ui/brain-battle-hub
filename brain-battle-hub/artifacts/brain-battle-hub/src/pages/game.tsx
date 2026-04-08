@@ -8,7 +8,7 @@ import { DontBlink } from "@/games/DontBlink";
 import { FakeTapTrap } from "@/games/FakeTapTrap";
 import { IllusionFinder } from "@/games/IllusionFinder";
 import { RiskOrSafe } from "@/games/RiskOrSafe";
-import { useSubmitScore } from "@workspace/api-client-react";
+import { saveScore } from "@/lib/appwrite.js";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { InterstitialAd } from "@/components/interstitial-ad";
@@ -25,8 +25,6 @@ export default function Game() {
   const { username, gamesPlayedSession, incrementGamesPlayed, resetGamesPlayedSession } = useAppState();
   const addLocalScore = useLocalLeaderboard((s) => s.addScore);
 
-  const submitScore = useSubmitScore();
-
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [showRewardAd, setShowRewardAd] = useState(false);
 
@@ -34,7 +32,7 @@ export default function Game() {
 
   const handleStart = () => setGameState("playing");
 
-  const handleGameOver = (finalScore: number) => {
+  const handleGameOver = async (finalScore: number) => {
     setScore(finalScore);
     setGameState("gameover");
     incrementGamesPlayed();
@@ -44,10 +42,8 @@ export default function Game() {
       addLocalScore({ gameId: game.id, username, score: finalScore });
     }
 
-    // Try to submit to remote API if available
-    if (username) {
-      submitScore.mutate({ data: { gameId: game.id, username, score: finalScore } });
-    }
+    // Save to Appwrite database
+    await saveScore(finalScore, game.name);
 
     if (gamesPlayedSession > 0 && gamesPlayedSession % 3 === 0) {
       setShowInterstitial(true);
@@ -63,13 +59,13 @@ export default function Game() {
     setShowRewardAd(true);
   };
 
-  const onRewardComplete = () => {
+  const onRewardComplete = async () => {
     setShowRewardAd(false);
     const doubled = score * 2;
     setScore(doubled);
     if (username) {
       addLocalScore({ gameId: game.id, username, score: doubled });
-      submitScore.mutate({ data: { gameId: game.id, username, score: doubled } });
+      await saveScore(doubled, game.name);
     }
   };
 

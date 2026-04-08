@@ -17,8 +17,9 @@ const RIDDLES = [
 export function IllusionFinder({ onGameOver }: { onGameOver: (score: number) => void }) {
   const [score, setScore] = useState(0);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(10);
-  
+  const [timeLeft, setTimeLeft] = useState(15); // More time per question
+  const [streak, setStreak] = useState(0); // Bonus for consecutive correct answers
+
   useEffect(() => {
     if (timeLeft <= 0) {
       onGameOver(score);
@@ -30,14 +31,22 @@ export function IllusionFinder({ onGameOver }: { onGameOver: (score: number) => 
 
   const handleAnswer = (optIdx: number) => {
     if (optIdx === RIDDLES[currentIdx].ans) {
-      const earned = Math.max(1, 10 - (10 - timeLeft)); // Max 10, minus elapsed
-      setScore(s => s + earned);
+      // Base points: 15, plus time bonus (up to 15), plus streak bonus
+      const newStreak = streak + 1;
+      const timeBonus = timeLeft; // Up to 15 points for answering quickly
+      const streakBonus = Math.min(newStreak * 2, 20); // Up to 20 points for streak
+      const earned = 15 + timeBonus + streakBonus;
       
+      setScore(s => s + earned);
+      setStreak(newStreak);
+
       if (currentIdx + 1 >= RIDDLES.length) {
-        onGameOver(score + earned);
+        // Completed all riddles - bonus for remaining time
+        const timeBonus = timeLeft * 2;
+        onGameOver(score + earned + timeBonus);
       } else {
         setCurrentIdx(i => i + 1);
-        setTimeLeft(10);
+        setTimeLeft(15);
       }
     } else {
       onGameOver(score);
@@ -50,6 +59,7 @@ export function IllusionFinder({ onGameOver }: { onGameOver: (score: number) => 
     <div className="flex flex-col items-center justify-center w-full h-full max-w-sm mx-auto">
       <div className="flex justify-between w-full mb-8">
         <div className="font-bold text-gray-500">Score: {score}</div>
+        <div className="font-bold text-primary">Streak: {streak}🔥</div>
         <div className={`font-bold ${timeLeft <= 3 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>
           {timeLeft}s
         </div>

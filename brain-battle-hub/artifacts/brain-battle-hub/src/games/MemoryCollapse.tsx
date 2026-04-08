@@ -29,7 +29,7 @@ export function MemoryCollapse({ onGameOver }: { onGameOver: (score: number) => 
 
     setTimeout(() => {
       setShowingSequence(false);
-    }, 2000); // Show for 2s
+    }, 2500 + (currentLevel * 200)); // More time for higher levels
   };
 
   const handleTap = (index: number) => {
@@ -42,7 +42,7 @@ export function MemoryCollapse({ onGameOver }: { onGameOver: (score: number) => 
     
     if (sequence[currentTapIndex] !== index) {
       // Wrong tap
-      onGameOver((level - 1) * 10);
+      onGameOver((level - 1) * 25);
       return;
     }
 

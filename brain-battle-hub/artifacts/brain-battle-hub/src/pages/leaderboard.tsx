@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout";
-import { useGetLeaderboard } from "@workspace/api-client-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star, Medal } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
-import { generateMockLeaderboard, MockLeaderboardEntry } from "@/lib/mock-leaderboard";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 function getTimeUntilMidnight(): string {
@@ -12,11 +10,11 @@ function getTimeUntilMidnight(): string {
   const midnight = new Date(now);
   midnight.setHours(24, 0, 0, 0);
   const diff = midnight.getTime() - now.getTime();
-  
+
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  
+
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
@@ -42,20 +40,12 @@ export default function Leaderboard() {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: leaderboardRaw, isError } = useGetLeaderboard({
-    period,
-    limit: 100
-  }, { query: { queryKey: ["leaderboard", period] } });
-
-  const mockLeaderboard = generateMockLeaderboard(50);
-  const rawLeaderboard = isError || !Array.isArray(leaderboardRaw) ? mockLeaderboard : leaderboardRaw;
-
   // Filter by period and deduplicate: keep only best score per username
-  const allRawScores: MockLeaderboardEntry[] = period === "daily"
-    ? [...rawLeaderboard, ...localScores].filter(entry => isToday(entry.createdAt))
-    : [...rawLeaderboard, ...localScores];
+  const allRawScores = period === "daily"
+    ? localScores.filter(entry => isToday(entry.createdAt))
+    : [...localScores];
 
-  const bestScoreMap = new Map<string, MockLeaderboardEntry>();
+  const bestScoreMap = new Map<string, typeof localScores[0]>();
   for (const entry of allRawScores) {
     const existing = bestScoreMap.get(entry.username);
     if (!existing || entry.score > existing.score) {
@@ -67,11 +57,11 @@ export default function Leaderboard() {
   // Calculate player's rank for current tab (best score position)
   const playerScores = localScores.filter(s => s.username === username);
   const playerBestScore = period === "daily"
-    ? Math.max(...playerScores.filter(s => isToday(s.createdAt)).map(s => s.score), 0)
-    : Math.max(...playerScores.map(s => s.score), 0);
+    ? (playerScores.filter(s => isToday(s.createdAt)).length > 0 ? Math.max(...playerScores.filter(s => isToday(s.createdAt)).map(s => s.score), 0) : 0)
+    : (playerScores.length > 0 ? Math.max(...playerScores.map(s => s.score), 0) : 0);
 
-  // Find rank by best score
-  const playerRank = playerBestScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username && entry.score === playerBestScore) + 1 : 0;
+  // Find rank by looking up player's best score in the filtered leaderboard
+  const playerRank = playerBestScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;
   const totalPlayers = filteredLeaderboard.length;
   const percentile = totalPlayers > 0 && playerRank > 0 ? ((totalPlayers - playerRank) / totalPlayers) * 100 : 0;
   const badge = percentile >= 90 ? "gold" : percentile >= 75 ? "silver" : "bronze";

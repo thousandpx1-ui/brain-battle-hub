@@ -12,7 +12,8 @@ router.get("/leaderboard", async (req, res) => {
     return;
   }
   const { gameId, period, limit: limitParam } = parsed.data;
-  const limitVal = limitParam ?? 50;
+  // Use a very high default limit to show all scores
+  const limitVal = limitParam ?? 10000;
 
   let query = db
     .select({

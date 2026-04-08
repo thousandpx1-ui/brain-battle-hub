@@ -2,15 +2,16 @@ import { useState, useEffect, useRef } from "react";
 
 export function DontBlink({ onGameOver }: { onGameOver: (score: number) => void }) {
   const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
   const [barPosition, setBarPosition] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [speed, setSpeed] = useState(2); // Initial speed
-  const requestRef = useRef<number>();
+  const [speed, setSpeed] = useState(1.5); // Slightly slower initial speed
+  const requestRef = useRef<number | undefined>(undefined);
   const isPlayingRef = useRef(true);
 
   // Define zones (0 to 100)
-  const perfectZone = { min: 45, max: 55 };
-  const goodZone = { min: 35, max: 65 };
+  const perfectZone = { min: 42, max: 58 }; // Wider perfect zone
+  const goodZone = { min: 30, max: 70 }; // Wider good zone
 
   useEffect(() => {
     const animate = () => {
@@ -38,22 +39,35 @@ export function DontBlink({ onGameOver }: { onGameOver: (score: number) => void 
   }, [speed, direction]);
 
   const handleTap = () => {
-    isPlayingRef.current = false;
-    if (requestRef.current) cancelAnimationFrame(requestRef.current);
-
+    if (!isPlayingRef.current) return;
+    
     if (barPosition >= perfectZone.min && barPosition <= perfectZone.max) {
       // Perfect
-      const newScore = score + 20;
+      const newScore = score + 25;
       setScore(newScore);
-      setTimeout(() => nextRound(), 1000);
+      setTimeout(() => nextRound(), 800);
     } else if (barPosition >= goodZone.min && barPosition <= goodZone.max) {
       // Good
-      const newScore = score + 10;
+      const newScore = score + 15;
       setScore(newScore);
-      setTimeout(() => nextRound(), 1000);
+      setTimeout(() => nextRound(), 800);
     } else {
-      // Miss - Game Over
-      setTimeout(() => onGameOver(score), 1000);
+      // Miss - lose a life
+      const newLives = lives - 1;
+      setLives(newLives);
+      
+      if (newLives <= 0) {
+        // Game over
+        isPlayingRef.current = false;
+        if (requestRef.current) cancelAnimationFrame(requestRef.current);
+        setTimeout(() => onGameOver(score), 800);
+      } else {
+        // Continue with reset
+        setTimeout(() => {
+          setBarPosition(0);
+          setDirection(1);
+        }, 800);
+      }
     }
   };
 
@@ -68,6 +82,13 @@ export function DontBlink({ onGameOver }: { onGameOver: (score: number) => void 
     <div className="flex flex-col items-center justify-center w-full h-full" onClick={handleTap}>
       <div className="mb-12 text-center pointer-events-none">
         <h2 className="text-3xl font-black">{score}</h2>
+        <div className="flex gap-1 justify-center mt-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <span key={i} className={`text-2xl ${i < lives ? 'text-red-500' : 'text-gray-300'}`}>
+              ♥
+            </span>
+          ))}
+        </div>
         <p className="text-gray-500 mt-2">Tap to stop in the blue zone!</p>
       </div>
 
