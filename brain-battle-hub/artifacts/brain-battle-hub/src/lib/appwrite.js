@@ -11,79 +11,140 @@ const COLLECTION_ID = "scores";
 
 const databases = new Databases(client);
 
-async function saveScore(score, game = "unknown") {
-  try {
-    // Check if user already has scores
-    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
-    const existing = res.documents.find(d => d.userId === "guest");
+// 52 fake player names for seeding
+const FAKE_PLAYER_NAMES = [
+  "ShadowNinja", "PixelPro", "GameMaster", "SpeedRunner", "BrainKing",
+  "PuzzleQueen", "QuickThinker", "FirePlayer", "IceWizard", "StormBreaker",
+  "NeonGhost", "DarkKnight", "AlphaGamer", "BetaBoss", "CyberChamp",
+  "LogicLord", "RapidFire", "SilentHunter", "CodeCrusher", "FlashPlayer",
+  "TurboMind", "SharpEdge", "BlazeHero", "FrostByte", "ThunderX",
+  "NightCrawler", "SolarFlare", "EchoPlayer", "VortexKing", "NovaStar",
+  "QuantumX", "ZenMaster", "GhostRider", "SkyWalker", "InfernoX",
+  "CrystalMind", "MegaPlayer", "UltraThink", "HyperNova", "MindBender",
+  "BrainStorm", "GameWizard", "PixelHero", "ElitePlayer", "FastFinger",
+  "LuckyShot", "ProGamer", "AcePlayer", "TopScorer", "LegendX",
+  "MasterMind", "FinalBoss"
+];
 
-    if (!existing) {
-      // First time - create new document
+// Generate fake players with scores between 500-1000
+function generateFakePlayers() {
+  return FAKE_PLAYER_NAMES.map(name => ({
+    userId: name,
+    username: name,
+    score: Math.floor(Math.random() * 500) + 500, // 500-1000
+    createdAt: new Date().toISOString()
+  }));
+}
+
+// Seed the leaderboard with 52 fake players (RUN ONLY ONCE)
+async function seedLeaderboard() {
+  // Check if already seeded
+  if (localStorage.getItem("leaderboard_seeded") === "true") {
+    console.log("⏭️ Leaderboard already seeded, skipping");
+    return;
+  }
+
+  try {
+    const players = generateFakePlayers();
+
+    for (let player of players) {
       await databases.createDocument(
         DATABASE_ID,
         COLLECTION_ID,
         ID.unique(),
-        {
-          score: score,
-          userId: "guest",
-          game: game
-        }
+        player
       );
-      console.log("Score saved:", score);
-    } else if (score > existing.score) {
-      // Update only if new score is higher
-      await databases.updateDocument(
-        DATABASE_ID,
-        COLLECTION_ID,
-        existing.$id,
-        { score: score }
-      );
-      console.log("Score updated (higher):", score);
-    } else {
-      console.log("Score not saved (lower or equal):", score, "vs best:", existing.score);
     }
+
+    localStorage.setItem("leaderboard_seeded", "true");
+    console.log("✅ 52 fake players added to leaderboard");
   } catch (error) {
-    console.error("Error saving score:", error);
+    console.error("❌ Error seeding leaderboard:", error);
+    throw error;
   }
 }
 
-async function getFullLeaderboard(period) {
+// Save score for real users
+async function saveScore(score, username) {
+  try {
+    await databases.createDocument(
+      DATABASE_ID,
+      COLLECTION_ID,
+      ID.unique(),
+      {
+        userId: username || "guest_" + Date.now(),
+        username: username || "guest_" + Date.now(),
+        score: score,
+        createdAt: new Date().toISOString()
+      }
+    );
+    console.log("✅ Score saved:", score, "for", username);
+  } catch (error) {
+    console.error("❌ Error saving score:", error);
+    throw error;
+  }
+}
+
+// All-time leaderboard
+async function getAllTimeLeaderboard() {
   try {
     const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
-    let docs = res.documents;
-
-    // Filter daily
-    if (period === 'daily') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      docs = docs.filter(doc => {
-        if (!doc.createdAt) return false;
-        const docDate = new Date(doc.createdAt);
-        return docDate >= today;
-      });
-    }
-
-    // Dedup: best score per username
-    const bestMap = new Map();
-    for (const doc of docs) {
-      if (!doc.username) continue;
-      const existing = bestMap.get(doc.username);
-      if (!existing || doc.score > existing.score) {
-        bestMap.set(doc.username, doc);
-      }
-    }
-
-    const leaderboard = Array.from(bestMap.values()).sort((a, b) => b.score - a.score);
-    console.log(`Leaderboard ${period}:`, leaderboard.length, 'entries');
-    return leaderboard;
+    
+    return res.documents.sort((a, b) => b.score - a.score);
   } catch (error) {
-    console.error('Error fetching leaderboard:', error);
+    console.error("❌ Error fetching all-time leaderboard:", error);
     return [];
   }
 }
 
-async function getLeaderboard() {
-  return getFullLeaderboard('global');
+// Today's leaderboard
+async function getTodayLeaderboard() {
+  try {
+    const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
+    
+    const today = new Date().toDateString();
+    
+    return res.documents
+      .filter(p => new Date(p.createdAt).toDateString() === today)
+      .sort((a, b) => b.score - a.score);
+  } catch (error) {
+    console.error("❌ Error fetching today's leaderboard:", error);
+    return [];
+  }
 }
 
-export { client, databases, ID, saveScore, getLeaderboard, getFullLeaderboard, DATABASE_ID, COLLECTION_ID };
+// Unified leaderboard function (backward compatible)
+async function getFullLeaderboard(period) {
+  if (period === "daily") {
+    return getTodayLeaderboard();
+  }
+  return getAllTimeLeaderboard();
+}
+
+// Backward compatible alias
+async function getLeaderboard() {
+  return getAllTimeLeaderboard();
+}
+
+// Medal helper
+function getMedal(index) {
+  if (index === 0) return "🥇";
+  if (index === 1) return "🥈";
+  if (index === 2) return "🥉";
+  return "";
+}
+
+export { 
+  client, 
+  databases, 
+  ID, 
+  saveScore, 
+  getLeaderboard, 
+  getFullLeaderboard,
+  getAllTimeLeaderboard,
+  getTodayLeaderboard,
+  seedLeaderboard,
+  getMedal,
+  DATABASE_ID, 
+  COLLECTION_ID 
+};

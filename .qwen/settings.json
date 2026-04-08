@@ -16,7 +16,8 @@
       "Bash(curl *)",
       "Bash(kill *)",
       "Bash(cp *)",
-      "Bash(wrangler *)"
+      "Bash(wrangler *)",
+      "Bash(ls *)"
     ]
   },
   "$version": 3

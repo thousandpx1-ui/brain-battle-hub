@@ -3,7 +3,7 @@ import { Layout } from "@/components/layout";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star, Medal } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
-import { getFullLeaderboard } from "@/lib/appwrite.js";
+import { getFullLeaderboard, seedLeaderboard } from "@/lib/appwrite.js";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 function getTimeUntilMidnight(): string {
@@ -40,6 +40,9 @@ export default function Leaderboard() {
     const fetchLeaderboard = async () => {
       setLoading(true);
       try {
+        // Try to seed first (will skip if already seeded)
+        await seedLeaderboard();
+        
         const data = await getFullLeaderboard(period);
         setLeaderboard(data);
       } catch (error) {
@@ -135,9 +138,9 @@ export default function Leaderboard() {
           <div className="flex flex-col gap-3 pb-8">
             {filteredLeaderboard.map((entry, i) => {
               const isMe = entry.username === username;
-              const medal = i === 0 ? <Trophy className="w-5 h-5 text-yellow-500 fill-yellow-500" /> : 
-                            i === 1 ? <Medal className="w-5 h-5 text-gray-400" /> : 
-                            i === 2 ? <Medal className="w-5 h-5 text-amber-600" /> : null;
+              const medalEmoji = i === 0 ? "🥇" :
+                                 i === 1 ? "🥈" :
+                                 i === 2 ? "🥉" : null;
 
               return (
                 <div
@@ -150,7 +153,9 @@ export default function Leaderboard() {
                     i === 2 ? 'bg-amber-100' :
                     'bg-gray-50'
                   }`}>
-                    {medal || (
+                    {medalEmoji ? (
+                      <span className="text-2xl">{medalEmoji}</span>
+                    ) : (
                       <span className="font-black text-sm text-gray-400">{i + 1}</span>
                     )}
                   </div>
