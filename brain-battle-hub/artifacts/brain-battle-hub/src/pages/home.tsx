@@ -164,20 +164,14 @@ export default function Home() {
             <strong>Daily Leaderboard Debug:</strong> {dailyLeaderboard.length} players loaded
             {dailyLoading && " (Loading...)"}
             {!dailyLoading && dailyLeaderboard.length === 0 && " - No daily scores found"}
+            {dailyLeaderboard.length > 0 && ` - Top: ${dailyLeaderboard[0]?.username} (${formatScore(dailyLeaderboard[0]?.score)})`}
           </p>
-          <div className="mt-2 flex gap-2">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-            >
-              Refresh Page
-            </button>
-            {dailyLeaderboard.length > 0 && (
-              <div className="text-xs text-green-700">
-                Top: {dailyLeaderboard[0]?.username} ({formatScore(dailyLeaderboard[0]?.score)})
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+          >
+            Refresh Page
+          </button>
         </div>
 
         {dailyLeaderboard.length > 0 && (
