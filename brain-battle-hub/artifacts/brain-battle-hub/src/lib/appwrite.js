@@ -11,26 +11,6 @@ const COLLECTION_ID = "scores";
 
 const databases = new Databases(client);
 
-async function submitScoreFull(username: string, gameId: string, score: number, gameName: string = "unknown") {
-  try {
-    await databases.createDocument(
-      DATABASE_ID,
-      COLLECTION_ID,
-      ID.unique(),
-      {
-        username,
-        gameId,
-        score,
-        gameName,
-        createdAt: new Date().toISOString(),
-      }
-    );
-    console.log(`Full score submitted: ${username} ${gameId} ${score}`);
-  } catch (error) {
-    console.error("Error submitting score:", error);
-  }
-}
-
 async function saveScore(score, game = "unknown") {
   try {
     // Check if user already has scores
@@ -67,7 +47,7 @@ async function saveScore(score, game = "unknown") {
   }
 }
 
-async function getFullLeaderboard(period: 'global' | 'daily' = 'global'): Promise<any[]> {
+async function getFullLeaderboard(period) {
   try {
     const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
     let docs = res.documents;
@@ -103,7 +83,7 @@ async function getFullLeaderboard(period: 'global' | 'daily' = 'global'): Promis
 }
 
 async function getLeaderboard() {
-  return getFullLeaderboard('global'); // Legacy
+  return getFullLeaderboard('global');
 }
 
-export { client, databases, ID, saveScore, submitScoreFull, getFullLeaderboard, getLeaderboard, DATABASE_ID, COLLECTION_ID };
+export { client, databases, ID, saveScore, getLeaderboard, getFullLeaderboard, DATABASE_ID, COLLECTION_ID };
