@@ -1,9 +1,16 @@
 import { Client, Databases, ID, Query } from "appwrite";
 
+function log(msg) {
+  const div = document.createElement("div");
+  div.innerText = msg;
+  div.style.color = "red";
+  document.body.appendChild(div);
+}
+
 const client = new Client();
 
 client
-  .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1")
+  .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1")
   .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID || "69d5081d003dd1e2fe0a");
 
 const DATABASE_ID = "leaderboardDB";
@@ -22,7 +29,7 @@ async function seedLeaderboard() {
 
 // Save score for real users
 async function saveScore(score, username) {
-  console.log("💾 saveScore called with:", { score, username });
+  log("Saving score: " + score + " for " + username);
 
   try {
     const docData = {
@@ -42,10 +49,9 @@ async function saveScore(score, username) {
       docData
     );
 
-    console.log("✅ Score saved successfully:", result.$id, "for", username, "with score", score);
+    log("Saved successfully: " + result.$id + " for " + username + " with score " + score);
   } catch (error) {
-    console.error("❌ Error saving score:", error);
-    console.error("❌ Error details:", error.message);
+    log("SAVE ERROR: " + error.message);
     throw error;
   }
 }
