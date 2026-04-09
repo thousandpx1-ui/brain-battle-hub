@@ -11,6 +11,9 @@ interface AppState {
   profileImage: string | null;
   setProfileImage: (image: string | null) => void;
 
+  profileFrame: string | null;
+  setProfileFrame: (frame: string | null) => void;
+
   streak: number;
   lastPlayedDate: string | null;
   updateStreak: () => void;
@@ -29,6 +32,9 @@ export const useAppState = create<AppState>()(
 
       profileImage: null,
       setProfileImage: (image) => set({ profileImage: image }),
+
+      profileFrame: null,
+      setProfileFrame: (frame) => set({ profileFrame: frame }),
 
       streak: 0,
       lastPlayedDate: null,

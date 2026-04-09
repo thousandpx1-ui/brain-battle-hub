@@ -7,6 +7,19 @@ import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { Camera, User } from "lucide-react";
 
+const frames = [
+  { id: 'none', name: 'None', style: '' },
+  { id: 'gold', name: 'Gold', style: 'border-4 border-yellow-400 rounded-full' },
+  { id: 'silver', name: 'Silver', style: 'border-4 border-gray-400 rounded-full' },
+  { id: 'bronze', name: 'Bronze', style: 'border-4 border-amber-600 rounded-full' },
+  { id: 'blue', name: 'Blue', style: 'border-4 border-blue-500 rounded-full' },
+  { id: 'red', name: 'Red', style: 'border-4 border-red-500 rounded-full' },
+  { id: 'green', name: 'Green', style: 'border-4 border-green-500 rounded-full' },
+  { id: 'purple', name: 'Purple', style: 'border-4 border-purple-500 rounded-full' },
+  { id: 'rainbow', name: 'Rainbow', style: 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 rounded-full p-1' },
+  { id: 'black', name: 'Black', style: 'border-4 border-black rounded-full' },
+];
+
 function formatScore(score: number): string {
   const num = Math.floor(score);
 
@@ -24,7 +37,7 @@ function formatScore(score: number): string {
 }
 
 export default function Profile() {
-  const { username, setUsername, profileImage, setProfileImage } = useAppState();
+  const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame } = useAppState();
   const { scores, updateUsername } = useLocalLeaderboard();
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
@@ -72,12 +85,25 @@ export default function Profile() {
             {/* Avatar Section */}
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={profileImage || undefined} alt={username || "User"} />
-                  <AvatarFallback className="text-2xl">
-                    <User className="w-8 h-8" />
-                  </AvatarFallback>
-                </Avatar>
+                <div className={`${frames.find(f => f.id === profileFrame)?.style || ''}`}>
+                  {profileFrame === 'rainbow' ? (
+                    <div className="bg-white rounded-full p-1">
+                      <Avatar className="w-22 h-22">
+                        <AvatarImage src={profileImage || undefined} alt={username || "User"} />
+                        <AvatarFallback className="text-xl">
+                          <User className="w-7 h-7" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  ) : (
+                    <Avatar className="w-24 h-24">
+                      <AvatarImage src={profileImage || undefined} alt={username || "User"} />
+                      <AvatarFallback className="text-2xl">
+                        <User className="w-8 h-8" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
                 <label className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors">
                   <Camera className="w-4 h-4" />
                   <input
@@ -98,6 +124,39 @@ export default function Profile() {
                   Remove Photo
                 </Button>
               )}
+            </div>
+
+            {/* Profile Frame Section */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">Profile Frame</label>
+              <div className="grid grid-cols-5 gap-2">
+                {frames.map((frame) => (
+                  <button
+                    key={frame.id}
+                    onClick={() => setProfileFrame(frame.id === 'none' ? null : frame.id)}
+                    className={`p-2 rounded-lg border-2 ${
+                      (profileFrame === frame.id || (frame.id === 'none' && !profileFrame))
+                        ? 'border-primary bg-primary/10'
+                        : 'border-gray-200 hover:border-gray-300'
+                    } transition-colors`}
+                  >
+                    <div className={`w-8 h-8 mx-auto ${frame.style}`}>
+                      {frame.id === 'rainbow' ? (
+                        <div className="bg-white rounded-full p-0.5">
+                          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
+                            <User className="w-3 h-3" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-xs mt-1 text-center">{frame.name}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Username Section */}
