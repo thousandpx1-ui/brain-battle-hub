@@ -134,21 +134,13 @@ export default function Profile() {
                   <button
                     key={frame.id}
                     onClick={() => setProfileFrame(frame.id === 'none' ? null : frame.id)}
-                    className={`p-2 rounded-lg border-2 ${
+                    className={`h-16 p-2 rounded-lg border-2 flex flex-col items-center justify-center ${
                       (profileFrame === frame.id || (frame.id === 'none' && !profileFrame))
                         ? 'border-primary bg-primary/10'
                         : 'border-gray-200 hover:border-gray-300'
                     } transition-colors`}
                   >
-                    <div className={`w-8 h-8 mx-auto ${frame.style}`}>
-                      {frame.id === 'rainbow' ? (
-                        <div className="bg-white rounded-full p-0.5">
-                          <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
-                        </div>
-                      ) : (
-                        <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                      )}
-                    </div>
+                    <div className={`w-8 h-8 mx-auto ${frame.style}`}></div>
                     <div className="text-xs mt-1 text-center">{frame.name}</div>
                   </button>
                 ))}
