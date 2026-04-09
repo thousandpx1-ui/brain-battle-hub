@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, Star, Medal, User } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 
-import { getFullLeaderboard, saveScore } from "@/lib/d1-client.js";
+import { getFullLeaderboard, saveScore } from "@/lib/d1-client";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 function getTimeUntilMidnight(): string {

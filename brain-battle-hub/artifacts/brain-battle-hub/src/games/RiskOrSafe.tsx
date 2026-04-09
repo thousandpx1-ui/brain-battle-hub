@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { saveScore } from "@/lib/d1-client.js";
+import { saveScore } from "@/lib/d1-client";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
