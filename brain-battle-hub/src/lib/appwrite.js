@@ -1,5 +1,12 @@
 import { Client, Databases, ID } from "appwrite";
 
+function log(msg) {
+  const div = document.createElement("div");
+  div.innerText = msg;
+  div.style.color = "red";
+  document.body.appendChild(div);
+}
+
 const client = new Client();
 
 client
@@ -12,7 +19,7 @@ const COLLECTION_ID = "scores";
 const databases = new Databases(client);
 
 async function saveScore(score, game = "unknown") {
-  console.log("Saving score:", score);
+  log("Saving score: " + score);
 
   try {
     // Check if user already has scores
@@ -31,7 +38,7 @@ async function saveScore(score, game = "unknown") {
           game: game
         }
       );
-      console.log("Saved successfully:", res);
+      log("Saved successfully: " + JSON.stringify(res));
     } else if (score > existing.score) {
       // Update only if new score is higher
       await databases.updateDocument(
@@ -40,12 +47,12 @@ async function saveScore(score, game = "unknown") {
         existing.$id,
         { score: score }
       );
-      console.log("Score updated (higher):", score);
+      log("Score updated (higher): " + score);
     } else {
-      console.log("Score not saved (lower or equal):", score, "vs best:", existing.score);
+      log("Score not saved (lower or equal): " + score + " vs best: " + existing.score);
     }
   } catch (error) {
-    console.error("Error saving score:", error);
+    log("SAVE ERROR: " + error.message);
   }
 }
 
