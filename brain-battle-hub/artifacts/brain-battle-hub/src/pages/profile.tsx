@@ -16,7 +16,7 @@ const frames = [
   { id: 'red', name: 'Red', style: 'border-4 border-red-500 rounded-full' },
   { id: 'green', name: 'Green', style: 'border-4 border-green-500 rounded-full' },
   { id: 'purple', name: 'Purple', style: 'border-4 border-purple-500 rounded-full' },
-  { id: 'rainbow', name: 'Rainbow', style: 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 rounded-full p-1' },
+  { id: 'rainbow', name: 'Prismatic', style: 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 rounded-full p-1' },
   { id: 'black', name: 'Black', style: 'border-4 border-black rounded-full' },
 ];
 
@@ -143,14 +143,10 @@ export default function Profile() {
                     <div className={`w-8 h-8 mx-auto ${frame.style}`}>
                       {frame.id === 'rainbow' ? (
                         <div className="bg-white rounded-full p-0.5">
-                          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                            <User className="w-3 h-3" />
-                          </div>
+                          <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
                         </div>
                       ) : (
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4" />
-                        </div>
+                        <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
                       )}
                     </div>
                     <div className="text-xs mt-1 text-center">{frame.name}</div>
