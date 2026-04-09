@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { saveScore } from "@/lib/appwrite.js";
+
+import { saveScore } from "@/lib/d1-client.js";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 

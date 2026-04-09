@@ -1,0 +1,113 @@
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+
+type Bindings = {
+  DB: D1Database;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+app.use('*', cors());
+app.use('*', logger());
+
+// Save score endpoint
+app.post('/api/scores', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id, username, score, game_id } = body;
+
+    if (!username || typeof score !== 'number') {
+      return c.json({ error: 'Invalid request body' }, 400);
+    }
+
+    const result = await c.env.DB.prepare(
+      'INSERT INTO leaderboard (user_id, username, score, game_id) VALUES (?, ?, ?, ?)'
+    )
+      .bind(user_id, username, score, game_id || 'unknown')
+      .run();
+
+    return c.json({
+      id: result.meta.last_row_id,
+      user_id,
+      username,
+      score,
+      game_id: game_id || 'unknown'
+    });
+  } catch (error) {
+    console.error('Error saving score:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Get all-time leaderboard
+app.get('/api/leaderboard/all-time', async (c) => {
+  try {
+    const result = await c.env.DB.prepare(`
+      SELECT
+        username,
+        SUM(score) as total_score,
+        game_id,
+        MAX(created_at) as latest_created_at
+      FROM leaderboard
+      GROUP BY username
+      ORDER BY total_score DESC
+      LIMIT 100
+    `).all();
+
+    const leaderboard = result.results.map((row, index) => ({
+      rank: index + 1,
+      username: row.username,
+      score: Number(row.total_score),
+      gameId: row.game_id,
+      createdAt: row.latest_created_at
+    }));
+
+    return c.json(leaderboard);
+  } catch (error) {
+    console.error('Error fetching all-time leaderboard:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Get today's leaderboard
+app.get('/api/leaderboard/today', async (c) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString();
+
+    const result = await c.env.DB.prepare(`
+      SELECT
+        username,
+        SUM(score) as total_score,
+        game_id,
+        MAX(created_at) as latest_created_at
+      FROM leaderboard
+      WHERE created_at >= ?
+      GROUP BY username
+      ORDER BY total_score DESC
+      LIMIT 100
+    `).bind(todayStr).all();
+
+    const leaderboard = result.results.map((row, index) => ({
+      rank: index + 1,
+      username: row.username,
+      score: Number(row.total_score),
+      gameId: row.game_id,
+      createdAt: row.latest_created_at
+    }));
+
+    return c.json(leaderboard);
+  } catch (error) {
+    console.error('Error fetching today leaderboard:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Health check
+app.get('/api/health', (c) => {
+  return c.json({ status: 'ok' });
+});
+
+export default app;

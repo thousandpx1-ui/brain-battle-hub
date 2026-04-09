@@ -1,34 +1,27 @@
-# Fix Score Leaderboard Cap at 100 - Appwrite Integration (Continued)
+# Migration from Appwrite to Cloudflare D1
 
-## Progress
-Completed: 4/8
+## Migration Complete ✅
 
-**Step 1: appwrite.js updates** ✅
-- [x] Add `createdAt` to save/submit
-- [x] `getFullLeaderboard(global|daily)`: listDocuments → filter/sort desc score
-- [x] `submitScoreFull`: createDocument per score (username)
+Successfully migrated the leaderboard functionality from Appwrite to Cloudflare D1:
 
-**Step 2: leaderboard.tsx** ✅
-- [x] Import getFullLeaderboard
-- [x] useState remoteData, useEffect fetch on period/username change
-- [x] Replace localScores with appwrite data + dedup/sort logic (server-side)
-- [x] Player rank calc from remote (w/ local fallback)
+**Completed Tasks:**
+- ✅ Removed all Appwrite dependencies from package.json files
+- ✅ Removed appwrite.js library files
+- ✅ Removed Appwrite imports from all components
+- ✅ Set up Cloudflare D1 database configuration
+- ✅ Created D1 database schema for leaderboard
+- ✅ Implemented Cloudflare Worker API with D1 integration
+- ✅ Created D1 client library for frontend
+- ✅ Updated all components to use new D1 functions
 
-**Step 3: home.tsx** ✅
-- [x] Similar fetch top 5
+**Key Changes:**
+- Replaced Appwrite SDK with Cloudflare D1 + Hono worker
+- Created REST API endpoints for score submission and leaderboard retrieval
+- Maintained backward compatibility with existing component interfaces
+- Added proper error handling and logging
 
-**Step 4: game.tsx** ✅
-- [x] Add submitScoreFull alongside saveScore for full list
-- [x] Both normal + doubled
-
-**Step 5: Test**
-- [x] Submit score >100
-- [x] Check leaderboard shows uncapped
-- [x] Daily filter
-- [x] Error fallback to local
-
-**Step 6: Cleanup**
-- [ ] Remove local-leaderboard if stable
-- [ ] Polish loading states
-
-**Step 7: attempt_completion**
+**Next Steps:**
+- Deploy the Cloudflare Worker and D1 database
+- Test the leaderboard functionality
+- Remove local-leaderboard fallback if D1 proves stable
+- Polish loading states and error handling

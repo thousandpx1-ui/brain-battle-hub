@@ -1,8 +1,12 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "brain-battle-hub"
-pages_build_output_dir = "artifacts/brain-battle-hub/dist/public"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "brain-battle-hub-db"
+database_id = "create-new"
 
 [vars]
-PORT = "3000"
-BASE_PATH = "/"
 NODE_ENV = "production"

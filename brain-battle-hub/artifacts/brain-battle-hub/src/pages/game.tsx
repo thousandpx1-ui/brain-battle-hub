@@ -8,7 +8,8 @@ import { DontBlink } from "@/games/DontBlink";
 import { FakeTapTrap } from "@/games/FakeTapTrap";
 import { IllusionFinder } from "@/games/IllusionFinder";
 import { RiskOrSafe } from "@/games/RiskOrSafe";
-import { saveScore } from "@/lib/appwrite.js";
+
+import { saveScore } from "@/lib/d1-client.js";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { InterstitialAd } from "@/components/interstitial-ad";

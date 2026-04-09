@@ -6,7 +6,8 @@ import { GAMES } from "@/lib/games";
 import { useAppState } from "@/hooks/useAppState";
 import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
-import { getFullLeaderboard } from "@/lib/appwrite.js";
+
+import { getFullLeaderboard } from "@/lib/d1-client.js";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 function formatScore(score: number): string {
