@@ -25,16 +25,14 @@ async function saveScore(score: number, username?: string | null): Promise<any> 
     const userId = username || "guest_" + Date.now();
     const finalUsername = username || "guest_" + Date.now();
 
-    const response = await fetch(`${API_BASE_URL}/api/scores`, {
+    const response = await fetch(`${API_BASE_URL}/save-score`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        user_id: userId,
-        username: finalUsername,
-        score: score,
-        game_id: 'unknown'
+        userId: userId,
+        score: score
       })
     });
 
@@ -54,13 +52,21 @@ async function saveScore(score: number, username?: string | null): Promise<any> 
 // Get all-time leaderboard
 async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/leaderboard/all-time`);
+    const response = await fetch(`${API_BASE_URL}/leaderboard`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
     console.log('All-time leaderboard:', data.length, 'entries');
-    return data;
+
+    // Transform the response to match expected format
+    return data.map((entry: any, index: number) => ({
+      rank: index + 1,
+      username: entry.userId,
+      score: entry.score,
+      gameId: 'unknown',
+      createdAt: entry.createdAt
+    }));
   } catch (error) {
     console.error('Error fetching all-time leaderboard:', error);
     return [];
@@ -70,13 +76,28 @@ async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
 // Get today's leaderboard
 async function getTodayLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/leaderboard/today`);
+    const response = await fetch(`${API_BASE_URL}/leaderboard`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data = await response.json();
-    console.log('Today leaderboard:', data.length, 'entries');
-    return data;
+    const allData = await response.json();
+
+    // Filter for today's entries
+    const today = new Date().toDateString();
+    const todayData = allData.filter((entry: any) =>
+      new Date(entry.createdAt).toDateString() === today
+    );
+
+    console.log('Today leaderboard:', todayData.length, 'entries');
+
+    // Transform the response to match expected format
+    return todayData.map((entry: any, index: number) => ({
+      rank: index + 1,
+      username: entry.userId,
+      score: entry.score,
+      gameId: 'unknown',
+      createdAt: entry.createdAt
+    }));
   } catch (error) {
     console.error('Error fetching today leaderboard:', error);
     return [];

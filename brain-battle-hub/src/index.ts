@@ -75,7 +75,7 @@ app.get('/api/leaderboard/today', async (c) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString();
+    const todayStr = today.toISOString().split('T')[0]; // Get YYYY-MM-DD format
 
     const result = await c.env.DB.prepare(`
       SELECT
@@ -84,7 +84,7 @@ app.get('/api/leaderboard/today', async (c) => {
         game_id,
         MAX(created_at) as latest_created_at
       FROM leaderboard
-      WHERE created_at >= ?
+      WHERE date(created_at) >= ?
       GROUP BY username
       ORDER BY total_score DESC
       LIMIT 100
