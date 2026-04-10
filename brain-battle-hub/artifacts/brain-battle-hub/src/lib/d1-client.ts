@@ -10,6 +10,31 @@ interface LeaderboardEntry {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mute-art-58b0.thousandpx1.workers.dev';
 
+// Known game names to filter out from leaderboard
+const GAME_NAMES = [
+  'RiskOrSafe',
+  'Risk or Safe',
+  'Memory Collapse',
+  'DontBlink',
+  'FakeTapTrap',
+  'IllusionFinder',
+  'Illusion Finder'
+];
+
+function isValidUsername(username: string): boolean {
+  // Filter out known game names
+  if (GAME_NAMES.includes(username)) return false;
+
+  // Filter out usernames that look like game IDs or test entries
+  if (username.startsWith('guest_')) return false;
+  if (username.includes('test')) return false;
+
+  // Filter out empty or very short usernames
+  if (!username || username.length < 2) return false;
+
+  return true;
+}
+
 function log(msg: string) {
   const div = document.createElement("div");
   div.innerText = msg;
@@ -22,8 +47,14 @@ async function saveScore(score: number, username?: string | null): Promise<any> 
   log("Saving score: " + score + " for " + (username || "guest"));
 
   try {
-    const userId = username || "guest_" + Date.now();
-    const finalUsername = username || "guest_" + Date.now();
+    let userId = username || "guest_" + Date.now();
+    let finalUsername = username || "guest_" + Date.now();
+
+    // Validate username - don't save if it looks like a game name
+    if (!isValidUsername(finalUsername)) {
+      log("Skipping save for invalid username: " + finalUsername);
+      return null;
+    }
 
     const response = await fetch(`${API_BASE_URL}/save-score`, {
       method: 'POST',
@@ -59,8 +90,11 @@ async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
     const data = await response.json();
     console.log('All-time leaderboard:', data.length, 'entries');
 
+    // Filter out invalid usernames (game names, test entries, etc.)
+    const filteredData = data.filter((entry: any) => isValidUsername(entry.userId));
+
     // Transform the response to match expected format
-    return data.map((entry: any, index: number) => ({
+    return filteredData.map((entry: any, index: number) => ({
       rank: index + 1,
       username: entry.userId,
       score: entry.score,
@@ -82,10 +116,10 @@ async function getTodayLeaderboard(): Promise<LeaderboardEntry[]> {
     }
     const allData = await response.json();
 
-    // Filter for today's entries
+    // Filter for today's entries and valid usernames
     const today = new Date().toDateString();
     const todayData = allData.filter((entry: any) =>
-      new Date(entry.createdAt).toDateString() === today
+      new Date(entry.createdAt).toDateString() === today && isValidUsername(entry.userId)
     );
 
     console.log('Today leaderboard:', todayData.length, 'entries');
