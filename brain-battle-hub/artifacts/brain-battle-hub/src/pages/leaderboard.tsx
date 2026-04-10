@@ -95,11 +95,20 @@ export default function Leaderboard() {
         }
 
         // Filter out entries with old usernames that are no longer current
+        // Only filter if the entry could potentially be from this user (has scores in local data)
+        const userScoreUsernames = new Set(localScores.map(s => s.username));
+
         const rawData = Array.from(totalScoreMap.values());
         console.log('Leaderboard: raw data before filtering =', rawData.map(d => d.username));
-        const filteredData = rawData.filter(entry =>
-          !oldUsernames.includes(entry.username)
-        );
+        console.log('Leaderboard: oldUsernames =', oldUsernames);
+        console.log('Leaderboard: userScoreUsernames =', Array.from(userScoreUsernames));
+
+        const filteredData = rawData.filter(entry => {
+          // If this username has local scores, it's likely a current/valid user
+          if (userScoreUsernames.has(entry.username)) return true;
+          // Otherwise, filter out old usernames
+          return !oldUsernames.includes(entry.username);
+        });
         console.log('Leaderboard: filtered data =', filteredData.map(d => d.username));
         const combinedData = filteredData.sort((a, b) => b.score - a.score);
         setLeaderboard(combinedData);
@@ -119,9 +128,12 @@ export default function Leaderboard() {
             totalScoreMap.set(entry.username, { ...entry });
           }
         }
-        const filteredLocalData = Array.from(totalScoreMap.values()).filter(entry =>
-          !oldUsernames.includes(entry.username)
-        );
+        // Apply same filtering logic to local data
+        const userScoreUsernamesLocal = new Set(localScores.map(s => s.username));
+        const filteredLocalData = Array.from(totalScoreMap.values()).filter(entry => {
+          if (userScoreUsernamesLocal.has(entry.username)) return true;
+          return !oldUsernames.includes(entry.username);
+        });
         const localData = filteredLocalData.sort((a, b) => b.score - a.score);
         setLeaderboard(localData);
       } finally {
