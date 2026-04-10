@@ -5,6 +5,7 @@ import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 interface AppState {
   username: string | null;
+  oldUsernames: string[];
   setUsername: (name: string) => void;
   updateUsername: (newName: string) => void;
 
@@ -27,8 +28,19 @@ export const useAppState = create<AppState>()(
   persist(
     (set, get) => ({
       username: null,
+      oldUsernames: [],
       setUsername: (name) => set({ username: name }),
-      updateUsername: (newName) => set({ username: newName }),
+      updateUsername: (newName) => {
+        const oldName = get().username;
+        if (oldName && oldName !== newName) {
+          // Add old username to the list of old usernames
+          const currentOldUsernames = get().oldUsernames;
+          if (!currentOldUsernames.includes(oldName)) {
+            set({ oldUsernames: [...currentOldUsernames, oldName] });
+          }
+        }
+        set({ username: newName });
+      },
 
       profileImage: null,
       setProfileImage: (image) => set({ profileImage: image }),

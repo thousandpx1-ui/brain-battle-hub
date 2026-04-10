@@ -53,7 +53,7 @@ function formatScore(score: number): string {
 // formatScore(1000000000) = "1B"
 
 export default function Leaderboard() {
-  const { username, profileImage } = useAppState();
+  const { username, profileImage, oldUsernames } = useAppState();
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const localScores = useLocalLeaderboard((s) => s.scores); // Fallback
@@ -93,7 +93,11 @@ export default function Leaderboard() {
           }
         }
 
-        const combinedData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+        // Filter out entries with old usernames that are no longer current
+        const filteredData = Array.from(totalScoreMap.values()).filter(entry =>
+          !oldUsernames.includes(entry.username)
+        );
+        const combinedData = filteredData.sort((a, b) => b.score - a.score);
         setLeaderboard(combinedData);
       } catch (error) {
         console.error('Appwrite fetch failed, using local only:', error);
@@ -111,7 +115,10 @@ export default function Leaderboard() {
             totalScoreMap.set(entry.username, { ...entry });
           }
         }
-        const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+        const filteredLocalData = Array.from(totalScoreMap.values()).filter(entry =>
+          !oldUsernames.includes(entry.username)
+        );
+        const localData = filteredLocalData.sort((a, b) => b.score - a.score);
         setLeaderboard(localData);
       } finally {
         setLoading(false);
