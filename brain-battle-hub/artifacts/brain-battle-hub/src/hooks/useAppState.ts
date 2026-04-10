@@ -29,18 +29,18 @@ export const useAppState = create<AppState>()(
     (set, get) => ({
       username: null,
       oldUsernames: [],
-      setUsername: (name) => set({ username: name }),
-      updateUsername: (newName) => {
-        const oldName = get().username;
-        if (oldName && oldName !== newName) {
-          // Add old username to the list of old usernames
+      setUsername: (name) => {
+        const currentUsername = get().username;
+        if (currentUsername && currentUsername !== name) {
+          // Add current username to old usernames before changing
           const currentOldUsernames = get().oldUsernames;
-          if (!currentOldUsernames.includes(oldName)) {
-            set({ oldUsernames: [...currentOldUsernames, oldName] });
+          if (!currentOldUsernames.includes(currentUsername)) {
+            set({ oldUsernames: [...currentOldUsernames, currentUsername] });
           }
         }
-        set({ username: newName });
+        set({ username: name });
       },
+      updateUsername: (newName) => set({ username: newName }),
 
       profileImage: null,
       setProfileImage: (image) => set({ profileImage: image }),

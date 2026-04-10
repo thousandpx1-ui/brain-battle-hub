@@ -66,6 +66,7 @@ export default function Leaderboard() {
 
   // Fetch leaderboard from Appwrite
   useEffect(() => {
+    console.log('Leaderboard: oldUsernames =', oldUsernames);
     const fetchLeaderboard = async () => {
       setLoading(true);
       try {
@@ -94,9 +95,12 @@ export default function Leaderboard() {
         }
 
         // Filter out entries with old usernames that are no longer current
-        const filteredData = Array.from(totalScoreMap.values()).filter(entry =>
+        const rawData = Array.from(totalScoreMap.values());
+        console.log('Leaderboard: raw data before filtering =', rawData.map(d => d.username));
+        const filteredData = rawData.filter(entry =>
           !oldUsernames.includes(entry.username)
         );
+        console.log('Leaderboard: filtered data =', filteredData.map(d => d.username));
         const combinedData = filteredData.sort((a, b) => b.score - a.score);
         setLeaderboard(combinedData);
       } catch (error) {
