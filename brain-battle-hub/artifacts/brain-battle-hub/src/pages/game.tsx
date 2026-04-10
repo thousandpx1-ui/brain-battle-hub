@@ -49,7 +49,7 @@ export default function Game() {
     // Save to Appwrite database
     try {
       console.log('💾 Attempting to save to Appwrite database...');
-      await saveScore(finalScore, game.name);
+      await saveScore(finalScore, username);
       console.log('✅ Score saved to database successfully');
     } catch (error) {
       console.error('❌ Failed to save score to database:', error);
@@ -76,7 +76,7 @@ export default function Game() {
     setScore(doubled);
     if (username) {
       addLocalScore({ gameId: game.id, username, score: doubled });
-      await saveScore(doubled, game.name);
+      await saveScore(doubled, username);
     }
   };
 

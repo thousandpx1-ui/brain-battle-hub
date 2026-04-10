@@ -44,7 +44,7 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
       addLocalScore({ gameId: 'risk', username, score: currentScore });
       console.log('✅ RiskOrSafe: Saved to local leaderboard');
       // Save to Appwrite database
-      await saveScore(currentScore, 'RiskOrSafe');
+      await saveScore(currentScore, username);
       console.log('✅ RiskOrSafe: Saved to database');
     } catch (error) {
       console.error('❌ RiskOrSafe: Failed to save progress:', error);
