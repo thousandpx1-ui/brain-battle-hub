@@ -51,17 +51,33 @@ app.post('/save-score', async (c) => {
       return c.json({ error: 'Invalid request body' }, 400);
     }
 
-    const result = await c.env.DB.prepare(
-      'INSERT INTO leaderboard (user_id, username, score, game_id, profile_frame) VALUES (?, ?, ?, ?, ?)'
-    )
-      .bind(userId, userId, score, 'unknown', profileFrame || null)
-      .run();
+    // Check if user exists
+    const existing = await c.env.DB.prepare(
+      "SELECT score FROM leaderboard WHERE user_id = ?"
+    ).bind(userId).first();
+
+    if (existing) {
+      // Only update if new score is higher
+      if (score > existing.score) {
+        await c.env.DB.prepare(
+          "UPDATE leaderboard SET score = ?, created_at = ?, profile_frame = ? WHERE user_id = ?"
+        )
+          .bind(score, new Date().toISOString(), profileFrame || null, userId)
+          .run();
+      }
+    } else {
+      // Insert new user
+      await c.env.DB.prepare(
+        "INSERT INTO leaderboard (user_id, username, score, game_id, profile_frame, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+        .bind(userId, userId, score, 'unknown', profileFrame || null, new Date().toISOString())
+        .run();
+    }
 
     return c.json({
-      id: result.meta.last_row_id,
+      success: true,
       userId,
-      score,
-      profileFrame
+      score
     });
   } catch (error) {
     console.error('Error saving score:', error);

@@ -42,8 +42,14 @@ function isValidUsername(username: string): boolean {
 async function saveScore(score: number, username?: string | null, profileFrame?: string | null): Promise<any> {
 
   try {
-    let userId = username || "guest_" + Date.now();
-    let finalUsername = username || "guest_" + Date.now();
+    // Use persistent userId from localStorage instead of generating new one each time
+    let userId = localStorage.getItem("brainBattleUserId");
+    if (!userId) {
+      userId = "user_" + Math.random().toString(36).substring(2, 8);
+      localStorage.setItem("brainBattleUserId", userId);
+    }
+
+    let finalUsername = username || userId;
 
     // Validate username - don't save if it looks like a game name
     if (!isValidUsername(finalUsername)) {
