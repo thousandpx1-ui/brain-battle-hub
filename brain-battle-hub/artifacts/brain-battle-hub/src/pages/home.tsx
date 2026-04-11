@@ -29,7 +29,7 @@ function formatScore(score: number): string {
 export default function Home() {
   const { username, streak, updateStreak } = useAppState();
   const [showUsername, setShowUsername] = useState(false);
-  const [dailyLeaderboard, setDailyLeaderboard] = useState([]);
+  const [dailyLeaderboard, setDailyLeaderboard] = useState<Array<{username: string; score: number; createdAt?: string}>>([]);
   const [dailyLoading, setDailyLoading] = useState(true);
   const localScores = useLocalLeaderboard((s) => s.scores);
   const _version = useLocalLeaderboard((s) => s.version);

@@ -39,13 +39,13 @@ router.get("/leaderboard", async (req, res) => {
 
   const rows = await baseQuery.orderBy(desc(sql`sum(${scoresTable.score})`)).limit(limitVal);
 
-  const entries = rows.map((r, i) => ({
-    rank: i + 1,
-    username: r.username,
-    gameId: r.latestGameId,
-    score: Number(r.totalScore),
-    createdAt: r.latestCreatedAt.toISOString(),
-  }));
+   const entries = rows.map((r, i) => ({
+     rank: i + 1,
+     username: r.username,
+     gameId: r.latestGameId,
+     score: Number(r.totalScore),
+     createdAt: r.latestCreatedAt,
+   }));
 
   res.json(entries);
 });

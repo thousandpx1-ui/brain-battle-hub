@@ -19,6 +19,7 @@ export function InterstitialAd({ open, onOpenChange }: { open: boolean; onOpenCh
       }, 1000);
       return () => clearInterval(timer);
     }
+    return undefined;
   }, [open]);
 
   if (!open) return null;

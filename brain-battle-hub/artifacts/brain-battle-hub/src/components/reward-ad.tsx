@@ -19,6 +19,7 @@ export function RewardAd({ open, onReward, onCancel }: { open: boolean; onReward
       }, 1000);
       return () => clearInterval(timer);
     }
+    return undefined;
   }, [open, onReward]);
 
   if (!open) return null;

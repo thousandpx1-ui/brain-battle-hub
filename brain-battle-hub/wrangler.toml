@@ -9,13 +9,5 @@ binding = "DB"
 database_name = "brain-battle-hub-db"
 database_id = "2c53ffc5-d16a-4221-826f-9653d4f0a9fc"
 
-[[durable_objects.bindings]]
-name = "LEADERBOARD"
-class_name = "LeaderboardDO"
-
-[[migrations]]
-tag = "v1"
-new_classes = ["LeaderboardDO"]
-
 [vars]
 NODE_ENV = "production"
