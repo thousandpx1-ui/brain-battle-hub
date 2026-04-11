@@ -10,16 +10,10 @@ interface LeaderboardEntry {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mute-art-58b0.thousandpx1.workers.dev';
 
-function log(msg) {
-  const div = document.createElement("div");
-  div.innerText = msg;
-  div.style.color = "red";
-  document.body.appendChild(div);
-}
+
 
 // Save score to D1 database
 async function saveScore(score: number, username?: string | null): Promise<any> {
-  log("Saving score: " + score + " for " + (username || "guest"));
 
   try {
     const userId = username || "guest_" + Date.now();
@@ -43,10 +37,8 @@ async function saveScore(score: number, username?: string | null): Promise<any> 
     }
 
     const result = await response.json();
-    log("Saved successfully: " + JSON.stringify(result));
     return result;
   } catch (error) {
-    log("SAVE ERROR: " + error.message);
     throw error;
   }
 }

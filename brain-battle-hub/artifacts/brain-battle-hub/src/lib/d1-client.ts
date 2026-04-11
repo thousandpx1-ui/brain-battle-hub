@@ -35,16 +35,10 @@ function isValidUsername(username: string): boolean {
   return true;
 }
 
-function log(msg: string) {
-  const div = document.createElement("div");
-  div.innerText = msg;
-  div.style.color = "red";
-  document.body.appendChild(div);
-}
+
 
 // Save score to D1 database
 async function saveScore(score: number, username?: string | null): Promise<any> {
-  log("Saving score: " + score + " for " + (username || "guest"));
 
   try {
     let userId = username || "guest_" + Date.now();
@@ -52,7 +46,6 @@ async function saveScore(score: number, username?: string | null): Promise<any> 
 
     // Validate username - don't save if it looks like a game name
     if (!isValidUsername(finalUsername)) {
-      log("Skipping save for invalid username: " + finalUsername);
       return null;
     }
 
@@ -72,10 +65,8 @@ async function saveScore(score: number, username?: string | null): Promise<any> 
     }
 
     const result = await response.json();
-    log("Saved successfully: " + JSON.stringify(result));
     return result;
   } catch (error) {
-    log("SAVE ERROR: " + error.message);
     throw error;
   }
 }
