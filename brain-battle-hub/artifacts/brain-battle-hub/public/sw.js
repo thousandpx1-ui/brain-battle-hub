@@ -12,13 +12,13 @@ self.addEventListener('install', (event) => {
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
-      }
-    )
-  );
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+
+  // ❌ Skip API requests
+  if (url.hostname.includes("workers.dev")) {
+    return;
+  }
+
+  event.respondWith(fetch(event.request));
 });

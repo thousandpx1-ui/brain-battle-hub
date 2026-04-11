@@ -27,6 +27,7 @@ export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
   // Load leaderboard
   const loadLeaderboard = async () => {
@@ -46,7 +47,32 @@ export default function Leaderboard() {
     loadLeaderboard();
   }, []);
 
-  // Auto-refresh every 2 seconds
+  // WebSocket for real-time updates
+  useEffect(() => {
+    const wsUrl = "wss://mute-art-58b0.thousandpx1.workers.dev";
+    const newWs = new WebSocket(wsUrl);
+
+    newWs.onmessage = (event) => {
+      const players = JSON.parse(event.data);
+      setLeaderboard(players);
+    };
+
+    newWs.onclose = () => {
+      console.log('WebSocket closed');
+    };
+
+    newWs.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    setWs(newWs);
+
+    return () => {
+      newWs.close();
+    };
+  }, []);
+
+  // Polling fallback every 2 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       loadLeaderboard();
