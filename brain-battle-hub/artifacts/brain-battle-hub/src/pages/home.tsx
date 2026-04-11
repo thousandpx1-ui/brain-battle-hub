@@ -34,60 +34,28 @@ export default function Home() {
   const localScores = useLocalLeaderboard((s) => s.scores);
   const _version = useLocalLeaderboard((s) => s.version);
 
-  // Fetch daily leaderboard
+  // Fetch daily leaderboard from local data
   useEffect(() => {
     const fetchDailyLeaderboard = async () => {
       setDailyLoading(true);
-      try {
-        const data = await getFullLeaderboard('daily');
+      const today = new Date().toDateString();
+      const todayScores = localScores.filter(entry =>
+        new Date(entry.createdAt).toDateString() === today
+      );
 
-        // Always combine database data with local data
-        const today = new Date().toDateString();
-        const todayScores = localScores.filter(entry =>
-          new Date(entry.createdAt).toDateString() === today
-        );
-
-        const totalScoreMap = new Map();
-
-        // Add database data first
-        for (const entry of data) {
+      const totalScoreMap = new Map();
+      for (const entry of todayScores) {
+        const existing = totalScoreMap.get(entry.username);
+        if (existing) {
+          existing.score += entry.score;
+        } else {
           totalScoreMap.set(entry.username, { ...entry });
         }
-
-        // Add local data (will combine scores if user exists in both)
-        for (const entry of todayScores) {
-          const existing = totalScoreMap.get(entry.username);
-          if (existing) {
-            existing.score += entry.score;
-          } else {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
-        }
-
-        const combinedData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-        const top5 = combinedData.slice(0, 5);
-        setDailyLeaderboard(top5);
-      } catch (error) {
-        // Fallback to local only if database completely fails
-        const today = new Date().toDateString();
-        const todayScores = localScores.filter(entry =>
-          new Date(entry.createdAt).toDateString() === today
-        );
-
-        const totalScoreMap = new Map();
-        for (const entry of todayScores) {
-          const existing = totalScoreMap.get(entry.username);
-          if (existing) {
-            existing.score += entry.score;
-          } else {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
-        }
-        const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-        setDailyLeaderboard(localData);
-      } finally {
-        setDailyLoading(false);
       }
+      const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+      const top5 = localData.slice(0, 5);
+      setDailyLeaderboard(top5);
+      setDailyLoading(false);
     };
 
     fetchDailyLeaderboard();

@@ -77,81 +77,33 @@ export default function Leaderboard() {
   const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
   const [, setTick] = useState(0);
 
-  // Fetch leaderboard from Appwrite
+  // Fetch leaderboard from local data
   useEffect(() => {
     console.log('Leaderboard: oldUsernames =', oldUsernames);
     const fetchLeaderboard = async () => {
       setLoading(true);
-      try {
-        const data = await getFullLeaderboard(period);
+      const allRawScores = period === "daily"
+        ? localScores.filter(entry => isToday(entry.createdAt))
+        : [...localScores];
 
-        // Always check local data as well and combine
-        const allRawScores = period === "daily"
-          ? localScores.filter(entry => isToday(entry.createdAt))
-          : [...localScores];
-
-        const totalScoreMap = new Map();
-
-        // Add database data first
-        for (const entry of data) {
+      const totalScoreMap = new Map();
+      for (const entry of allRawScores) {
+        const existing = totalScoreMap.get(entry.username);
+        if (existing) {
+          existing.score += entry.score;
+        } else {
           totalScoreMap.set(entry.username, { ...entry });
         }
-
-        // Add local data (will combine if user exists in both)
-        for (const entry of allRawScores) {
-          const existing = totalScoreMap.get(entry.username);
-          if (existing) {
-            existing.score += entry.score;
-          } else {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
-        }
-
-        // Filter out entries with old usernames that are no longer current
-        // Only filter if the entry could potentially be from this user (has scores in local data)
-        const userScoreUsernames = new Set(localScores.map(s => s.username));
-
-        const rawData = Array.from(totalScoreMap.values());
-        console.log('Leaderboard: raw data before filtering =', rawData.map(d => d.username));
-        console.log('Leaderboard: oldUsernames =', oldUsernames);
-        console.log('Leaderboard: userScoreUsernames =', Array.from(userScoreUsernames));
-
-        const filteredData = rawData.filter(entry => {
-          // If this username has local scores, it's likely a current/valid user
-          if (userScoreUsernames.has(entry.username)) return true;
-          // Otherwise, filter out old usernames
-          return !oldUsernames.includes(entry.username);
-        });
-        console.log('Leaderboard: filtered data =', filteredData.map(d => d.username));
-        const combinedData = filteredData.sort((a, b) => b.score - a.score);
-        setLeaderboard(combinedData);
-      } catch (error) {
-        console.error('Appwrite fetch failed, using local only:', error);
-        // Fallback to local only if database completely fails
-        const allRawScores = period === "daily"
-          ? localScores.filter(entry => isToday(entry.createdAt))
-          : [...localScores];
-
-        const totalScoreMap = new Map();
-        for (const entry of allRawScores) {
-          const existing = totalScoreMap.get(entry.username);
-          if (existing) {
-              existing.score += entry.score;
-          } else {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
-        }
-        // Apply same filtering logic to local data
-        const userScoreUsernamesLocal = new Set(localScores.map(s => s.username));
-        const filteredLocalData = Array.from(totalScoreMap.values()).filter(entry => {
-          if (userScoreUsernamesLocal.has(entry.username)) return true;
-          return !oldUsernames.includes(entry.username);
-        });
-        const localData = filteredLocalData.sort((a, b) => b.score - a.score);
-        setLeaderboard(localData);
-      } finally {
-        setLoading(false);
       }
+      // Apply filtering logic to local data
+      const userScoreUsernamesLocal = new Set(localScores.map(s => s.username));
+      const filteredLocalData = Array.from(totalScoreMap.values()).filter(entry => {
+        if (userScoreUsernamesLocal.has(entry.username)) return true;
+        return !oldUsernames.includes(entry.username);
+      });
+      const localData = filteredLocalData.sort((a, b) => b.score - a.score);
+      setLeaderboard(localData);
+      setLoading(false);
     };
 
     fetchLeaderboard();
