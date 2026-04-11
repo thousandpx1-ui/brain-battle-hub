@@ -16,6 +16,15 @@ export function InstallButton() {
       return;
     }
 
+    // Only show on mobile/touch devices
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     ('ontouchstart' in window) ||
+                     (navigator.maxTouchPoints > 0);
+
+    if (!isMobile) {
+      return;
+    }
+
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
