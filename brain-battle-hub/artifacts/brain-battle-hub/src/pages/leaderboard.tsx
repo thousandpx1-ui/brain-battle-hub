@@ -228,29 +228,25 @@ export default function Leaderboard() {
                   key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  {isMe && profileImage ? (
-                    <Avatar className="w-10 h-10 mr-4 border-2 border-primary">
+                  <Avatar className={`w-10 h-10 mr-4 ${isMe && profileImage ? 'border-2 border-primary' : 'border-2 border-gray-200'}`}>
+                    {isMe && profileImage ? (
                       <AvatarImage src={profileImage} alt={username || "User"} />
-                      <AvatarFallback>
+                    ) : null}
+                    <AvatarFallback className={`rounded-full flex items-center justify-center ${
+                      i === 0 ? 'bg-yellow-100' :
+                      i === 1 ? 'bg-gray-100' :
+                      i === 2 ? 'bg-amber-100' :
+                      'bg-gray-50'
+                    }`}>
+                      {isMe && profileImage ? (
                         <User className="w-5 h-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <Avatar className={`w-10 h-10 mr-4`}>
-                      <AvatarFallback className={`rounded-full flex items-center justify-center ${
-                        i === 0 ? 'bg-yellow-100' :
-                        i === 1 ? 'bg-gray-100' :
-                        i === 2 ? 'bg-amber-100' :
-                        'bg-gray-50'
-                      }`}>
-                        {medalEmoji ? (
-                          <span className="text-2xl">{medalEmoji}</span>
-                        ) : (
-                          <span className="font-black text-sm text-gray-400">{entry.username.charAt(0).toUpperCase()}</span>
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
+                      ) : medalEmoji ? (
+                        <span className="text-2xl">{medalEmoji}</span>
+                      ) : (
+                        <span className="font-black text-sm text-gray-400">{entry.username.charAt(0).toUpperCase()}</span>
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
 
                   <div className="flex-1 min-w-0">
                     <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>
