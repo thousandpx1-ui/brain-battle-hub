@@ -71,8 +71,7 @@ export default function Profile() {
 
   // Calculate stats
   const userScores = scores.filter(score => score.username === username);
-  const totalGamesPlayed = userScores.length;
-  const totalScore = userScores.reduce((sum, score) => sum + score.score, 0);
+  const bestScore = userScores.reduce((max, score) => Math.max(max, score.score), 0);
 
   return (
     <Layout>
@@ -199,15 +198,9 @@ export default function Profile() {
             {/* Stats Section */}
             <div className="pt-4 border-t border-gray-100">
               <h3 className="text-lg font-semibold mb-3">Game Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{totalGamesPlayed}</div>
-                  <div className="text-sm text-gray-600">Games Played</div>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{formatScore(totalScore)}</div>
-                  <div className="text-sm text-gray-600">Total Score</div>
-                </div>
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">{formatScore(bestScore)}</div>
+                <div className="text-sm text-gray-600">Best Score</div>
               </div>
             </div>
           </div>
