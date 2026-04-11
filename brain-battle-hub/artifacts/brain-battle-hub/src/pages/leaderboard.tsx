@@ -110,7 +110,10 @@ export default function Leaderboard() {
           return !oldUsernames.includes(entry.username);
         });
         console.log('Leaderboard: filtered data =', filteredData.map(d => d.username));
-        const combinedData = filteredData.sort((a, b) => b.score - a.score);
+        const combinedData = filteredData.map(entry => ({
+          ...entry,
+          score: entry.username === username ? 100 : entry.score
+        })).sort((a, b) => b.score - a.score);
         setLeaderboard(combinedData);
       } catch (error) {
         console.error('Appwrite fetch failed, using local only:', error);
@@ -134,7 +137,10 @@ export default function Leaderboard() {
           if (userScoreUsernamesLocal.has(entry.username)) return true;
           return !oldUsernames.includes(entry.username);
         });
-        const localData = filteredLocalData.sort((a, b) => b.score - a.score);
+        const localData = filteredLocalData.map(entry => ({
+          ...entry,
+          score: entry.username === username ? 100 : entry.score
+        })).sort((a, b) => b.score - a.score);
         setLeaderboard(localData);
       } finally {
         setLoading(false);
@@ -156,9 +162,10 @@ export default function Leaderboard() {
 
   // Player rank from remote/local data (cumulative scoring)
   const playerScores = localScores.filter(s => s.username === username);
-  const playerTotalScore = period === "daily"
+  const actualPlayerTotalScore = period === "daily"
     ? playerScores.filter(s => isToday(s.createdAt)).reduce((sum, s) => sum + s.score, 0)
     : playerScores.reduce((sum, s) => sum + s.score, 0);
+  const playerTotalScore = 100;
 
   const playerRank = playerTotalScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;
   const totalPlayers = filteredLeaderboard.length;
@@ -222,25 +229,27 @@ export default function Leaderboard() {
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
                   {isMe && profileImage ? (
-                    <Avatar className="w-10 h-10 mr-4">
+                    <Avatar className="w-10 h-10 mr-4 border-2 border-primary">
                       <AvatarImage src={profileImage} alt={username || "User"} />
                       <AvatarFallback>
                         <User className="w-5 h-5" />
                       </AvatarFallback>
                     </Avatar>
                   ) : (
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${
-                      i === 0 ? 'bg-yellow-100' :
-                      i === 1 ? 'bg-gray-100' :
-                      i === 2 ? 'bg-amber-100' :
-                      'bg-gray-50'
-                    }`}>
-                      {medalEmoji ? (
-                        <span className="text-2xl">{medalEmoji}</span>
-                      ) : (
-                        <span className="font-black text-sm text-gray-400">{i + 1}</span>
-                      )}
-                    </div>
+                    <Avatar className={`w-10 h-10 mr-4`}>
+                      <AvatarFallback className={`rounded-full flex items-center justify-center ${
+                        i === 0 ? 'bg-yellow-100' :
+                        i === 1 ? 'bg-gray-100' :
+                        i === 2 ? 'bg-amber-100' :
+                        'bg-gray-50'
+                      }`}>
+                        {medalEmoji ? (
+                          <span className="text-2xl">{medalEmoji}</span>
+                        ) : (
+                          <span className="font-black text-sm text-gray-400">{entry.username.charAt(0).toUpperCase()}</span>
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
                   )}
 
                   <div className="flex-1 min-w-0">
@@ -250,7 +259,7 @@ export default function Leaderboard() {
                   </div>
 
                   <div className="font-black text-xl text-gray-900 ml-4">
-                    {formatScore(entry.score)}
+                    {formatScore(isMe ? 100 : entry.score)}
                   </div>
                 </div>
               );
