@@ -8,6 +8,19 @@ import { useAppState } from "@/hooks/useAppState";
 import { getFullLeaderboard, saveScore } from "@/lib/d1-client";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
+const frames = [
+  { id: 'none', name: 'None', style: '' },
+  { id: 'gold', name: 'Gold', style: 'border-4 border-yellow-400 rounded-full' },
+  { id: 'silver', name: 'Silver', style: 'border-4 border-gray-400 rounded-full' },
+  { id: 'bronze', name: 'Bronze', style: 'border-4 border-amber-600 rounded-full' },
+  { id: 'blue', name: 'Blue', style: 'border-4 border-blue-500 rounded-full' },
+  { id: 'red', name: 'Red', style: 'border-4 border-red-500 rounded-full' },
+  { id: 'green', name: 'Green', style: 'border-4 border-green-500 rounded-full' },
+  { id: 'purple', name: 'Purple', style: 'border-4 border-purple-500 rounded-full' },
+  { id: 'rainbow', name: 'Prismatic', style: 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 rounded-full p-1' },
+  { id: 'black', name: 'Black', style: 'border-4 border-black rounded-full' },
+];
+
 function getTimeUntilMidnight(): string {
   const now = new Date();
   const midnight = new Date(now);
@@ -53,7 +66,7 @@ function formatScore(score: number): string {
 // formatScore(1000000000) = "1B"
 
 export default function Leaderboard() {
-  const { username, profileImage, oldUsernames } = useAppState();
+  const { username, profileImage, profileFrame, oldUsernames } = useAppState();
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const localScores = useLocalLeaderboard((s) => s.scores); // Fallback
@@ -228,25 +241,47 @@ export default function Leaderboard() {
                   key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  <Avatar className={`w-10 h-10 mr-4 ${isMe && profileImage ? 'border-2 border-primary' : 'border-2 border-gray-200'}`}>
-                    {isMe && profileImage ? (
-                      <AvatarImage src={profileImage} alt={username || "User"} />
-                    ) : null}
-                    <AvatarFallback className={`rounded-full flex items-center justify-center ${
-                      i === 0 ? 'bg-yellow-100' :
-                      i === 1 ? 'bg-gray-100' :
-                      i === 2 ? 'bg-amber-100' :
-                      'bg-gray-50'
-                    }`}>
-                      {isMe && profileImage ? (
-                        <User className="w-5 h-5" />
-                      ) : medalEmoji ? (
-                        <span className="text-2xl">{medalEmoji}</span>
+                  {isMe && profileFrame ? (
+                    <div className={`mr-4 ${frames.find(f => f.id === profileFrame)?.style || ''}`}>
+                      {profileFrame === 'rainbow' ? (
+                        <div className="bg-white rounded-full p-0.5">
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage src={profileImage || undefined} alt={username || "User"} />
+                            <AvatarFallback className="text-sm">
+                              <User className="w-4 h-4" />
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
                       ) : (
-                        <span className="font-black text-sm text-gray-400">{entry.username.charAt(0).toUpperCase()}</span>
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={profileImage || undefined} alt={username || "User"} />
+                          <AvatarFallback className="text-sm">
+                            <User className="w-5 h-5" />
+                          </AvatarFallback>
+                        </Avatar>
                       )}
-                    </AvatarFallback>
-                  </Avatar>
+                    </div>
+                  ) : (
+                    <Avatar className={`w-10 h-10 mr-4 border-2 ${isMe && profileImage ? 'border-primary' : 'border-gray-200'}`}>
+                      {isMe && profileImage ? (
+                        <AvatarImage src={profileImage} alt={username || "User"} />
+                      ) : null}
+                      <AvatarFallback className={`rounded-full flex items-center justify-center ${
+                        i === 0 ? 'bg-yellow-100' :
+                        i === 1 ? 'bg-gray-100' :
+                        i === 2 ? 'bg-amber-100' :
+                        'bg-gray-50'
+                      }`}>
+                        {isMe && profileImage ? (
+                          <User className="w-5 h-5" />
+                        ) : medalEmoji ? (
+                          <span className="text-2xl">{medalEmoji}</span>
+                        ) : (
+                          <span className="font-black text-sm text-gray-400">{entry.username.charAt(0).toUpperCase()}</span>
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
 
                   <div className="flex-1 min-w-0">
                     <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>

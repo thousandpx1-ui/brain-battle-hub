@@ -41,6 +41,7 @@ export default function Profile() {
   const { scores, updateUsername } = useLocalLeaderboard();
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
+  const [selectedFrame, setSelectedFrame] = useState(profileFrame);
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,8 +86,8 @@ export default function Profile() {
             {/* Avatar Section */}
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
-                <div className={`${frames.find(f => f.id === profileFrame)?.style || ''}`}>
-                  {profileFrame === 'rainbow' ? (
+                <div className={`${frames.find(f => f.id === selectedFrame)?.style || ''}`}>
+                  {selectedFrame === 'rainbow' ? (
                     <div className="bg-white rounded-full p-1">
                       <Avatar className="w-22 h-22">
                         <AvatarImage src={profileImage || undefined} alt={username || "User"} />
@@ -133,9 +134,9 @@ export default function Profile() {
                 {frames.map((frame) => (
                   <button
                     key={frame.id}
-                    onClick={() => setProfileFrame(frame.id === 'none' ? null : frame.id)}
+                    onClick={() => setSelectedFrame(frame.id === 'none' ? null : frame.id)}
                     className={`h-16 p-2 rounded-lg border-2 flex flex-col items-center justify-center ${
-                      (profileFrame === frame.id || (frame.id === 'none' && !profileFrame))
+                      (selectedFrame === frame.id || (frame.id === 'none' && !selectedFrame))
                         ? 'border-primary bg-primary/10'
                         : 'border-gray-200 hover:border-gray-300'
                     } transition-colors`}
@@ -145,6 +146,11 @@ export default function Profile() {
                   </button>
                 ))}
               </div>
+              {selectedFrame !== profileFrame && (
+                <Button onClick={() => setProfileFrame(selectedFrame)} className="w-full">
+                  Save Frame Changes
+                </Button>
+              )}
             </div>
 
             {/* Username Section */}
