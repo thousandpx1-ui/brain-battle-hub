@@ -8,5 +8,15 @@ binding = "DB"
 database_name = "brain-battle-hub-db"
 database_id = "create-new"
 
+# ✅ ADD THIS (Durable Object binding)
+[[durable_objects.bindings]]
+name = "LEADERBOARD"
+class_name = "LeaderboardDO"
+
+# ✅ ADD THIS (migration required)
+[[migrations]]
+tag = "v1"
+new_classes = ["LeaderboardDO"]
+
 [vars]
 NODE_ENV = "production"
