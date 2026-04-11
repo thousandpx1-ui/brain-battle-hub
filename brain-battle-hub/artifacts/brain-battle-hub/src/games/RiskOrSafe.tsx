@@ -11,7 +11,7 @@ const MULTIPLIERS = [1.3, 1.5, 1.8, 2.0, 2.5, 3.0, 0.8, 1.0, 1.2]; // Better odd
 const WIN_CHANCES = [0.55, 0.60, 0.65, 0.70, 0.75]; // Higher win rates
 
 export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void }) {
-  const { username } = useAppState();
+  const { username, profileFrame } = useAppState();
   const addLocalScore = useLocalLeaderboard((s) => s.addScore);
 
   const [bank, setBank] = useState(100);
@@ -44,7 +44,7 @@ export function RiskOrSafe({ onGameOver }: { onGameOver: (score: number) => void
       addLocalScore({ gameId: 'risk', username, score: currentScore });
       console.log('✅ RiskOrSafe: Saved to local leaderboard');
       // Save to Appwrite database
-      await saveScore(currentScore, username);
+      await saveScore(currentScore, username, profileFrame);
       console.log('✅ RiskOrSafe: Saved to database');
     } catch (error) {
       console.error('❌ RiskOrSafe: Failed to save progress:', error);

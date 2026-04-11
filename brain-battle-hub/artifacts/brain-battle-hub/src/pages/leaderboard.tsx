@@ -235,12 +235,11 @@ export default function Leaderboard() {
                   key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  {isMe && profileFrame ? (
-                    <div className={`mr-4 ${frames.find(f => f.id === profileFrame)?.style || ''}`}>
-                      {profileFrame === 'rainbow' ? (
+                  {entry.profileFrame ? (
+                    <div className={`mr-4 ${frames.find(f => f.id === entry.profileFrame)?.style || ''}`}>
+                      {entry.profileFrame === 'rainbow' ? (
                         <div className="bg-white rounded-full p-0.5">
                           <Avatar className="w-8 h-8">
-                            <AvatarImage src={profileImage || undefined} alt={username || "User"} />
                             <AvatarFallback className="text-sm">
                               <User className="w-4 h-4" />
                             </AvatarFallback>
@@ -248,7 +247,6 @@ export default function Leaderboard() {
                         </div>
                       ) : (
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src={profileImage || undefined} alt={username || "User"} />
                           <AvatarFallback className="text-sm">
                             <User className="w-5 h-5" />
                           </AvatarFallback>

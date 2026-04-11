@@ -23,7 +23,7 @@ export default function Game() {
   const game = getGameById(gameId || "");
   const [gameState, setGameState] = useState<GameState>("start");
   const [score, setScore] = useState(0);
-  const { username, gamesPlayedSession, incrementGamesPlayed, resetGamesPlayedSession } = useAppState();
+  const { username, profileFrame, gamesPlayedSession, incrementGamesPlayed, resetGamesPlayedSession } = useAppState();
   const addLocalScore = useLocalLeaderboard((s) => s.addScore);
 
   const [showInterstitial, setShowInterstitial] = useState(false);
@@ -49,7 +49,7 @@ export default function Game() {
     // Save to Appwrite database
     try {
       console.log('💾 Attempting to save to Appwrite database...');
-      await saveScore(finalScore, username);
+      await saveScore(finalScore, username, profileFrame);
       console.log('✅ Score saved to database successfully');
     } catch (error) {
       console.error('❌ Failed to save score to database:', error);
@@ -76,7 +76,7 @@ export default function Game() {
     setScore(doubled);
     if (username) {
       addLocalScore({ gameId: game.id, username, score: doubled });
-      await saveScore(doubled, username);
+      await saveScore(doubled, username, profileFrame);
     }
   };
 

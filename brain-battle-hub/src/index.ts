@@ -15,16 +15,16 @@ app.use('*', logger());
 app.post('/api/scores', async (c) => {
   try {
     const body = await c.req.json();
-    const { user_id, username, score, game_id } = body;
+    const { user_id, username, score, game_id, profile_frame } = body;
 
     if (!username || typeof score !== 'number') {
       return c.json({ error: 'Invalid request body' }, 400);
     }
 
     const result = await c.env.DB.prepare(
-      'INSERT INTO leaderboard (user_id, username, score, game_id) VALUES (?, ?, ?, ?)'
+      'INSERT INTO leaderboard (user_id, username, score, game_id, profile_frame) VALUES (?, ?, ?, ?, ?)'
     )
-      .bind(user_id, username, score, game_id || 'unknown')
+      .bind(user_id, username, score, game_id || 'unknown', profile_frame)
       .run();
 
     return c.json({
@@ -32,7 +32,8 @@ app.post('/api/scores', async (c) => {
       user_id,
       username,
       score,
-      game_id: game_id || 'unknown'
+      game_id: game_id || 'unknown',
+      profile_frame
     });
   } catch (error) {
     console.error('Error saving score:', error);
@@ -48,7 +49,8 @@ app.get('/api/leaderboard/all-time', async (c) => {
         username,
         SUM(score) as total_score,
         game_id,
-        MAX(created_at) as latest_created_at
+        MAX(created_at) as latest_created_at,
+        MAX(profile_frame) as profile_frame
       FROM leaderboard
       GROUP BY username
       ORDER BY total_score DESC
@@ -60,7 +62,8 @@ app.get('/api/leaderboard/all-time', async (c) => {
       username: row.username,
       score: Number(row.total_score),
       gameId: row.game_id,
-      createdAt: row.latest_created_at
+      createdAt: row.latest_created_at,
+      profileFrame: row.profile_frame
     }));
 
     return c.json(leaderboard);
@@ -82,7 +85,8 @@ app.get('/api/leaderboard/today', async (c) => {
         username,
         SUM(score) as total_score,
         game_id,
-        MAX(created_at) as latest_created_at
+        MAX(created_at) as latest_created_at,
+        MAX(profile_frame) as profile_frame
       FROM leaderboard
       WHERE date(created_at) >= ?
       GROUP BY username
@@ -95,7 +99,8 @@ app.get('/api/leaderboard/today', async (c) => {
       username: row.username,
       score: Number(row.total_score),
       gameId: row.game_id,
-      createdAt: row.latest_created_at
+      createdAt: row.latest_created_at,
+      profileFrame: row.profile_frame
     }));
 
     return c.json(leaderboard);

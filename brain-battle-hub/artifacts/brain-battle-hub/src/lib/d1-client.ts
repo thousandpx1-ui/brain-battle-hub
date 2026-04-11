@@ -6,6 +6,7 @@ interface LeaderboardEntry {
   score: number;
   gameId: string;
   createdAt: string;
+  profileFrame?: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mute-art-58b0.thousandpx1.workers.dev';
@@ -38,7 +39,7 @@ function isValidUsername(username: string): boolean {
 
 
 // Save score to D1 database
-async function saveScore(score: number, username?: string | null): Promise<any> {
+async function saveScore(score: number, username?: string | null, profileFrame?: string | null): Promise<any> {
 
   try {
     let userId = username || "guest_" + Date.now();
@@ -56,7 +57,8 @@ async function saveScore(score: number, username?: string | null): Promise<any> 
       },
       body: JSON.stringify({
         userId: userId,
-        score: score
+        score: score,
+        profileFrame: profileFrame || null
       })
     });
 
