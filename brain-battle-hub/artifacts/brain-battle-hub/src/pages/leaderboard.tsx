@@ -28,8 +28,6 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
 
 
-  const [ws, setWs] = useState<WebSocket | null>(null);
-
   // Load leaderboard
   const loadLeaderboard = async () => {
     setLoading(true);
@@ -48,32 +46,7 @@ export default function Leaderboard() {
     loadLeaderboard();
   }, []);
 
-  // WebSocket for real-time updates
-  useEffect(() => {
-    const wsUrl = "wss://mute-art-58b0.thousandpx1.workers.dev";
-    const newWs = new WebSocket(wsUrl);
-
-    newWs.onmessage = (event) => {
-      const players = JSON.parse(event.data);
-      setLeaderboard(players);
-    };
-
-    newWs.onclose = () => {
-      console.log('WebSocket closed');
-    };
-
-    newWs.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    setWs(newWs);
-
-    return () => {
-      newWs.close();
-    };
-  }, []);
-
-  // Polling fallback every 2 seconds
+  // Auto-refresh every 2 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       loadLeaderboard();
@@ -173,7 +146,7 @@ export default function Leaderboard() {
               <div className="flex items-center justify-center h-32 text-gray-400">
                 Loading leaderboard...
               </div>
-            ) : filteredLeaderboard.length === 0 ? (
+            ) : leaderboard.length === 0 ? (
               <div className="text-center py-10 text-gray-400 font-medium">
                 No scores yet. Play some games to see your ranking!
                 <br />
