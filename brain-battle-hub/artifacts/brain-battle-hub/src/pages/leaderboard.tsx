@@ -106,6 +106,18 @@ export default function Leaderboard() {
             {leaderboard.map((entry, i) => {
               const isMe = entry.userId === userId;
               const displayName = entry.username || entry.userId;
+              
+              // DEBUG: Log what we're rendering
+              if (i < 3) {
+                console.log(`🎨 Rendering entry ${i}:`, { 
+                  userId: entry.userId, 
+                  username: entry.username, 
+                  displayName, 
+                  isMe,
+                  score: entry.score 
+                });
+              }
+              
               const medalEmoji = i === 0 ? "🥇" :
                                   i === 1 ? "🥈" :
                                   i === 2 ? "🥉" : null;
