@@ -41,7 +41,35 @@ app.post('/api/scores', async (c) => {
   }
 });
 
-// Get all-time leaderboard
+// Legacy save score endpoint for client compatibility
+app.post('/save-score', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { userId, score, profileFrame } = body;
+
+    if (!userId || typeof score !== 'number') {
+      return c.json({ error: 'Invalid request body' }, 400);
+    }
+
+    const result = await c.env.DB.prepare(
+      'INSERT INTO leaderboard (user_id, username, score, game_id, profile_frame) VALUES (?, ?, ?, ?, ?)'
+    )
+      .bind(userId, userId, score, 'unknown', profileFrame || null)
+      .run();
+
+    return c.json({
+      id: result.meta.last_row_id,
+      userId,
+      score,
+      profileFrame
+    });
+  } catch (error) {
+    console.error('Error saving score:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Get all-time leaderboard (summed by user)
 app.get('/api/leaderboard/all-time', async (c) => {
   try {
     const result = await c.env.DB.prepare(`
@@ -73,7 +101,7 @@ app.get('/api/leaderboard/all-time', async (c) => {
   }
 });
 
-// Get today's leaderboard
+// Get today's leaderboard (summed by user)
 app.get('/api/leaderboard/today', async (c) => {
   try {
     const today = new Date();
@@ -106,6 +134,32 @@ app.get('/api/leaderboard/today', async (c) => {
     return c.json(leaderboard);
   } catch (error) {
     console.error('Error fetching today leaderboard:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Legacy endpoint for client compatibility - returns all individual entries
+app.get('/leaderboard', async (c) => {
+  try {
+    const result = await c.env.DB.prepare(`
+      SELECT user_id, username, score, game_id, created_at, profile_frame
+      FROM leaderboard
+      ORDER BY score DESC
+      LIMIT 1000
+    `).all();
+
+    const leaderboard = result.results.map((row) => ({
+      userId: row.user_id,
+      username: row.username,
+      score: Number(row.score),
+      gameId: row.game_id,
+      createdAt: row.created_at,
+      profileFrame: row.profile_frame
+    }));
+
+    return c.json(leaderboard);
+  } catch (error) {
+    console.error('Error fetching legacy leaderboard:', error);
     return c.json({ error: 'Internal server error' }, 500);
   }
 });
