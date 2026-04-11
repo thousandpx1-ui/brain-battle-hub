@@ -1,44 +1,10 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Trophy, Star, Medal, User } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Trophy, Star } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 
-import { getFullLeaderboard, saveScore } from "@/lib/d1-client";
-import { useLocalLeaderboard } from "@/lib/local-leaderboard";
-
-const frames = [
-  { id: 'none', name: 'None', style: '' },
-  { id: 'gold', name: 'Gold', style: 'border-4 border-yellow-400 rounded-full' },
-  { id: 'silver', name: 'Silver', style: 'border-4 border-gray-400 rounded-full' },
-  { id: 'bronze', name: 'Bronze', style: 'border-4 border-amber-600 rounded-full' },
-  { id: 'blue', name: 'Blue', style: 'border-4 border-blue-500 rounded-full' },
-  { id: 'red', name: 'Red', style: 'border-4 border-red-500 rounded-full' },
-  { id: 'green', name: 'Green', style: 'border-4 border-green-500 rounded-full' },
-  { id: 'purple', name: 'Purple', style: 'border-4 border-purple-500 rounded-full' },
-  { id: 'rainbow', name: 'Prismatic', style: 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 rounded-full p-1' },
-  { id: 'black', name: 'Black', style: 'border-4 border-black rounded-full' },
-];
-
-function getTimeUntilMidnight(): string {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
-  const diff = midnight.getTime() - now.getTime();
-
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-}
-
-function isToday(dateStr: string): boolean {
-  const date = new Date(dateStr);
-  const now = new Date();
-  return date.toDateString() === now.toDateString();
-}
+import { loadLeaderboardRealtime } from "@/lib/realtime-leaderboard";
 
 function formatScore(score: number): string {
   const num = Math.floor(score);
@@ -56,185 +22,75 @@ function formatScore(score: number): string {
   return num.toString();
 }
 
-// Test cases for formatScore:
-// formatScore(500) = "500"
-// formatScore(1000) = "1k"
-// formatScore(1200) = "1.2k"
-// formatScore(1500) = "1.5k"
-// formatScore(1000000) = "1M"
-// formatScore(1200000) = "1.2M"
-// formatScore(1000000000) = "1B"
-
 export default function Leaderboard() {
-  const { username, profileImage, profileFrame, oldUsernames } = useAppState();
+  const { username, profileImage, profileFrame, oldUsernames, userId } = useAppState();
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const localScores = useLocalLeaderboard((s) => s.scores); // Fallback
-  const _version = useLocalLeaderboard((s) => s.version);
 
 
-  const [period, setPeriod] = useState<"global" | "daily">("global");
-  const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
-  const [, setTick] = useState(0);
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
-  // Fetch leaderboard from D1
+  // Load leaderboard
+  const loadLeaderboard = async () => {
+    setLoading(true);
+    try {
+      const players = await loadLeaderboardRealtime();
+      setLeaderboard(players);
+    } catch (error) {
+      console.error('Failed to load leaderboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
   useEffect(() => {
-    console.log('Leaderboard: oldUsernames =', oldUsernames);
-    const fetchLeaderboard = async () => {
-      setLoading(true);
-      try {
-        const data = await getFullLeaderboard(period);
-
-        // Always check local data as well and combine
-        const allRawScores = period === "daily"
-          ? localScores.filter(entry => isToday(entry.createdAt))
-          : [...localScores];
-
-        const totalScoreMap = new Map();
-
-        // Add database data first
-        for (const entry of data) {
-          totalScoreMap.set(entry.username, { ...entry });
-        }
-
-        // Add local data (will combine if user exists in both)
-        for (const entry of allRawScores) {
-          const existing = totalScoreMap.get(entry.username);
-          if (existing) {
-            existing.score = Math.max(existing.score, entry.score);
-          } else {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
-        }
-
-        // Filter out entries with old usernames that are no longer current
-        // Only filter if the entry could potentially be from this user (has scores in local data)
-        const userScoreUsernames = new Set(localScores.map(s => s.username));
-
-        const rawData = Array.from(totalScoreMap.values());
-        console.log('Leaderboard: raw data before filtering =', rawData.map(d => d.username));
-        console.log('Leaderboard: oldUsernames =', oldUsernames);
-        console.log('Leaderboard: userScoreUsernames =', Array.from(userScoreUsernames));
-
-        const filteredData = rawData.filter(entry => {
-          // If this username has local scores, it's likely a current/valid user
-          if (userScoreUsernames.has(entry.username)) return true;
-          // Otherwise, filter out old usernames
-          return !oldUsernames.includes(entry.username);
-        });
-        console.log('Leaderboard: filtered data =', filteredData.map(d => d.username));
-        const combinedData = filteredData.sort((a, b) => b.score - a.score);
-        setLeaderboard(combinedData);
-      } catch (error) {
-        console.error('D1 fetch failed, using local only:', error);
-        // Fallback to local only if database completely fails
-        const allRawScores = period === "daily"
-          ? localScores.filter(entry => isToday(entry.createdAt))
-          : [...localScores];
-
-        const totalScoreMap = new Map();
-        for (const entry of allRawScores) {
-          const existing = totalScoreMap.get(entry.username);
-          if (existing) {
-            existing.score = Math.max(existing.score, entry.score);
-          } else {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
-        }
-        // Apply same filtering logic to local data
-        const userScoreUsernamesLocal = new Set(localScores.map(s => s.username));
-        const filteredLocalData = Array.from(totalScoreMap.values()).filter(entry => {
-          if (userScoreUsernamesLocal.has(entry.username)) return true;
-          return !oldUsernames.includes(entry.username);
-        });
-        const localData = filteredLocalData.sort((a, b) => b.score - a.score);
-        setLeaderboard(localData);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeaderboard();
-  }, [period, username, _version]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(getTimeUntilMidnight());
-      setTick(t => t + 1);
-    }, 1000);
-    return () => clearInterval(timer);
+    loadLeaderboard();
   }, []);
 
-  // Auto-refresh leaderboard every 3 seconds
+  // WebSocket for real-time updates
   useEffect(() => {
-    const refreshTimer = setInterval(() => {
-      console.log('Auto-refreshing leaderboard...');
-      const fetchLeaderboard = async () => {
-        try {
-          const data = await getFullLeaderboard(period);
+    const wsUrl = "wss://mute-art-58b0.thousandpx1.workers.dev";
+    const newWs = new WebSocket(wsUrl);
 
-          // Always check local data as well and combine
-          const allRawScores = period === "daily"
-            ? localScores.filter(entry => isToday(entry.createdAt))
-            : [...localScores];
+    newWs.onmessage = (event) => {
+      const players = JSON.parse(event.data);
+      setLeaderboard(players);
+    };
 
-          const totalScoreMap = new Map();
+    newWs.onclose = () => {
+      console.log('WebSocket closed');
+    };
 
-          // Add database data first
-          for (const entry of data) {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
+    newWs.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
 
-          // Add local data (will combine if user exists in both)
-          for (const entry of allRawScores) {
-            const existing = totalScoreMap.get(entry.username);
-            if (existing) {
-              existing.score = Math.max(existing.score, entry.score);
-            } else {
-              totalScoreMap.set(entry.username, { ...entry });
-            }
-          }
+    setWs(newWs);
 
-          // Filter out entries with old usernames that are no longer current
-          const userScoreUsernames = new Set(localScores.map(s => s.username));
+    return () => {
+      newWs.close();
+    };
+  }, []);
 
-          const rawData = Array.from(totalScoreMap.values());
-          console.log('Leaderboard: raw data before filtering =', rawData.map(d => d.username));
-          console.log('Leaderboard: oldUsernames =', oldUsernames);
-          console.log('Leaderboard: userScoreUsernames =', Array.from(userScoreUsernames));
+  // Polling fallback every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadLeaderboard();
+    }, 2000);
 
-          const filteredData = rawData.filter(entry => {
-            // If this username has local scores, it's likely a current/valid user
-            if (userScoreUsernames.has(entry.username)) return true;
-            // Otherwise, filter out old usernames
-            return !oldUsernames.includes(entry.username);
-          });
-          console.log('Leaderboard: filtered data =', filteredData.map(d => d.username));
-          const combinedData = filteredData.sort((a, b) => b.score - a.score);
-          setLeaderboard(combinedData);
-        } catch (error) {
-          console.error('Error auto-refreshing leaderboard:', error);
-          // Don't show loading state for auto-refresh failures
-        }
-      };
+    return () => clearInterval(interval);
+  }, []);
 
-      fetchLeaderboard();
-    }, 3000); // every 3 seconds
 
-    return () => clearInterval(refreshTimer);
-  }, [period, username, _version, oldUsernames, localScores]); 
 
-  const filteredLeaderboard = leaderboard;
+ 
 
-  // Player rank from remote/local data (best scoring)
-  const playerScores = localScores.filter(s => s.username === username);
-  const actualPlayerTotalScore = period === "daily"
-    ? playerScores.filter(s => isToday(s.createdAt)).reduce((max, s) => Math.max(max, s.score), 0)
-    : playerScores.reduce((max, s) => Math.max(max, s.score), 0);
-  const playerTotalScore = actualPlayerTotalScore;
-
-  const playerRank = playerTotalScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;
-  const totalPlayers = filteredLeaderboard.length;
+  // Player rank
+  const playerEntry = leaderboard.find(entry => entry.userId === userId);
+  const playerTotalScore = playerEntry ? playerEntry.score : 0;
+  const playerRank = playerEntry ? leaderboard.indexOf(playerEntry) + 1 : 0;
+  const totalPlayers = leaderboard.length;
   const percentile = totalPlayers > 0 && playerRank > 0 ? ((totalPlayers - playerRank) / totalPlayers) * 100 : 0;
   const badge = percentile >= 90 ? "gold" : percentile >= 75 ? "silver" : "bronze";
 
@@ -244,20 +100,11 @@ export default function Leaderboard() {
         <div className="bg-white px-6 pt-10 pb-6 rounded-b-[32px] shadow-sm z-10 relative">
           <h1 className="text-3xl font-black text-gray-900 mb-6">Leaderboard</h1>
 
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as "global" | "daily")} className="w-full">
-            <TabsList className="w-full h-12 bg-gray-100 rounded-2xl p-1 mb-2">
-              <TabsTrigger value="global" className="flex-1 rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">All Time</TabsTrigger>
-              <TabsTrigger value="daily" className="flex-1 rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">Today</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="text-center text-sm text-gray-500 font-medium mb-4">
+            Real-time Leaderboard
+          </div>
 
-          {period === "daily" && (
-            <div className="text-center text-xs text-gray-500 font-medium mb-4">
-              Resets in <span className="font-mono font-bold text-primary">{timeLeft}</span>
-            </div>
-          )}
-
-          {username && playerTotalScore > 0 && (
+          {userId && playerTotalScore > 0 && (
             <div className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -283,62 +130,37 @@ export default function Leaderboard() {
 
         <div className="flex-1 p-6 overflow-y-auto">
           <div className="flex flex-col gap-3 pb-8">
-            {filteredLeaderboard.map((entry, i) => {
-              const isMe = entry.username === username;
+            {leaderboard.map((entry, i) => {
+              const isMe = entry.userId === userId;
               const medalEmoji = i === 0 ? "🥇" :
-                                 i === 1 ? "🥈" :
-                                 i === 2 ? "🥉" : null;
+                                  i === 1 ? "🥈" :
+                                  i === 2 ? "🥉" : null;
 
               return (
                 <div
-                  key={`${entry.username}-${entry.gameId}-${entry.score}-${i}`}
+                  key={`${entry.userId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  {entry.profileFrame ? (
-                    <div className={`mr-4 ${frames.find(f => f.id === entry.profileFrame)?.style || ''}`}>
-                      {entry.profileFrame === 'rainbow' ? (
-                        <div className="bg-white rounded-full p-0.5">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="text-sm">
-                              <User className="w-4 h-4" />
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
+                  <Avatar className={`w-10 h-10 mr-4 border-2 ${isMe ? 'border-primary' : 'border-gray-200'}`}>
+                    <AvatarFallback className={`rounded-full flex items-center justify-center ${
+                      i === 0 ? 'bg-yellow-100' :
+                      i === 1 ? 'bg-gray-100' :
+                      i === 2 ? 'bg-amber-100' :
+                      'bg-gray-50'
+                    }`}>
+                      {medalEmoji ? (
+                        <span className="text-2xl">{medalEmoji}</span>
                       ) : (
-                        <Avatar className="w-10 h-10">
-                          <AvatarFallback className="text-sm">
-                            <User className="w-5 h-5" />
-                          </AvatarFallback>
-                        </Avatar>
+                        <span className="font-black text-sm text-gray-400">{entry.userId.charAt(0).toUpperCase()}</span>
                       )}
-                    </div>
-                  ) : (
-                    <Avatar className={`w-10 h-10 mr-4 border-2 ${isMe && profileImage ? 'border-primary' : 'border-gray-200'}`}>
-                      {isMe && profileImage ? (
-                        <AvatarImage src={profileImage} alt={username || "User"} />
-                      ) : null}
-                      <AvatarFallback className={`rounded-full flex items-center justify-center ${
-                        i === 0 ? 'bg-yellow-100' :
-                        i === 1 ? 'bg-gray-100' :
-                        i === 2 ? 'bg-amber-100' :
-                        'bg-gray-50'
-                      }`}>
-                        {isMe && profileImage ? (
-                          <User className="w-5 h-5" />
-                        ) : medalEmoji ? (
-                          <span className="text-2xl">{medalEmoji}</span>
-                        ) : (
-                          <span className="font-black text-sm text-gray-400">{entry.username.charAt(0).toUpperCase()}</span>
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
+                    </AvatarFallback>
+                  </Avatar>
 
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>
-                      {entry.username} {isMe && "(You)"}
-                    </p>
-                  </div>
+                   <div className="flex-1 min-w-0">
+                     <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>
+                       {entry.userId} {isMe && "(You)"}
+                     </p>
+                   </div>
 
                   <div className="font-black text-xl text-gray-900 ml-4">
                     {formatScore(entry.score)}

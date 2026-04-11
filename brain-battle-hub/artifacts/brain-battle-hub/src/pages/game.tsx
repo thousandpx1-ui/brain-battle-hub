@@ -10,6 +10,7 @@ import { IllusionFinder } from "@/games/IllusionFinder";
 import { RiskOrSafe } from "@/games/RiskOrSafe";
 
 import { saveScore } from "@/lib/d1-client";
+import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { InterstitialAd } from "@/components/interstitial-ad";
@@ -23,7 +24,7 @@ export default function Game() {
   const game = getGameById(gameId || "");
   const [gameState, setGameState] = useState<GameState>("start");
   const [score, setScore] = useState(0);
-  const { username, profileFrame, gamesPlayedSession, incrementGamesPlayed, resetGamesPlayedSession } = useAppState();
+  const { username, profileFrame, gamesPlayedSession, incrementGamesPlayed, resetGamesPlayedSession, userId } = useAppState();
   const addLocalScore = useLocalLeaderboard((s) => s.addScore);
 
   const [showInterstitial, setShowInterstitial] = useState(false);
@@ -44,6 +45,15 @@ export default function Game() {
       console.log('💾 Saving to local leaderboard:', { gameId: game.id, username, score: finalScore });
       addLocalScore({ gameId: game.id, username, score: finalScore });
       console.log('✅ Saved to local leaderboard');
+    }
+
+    // Save to real-time leaderboard
+    try {
+      console.log('💾 Saving to real-time leaderboard:', { userId, score: finalScore });
+      await saveScoreRealtime(finalScore, userId);
+      console.log('✅ Score saved to real-time leaderboard');
+    } catch (error) {
+      console.error('❌ Failed to save to real-time leaderboard:', error);
     }
 
     // Save to Appwrite database
@@ -76,6 +86,7 @@ export default function Game() {
     setScore(doubled);
     if (username) {
       addLocalScore({ gameId: game.id, username, score: doubled });
+      await saveScoreRealtime(doubled, userId);
       await saveScore(doubled, username, profileFrame);
     }
   };

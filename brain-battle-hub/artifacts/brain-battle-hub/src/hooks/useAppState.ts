@@ -9,6 +9,9 @@ interface AppState {
   setUsername: (name: string) => void;
   updateUsername: (newName: string) => void;
 
+  userId: string;
+  setUserId: (id: string) => void;
+
   profileImage: string | null;
   setProfileImage: (image: string | null) => void;
 
@@ -41,6 +44,16 @@ export const useAppState = create<AppState>()(
         set({ username: name });
       },
       updateUsername: (newName) => set({ username: newName }),
+
+      userId: (() => {
+        let userId = localStorage.getItem("userId");
+        if (!userId) {
+          userId = "user_" + Math.random().toString(36).substring(2, 8);
+          localStorage.setItem("userId", userId);
+        }
+        return userId;
+      })(),
+      setUserId: (id) => set({ userId: id }),
 
       profileImage: null,
       setProfileImage: (image) => set({ profileImage: image }),
