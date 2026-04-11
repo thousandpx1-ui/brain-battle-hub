@@ -91,7 +91,7 @@ export default function Home() {
     };
 
     fetchDailyLeaderboard();
-  }, [username]); // Refetch when user changes (after playing games)
+  }, [username, _version]); // Refetch when user changes or scores update
 
   useEffect(() => {
     updateStreak();
