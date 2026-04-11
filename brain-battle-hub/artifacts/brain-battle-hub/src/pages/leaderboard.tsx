@@ -123,10 +123,7 @@ export default function Leaderboard() {
           return !oldUsernames.includes(entry.username);
         });
         console.log('Leaderboard: filtered data =', filteredData.map(d => d.username));
-        const combinedData = filteredData.map(entry => ({
-          ...entry,
-          score: entry.username === username ? 100 : entry.score
-        })).sort((a, b) => b.score - a.score);
+        const combinedData = filteredData.sort((a, b) => b.score - a.score);
         setLeaderboard(combinedData);
       } catch (error) {
         console.error('Appwrite fetch failed, using local only:', error);
@@ -150,10 +147,7 @@ export default function Leaderboard() {
           if (userScoreUsernamesLocal.has(entry.username)) return true;
           return !oldUsernames.includes(entry.username);
         });
-        const localData = filteredLocalData.map(entry => ({
-          ...entry,
-          score: entry.username === username ? 100 : entry.score
-        })).sort((a, b) => b.score - a.score);
+        const localData = filteredLocalData.sort((a, b) => b.score - a.score);
         setLeaderboard(localData);
       } finally {
         setLoading(false);
@@ -178,7 +172,7 @@ export default function Leaderboard() {
   const actualPlayerTotalScore = period === "daily"
     ? playerScores.filter(s => isToday(s.createdAt)).reduce((sum, s) => sum + s.score, 0)
     : playerScores.reduce((sum, s) => sum + s.score, 0);
-  const playerTotalScore = 100;
+  const playerTotalScore = actualPlayerTotalScore;
 
   const playerRank = playerTotalScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;
   const totalPlayers = filteredLeaderboard.length;
@@ -290,7 +284,7 @@ export default function Leaderboard() {
                   </div>
 
                   <div className="font-black text-xl text-gray-900 ml-4">
-                    {formatScore(isMe ? 100 : entry.score)}
+                    {formatScore(entry.score)}
                   </div>
                 </div>
               );
