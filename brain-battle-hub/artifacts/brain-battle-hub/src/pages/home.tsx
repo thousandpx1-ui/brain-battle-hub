@@ -64,7 +64,10 @@ export default function Home() {
           }
         }
 
-        const combinedData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+        const combinedData = Array.from(totalScoreMap.values()).map(entry => ({
+          ...entry,
+          score: entry.username === username ? 100 : entry.score
+        })).sort((a, b) => b.score - a.score);
         const top5 = combinedData.slice(0, 5);
         setDailyLeaderboard(top5);
       } catch (error) {
@@ -83,7 +86,10 @@ export default function Home() {
             totalScoreMap.set(entry.username, { ...entry });
           }
         }
-        const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+        const localData = Array.from(totalScoreMap.values()).map(entry => ({
+          ...entry,
+          score: entry.username === username ? 100 : entry.score
+        })).sort((a, b) => b.score - a.score);
         setDailyLeaderboard(localData);
       } finally {
         setDailyLoading(false);
