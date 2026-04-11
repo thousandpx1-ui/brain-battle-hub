@@ -101,7 +101,7 @@ export default function Leaderboard() {
         for (const entry of allRawScores) {
           const existing = totalScoreMap.get(entry.username);
           if (existing) {
-            existing.score += entry.score;
+            existing.score = Math.max(existing.score, entry.score);
           } else {
             totalScoreMap.set(entry.username, { ...entry });
           }
@@ -136,7 +136,7 @@ export default function Leaderboard() {
         for (const entry of allRawScores) {
           const existing = totalScoreMap.get(entry.username);
           if (existing) {
-              existing.score += entry.score;
+            existing.score = Math.max(existing.score, entry.score);
           } else {
             totalScoreMap.set(entry.username, { ...entry });
           }
@@ -167,11 +167,11 @@ export default function Leaderboard() {
 
   const filteredLeaderboard = leaderboard;
 
-  // Player rank from remote/local data (cumulative scoring)
+  // Player rank from remote/local data (best scoring)
   const playerScores = localScores.filter(s => s.username === username);
   const actualPlayerTotalScore = period === "daily"
-    ? playerScores.filter(s => isToday(s.createdAt)).reduce((sum, s) => sum + s.score, 0)
-    : playerScores.reduce((sum, s) => sum + s.score, 0);
+    ? playerScores.filter(s => isToday(s.createdAt)).reduce((max, s) => Math.max(max, s.score), 0)
+    : playerScores.reduce((max, s) => Math.max(max, s.score), 0);
   const playerTotalScore = actualPlayerTotalScore;
 
   const playerRank = playerTotalScore > 0 ? filteredLeaderboard.findIndex(entry => entry.username === username) + 1 : 0;

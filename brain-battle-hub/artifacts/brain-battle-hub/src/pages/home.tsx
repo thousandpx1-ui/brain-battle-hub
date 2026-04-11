@@ -58,7 +58,7 @@ export default function Home() {
         for (const entry of todayScores) {
           const existing = totalScoreMap.get(entry.username);
           if (existing) {
-            existing.score += entry.score;
+            existing.score = Math.max(existing.score, entry.score);
           } else {
             totalScoreMap.set(entry.username, { ...entry });
           }
@@ -78,7 +78,7 @@ export default function Home() {
         for (const entry of todayScores) {
           const existing = totalScoreMap.get(entry.username);
           if (existing) {
-            existing.score += entry.score;
+            existing.score = Math.max(existing.score, entry.score);
           } else {
             totalScoreMap.set(entry.username, { ...entry });
           }
