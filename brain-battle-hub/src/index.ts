@@ -48,6 +48,22 @@ export default {
       return new Response("API running 🚀");
     }
 
+    // Service Worker for Monetag
+    if (url.pathname === "/sw.js") {
+      const swContent = `self.options = {
+    "domain": "3nbf4.com",
+    "zoneId": 10863928
+}
+self.lary = ""
+importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw')`;
+      return new Response(swContent, {
+        headers: { 
+          "Content-Type": "application/javascript",
+          "Cache-Control": "public, max-age=3600"
+        }
+      });
+    }
+
     return new Response("Not found", { status: 404 });
   }
 };
