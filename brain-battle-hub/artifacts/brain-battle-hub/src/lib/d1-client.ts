@@ -82,7 +82,9 @@ async function saveScore(score: number, username?: string | null, profileFrame?:
 // Get all-time leaderboard
 async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/leaderboard`);
+    const response = await fetch(`${API_BASE_URL}/leaderboard`, {
+      cache: "no-store"
+    });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -109,7 +111,9 @@ async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
 // Get today's leaderboard
 async function getTodayLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/leaderboard`);
+    const response = await fetch(`${API_BASE_URL}/leaderboard`, {
+      cache: "no-store"
+    });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

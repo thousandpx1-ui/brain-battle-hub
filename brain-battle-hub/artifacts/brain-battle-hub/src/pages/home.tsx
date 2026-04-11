@@ -35,63 +35,67 @@ export default function Home() {
   const _version = useLocalLeaderboard((s) => s.version);
 
   // Fetch daily leaderboard
-  useEffect(() => {
-    const fetchDailyLeaderboard = async () => {
-      setDailyLoading(true);
-      try {
-        const data = await getFullLeaderboard('daily');
+  const fetchDailyLeaderboard = async () => {
+    setDailyLoading(true);
+    try {
+      const data = await getFullLeaderboard('daily');
 
-        // Always combine database data with local data
-        const today = new Date().toDateString();
-        const todayScores = localScores.filter(entry =>
-          new Date(entry.createdAt).toDateString() === today
-        );
+      // Always combine database data with local data
+      const today = new Date().toDateString();
+      const todayScores = localScores.filter(entry =>
+        new Date(entry.createdAt).toDateString() === today
+      );
 
-        const totalScoreMap = new Map();
+      const totalScoreMap = new Map();
 
-        // Add database data first
-        for (const entry of data) {
+      // Add database data first
+      for (const entry of data) {
+        totalScoreMap.set(entry.username, { ...entry });
+      }
+
+      // Add local data (will combine scores if user exists in both)
+      for (const entry of todayScores) {
+        const existing = totalScoreMap.get(entry.username);
+        if (existing) {
+          existing.score = Math.max(existing.score, entry.score);
+        } else {
           totalScoreMap.set(entry.username, { ...entry });
         }
-
-        // Add local data (will combine scores if user exists in both)
-        for (const entry of todayScores) {
-          const existing = totalScoreMap.get(entry.username);
-          if (existing) {
-            existing.score = Math.max(existing.score, entry.score);
-          } else {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
-        }
-
-        const combinedData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-        const top5 = combinedData.slice(0, 5);
-        setDailyLeaderboard(top5);
-      } catch (error) {
-        // Fallback to local only if database completely fails
-        const today = new Date().toDateString();
-        const todayScores = localScores.filter(entry =>
-          new Date(entry.createdAt).toDateString() === today
-        );
-
-        const totalScoreMap = new Map();
-        for (const entry of todayScores) {
-          const existing = totalScoreMap.get(entry.username);
-          if (existing) {
-            existing.score = Math.max(existing.score, entry.score);
-          } else {
-            totalScoreMap.set(entry.username, { ...entry });
-          }
-        }
-        const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-        const top5 = localData.slice(0, 5);
-        setDailyLeaderboard(top5);
-      } finally {
-        setDailyLoading(false);
       }
-    };
 
+      const combinedData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+      const top5 = combinedData.slice(0, 5);
+      setDailyLeaderboard(top5);
+    } catch (error) {
+      // Fallback to local only if database completely fails
+      const today = new Date().toDateString();
+      const todayScores = localScores.filter(entry =>
+        new Date(entry.createdAt).toDateString() === today
+      );
+
+      const totalScoreMap = new Map();
+      for (const entry of todayScores) {
+        const existing = totalScoreMap.get(entry.username);
+        if (existing) {
+          existing.score = Math.max(existing.score, entry.score);
+        } else {
+          totalScoreMap.set(entry.username, { ...entry });
+        }
+      }
+      const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
+      const top5 = localData.slice(0, 5);
+      setDailyLeaderboard(top5);
+    } finally {
+      setDailyLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDailyLeaderboard();
+
+    // Auto-refresh daily leaderboard every 3 seconds
+    const refreshTimer = setInterval(fetchDailyLeaderboard, 3000);
+    return () => clearInterval(refreshTimer);
   }, [username, _version]); // Refetch when user changes or scores update
 
   useEffect(() => {

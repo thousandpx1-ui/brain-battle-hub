@@ -22,7 +22,7 @@ export function IllusionFinder({ onGameOver }: { onGameOver: (score: number) => 
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      onGameOver(score);
+      onGameOver(Math.max(score, 100));
       return;
     }
     const t = setInterval(() => setTimeLeft(l => l - 1), 1000);
@@ -49,7 +49,7 @@ export function IllusionFinder({ onGameOver }: { onGameOver: (score: number) => 
         setTimeLeft(15);
       }
     } else {
-      onGameOver(score);
+      onGameOver(Math.max(score, 100));
     }
   };
 

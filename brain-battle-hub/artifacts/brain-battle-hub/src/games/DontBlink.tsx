@@ -43,12 +43,12 @@ export function DontBlink({ onGameOver }: { onGameOver: (score: number) => void 
     
     if (barPosition >= perfectZone.min && barPosition <= perfectZone.max) {
       // Perfect
-      const newScore = score + 25;
+      const newScore = score + 50;
       setScore(newScore);
       setTimeout(() => nextRound(), 800);
     } else if (barPosition >= goodZone.min && barPosition <= goodZone.max) {
       // Good
-      const newScore = score + 15;
+      const newScore = score + 30;
       setScore(newScore);
       setTimeout(() => nextRound(), 800);
     } else {
@@ -60,7 +60,7 @@ export function DontBlink({ onGameOver }: { onGameOver: (score: number) => void 
         // Game over
         isPlayingRef.current = false;
         if (requestRef.current) cancelAnimationFrame(requestRef.current);
-        setTimeout(() => onGameOver(score), 800);
+        setTimeout(() => onGameOver(score + 100), 800);
       } else {
         // Continue with reset
         setTimeout(() => {

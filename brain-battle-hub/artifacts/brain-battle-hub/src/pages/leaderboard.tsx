@@ -163,7 +163,66 @@ export default function Leaderboard() {
       setTick(t => t + 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, []); 
+  }, []);
+
+  // Auto-refresh leaderboard every 3 seconds
+  useEffect(() => {
+    const refreshTimer = setInterval(() => {
+      console.log('Auto-refreshing leaderboard...');
+      const fetchLeaderboard = async () => {
+        try {
+          const data = await getFullLeaderboard(period);
+
+          // Always check local data as well and combine
+          const allRawScores = period === "daily"
+            ? localScores.filter(entry => isToday(entry.createdAt))
+            : [...localScores];
+
+          const totalScoreMap = new Map();
+
+          // Add database data first
+          for (const entry of data) {
+            totalScoreMap.set(entry.username, { ...entry });
+          }
+
+          // Add local data (will combine if user exists in both)
+          for (const entry of allRawScores) {
+            const existing = totalScoreMap.get(entry.username);
+            if (existing) {
+              existing.score = Math.max(existing.score, entry.score);
+            } else {
+              totalScoreMap.set(entry.username, { ...entry });
+            }
+          }
+
+          // Filter out entries with old usernames that are no longer current
+          const userScoreUsernames = new Set(localScores.map(s => s.username));
+
+          const rawData = Array.from(totalScoreMap.values());
+          console.log('Leaderboard: raw data before filtering =', rawData.map(d => d.username));
+          console.log('Leaderboard: oldUsernames =', oldUsernames);
+          console.log('Leaderboard: userScoreUsernames =', Array.from(userScoreUsernames));
+
+          const filteredData = rawData.filter(entry => {
+            // If this username has local scores, it's likely a current/valid user
+            if (userScoreUsernames.has(entry.username)) return true;
+            // Otherwise, filter out old usernames
+            return !oldUsernames.includes(entry.username);
+          });
+          console.log('Leaderboard: filtered data =', filteredData.map(d => d.username));
+          const combinedData = filteredData.sort((a, b) => b.score - a.score);
+          setLeaderboard(combinedData);
+        } catch (error) {
+          console.error('Error auto-refreshing leaderboard:', error);
+          // Don't show loading state for auto-refresh failures
+        }
+      };
+
+      fetchLeaderboard();
+    }, 3000); // every 3 seconds
+
+    return () => clearInterval(refreshTimer);
+  }, [period, username, _version, oldUsernames, localScores]); 
 
   const filteredLeaderboard = leaderboard;
 

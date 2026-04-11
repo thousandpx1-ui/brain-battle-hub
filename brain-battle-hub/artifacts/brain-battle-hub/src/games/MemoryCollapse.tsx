@@ -42,7 +42,7 @@ export function MemoryCollapse({ onGameOver }: { onGameOver: (score: number) => 
     
     if (sequence[currentTapIndex] !== index) {
       // Wrong tap
-      onGameOver((level - 1) * 25);
+      onGameOver((level - 1) * 25 + 100);
       return;
     }
 
