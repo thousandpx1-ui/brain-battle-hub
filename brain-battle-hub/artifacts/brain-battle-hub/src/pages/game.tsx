@@ -49,8 +49,8 @@ export default function Game() {
 
     // Save to real-time leaderboard
     try {
-      console.log('💾 Saving to real-time leaderboard:', { userId, score: finalScore });
-      await saveScoreRealtime(finalScore, userId);
+      console.log('💾 Saving to real-time leaderboard:', { userId, username, score: finalScore });
+      await saveScoreRealtime(finalScore, userId, username);
       console.log('✅ Score saved to real-time leaderboard');
     } catch (error) {
       console.error('❌ Failed to save to real-time leaderboard:', error);
@@ -86,7 +86,7 @@ export default function Game() {
     setScore(doubled);
     if (username) {
       addLocalScore({ gameId: game.id, username, score: doubled });
-      await saveScoreRealtime(doubled, userId);
+      await saveScoreRealtime(doubled, userId, username);
       await saveScore(doubled, username, profileFrame);
     }
   };
