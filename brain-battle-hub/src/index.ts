@@ -2,7 +2,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // 🟢 SAVE SCORE (update if higher)
+    // 🟢 SAVE SCORE (update if higher, prevent duplicates)
     if (url.pathname === "/save-score") {
       const { userId, score } = await request.json();
 
@@ -11,6 +11,7 @@ export default {
       ).bind(userId).first();
 
       if (existing) {
+        // Only update if new score is higher
         if (score > existing.score) {
           await env.DB.prepare(
             "UPDATE leaderboard SET score = ?, created_at = ? WHERE user_id = ?"
@@ -31,10 +32,10 @@ export default {
       });
     }
 
-    // 🏆 GET LEADERBOARD
+    // 🏆 GET LEADERBOARD (deduplicated with MAX score)
     if (url.pathname === "/leaderboard") {
       const { results } = await env.DB.prepare(
-        "SELECT user_id as userId, score FROM leaderboard ORDER BY score DESC LIMIT 50"
+        "SELECT user_id as userId, MAX(score) as score FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50"
       ).all();
 
       return new Response(JSON.stringify(results), {
