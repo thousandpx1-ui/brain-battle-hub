@@ -42,11 +42,11 @@ function isValidUsername(username: string): boolean {
 async function saveScore(score: number, username?: string | null, profileFrame?: string | null): Promise<any> {
 
   try {
-    // Use persistent userId from localStorage instead of generating new one each time
-    let userId = localStorage.getItem("brainBattleUserId");
+    // Use SAME userId key as the rest of the app (useAppState)
+    let userId = localStorage.getItem("userId");
     if (!userId) {
       userId = "user_" + Math.random().toString(36).substring(2, 8);
-      localStorage.setItem("brainBattleUserId", userId);
+      localStorage.setItem("userId", userId);
     }
 
     let finalUsername = username || userId;
@@ -63,6 +63,7 @@ async function saveScore(score: number, username?: string | null, profileFrame?:
       },
       body: JSON.stringify({
         userId: userId,
+        username: finalUsername,
         score: score,
         profileFrame: profileFrame || null
       })
@@ -92,12 +93,12 @@ async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
     console.log('All-time leaderboard:', data.length, 'entries');
 
     // Filter out invalid usernames (game names, test entries, etc.)
-    const filteredData = data.filter((entry: any) => isValidUsername(entry.userId));
+    const filteredData = data.filter((entry: any) => isValidUsername(entry.username || entry.userId));
 
     // Transform the response to match expected format
     return filteredData.map((entry: any, index: number) => ({
       rank: index + 1,
-      username: entry.userId,
+      username: entry.username || entry.userId,
       score: entry.score,
       gameId: 'unknown',
       createdAt: entry.createdAt
@@ -122,7 +123,7 @@ async function getTodayLeaderboard(): Promise<LeaderboardEntry[]> {
     // Filter for today's entries and valid usernames
     const today = new Date().toDateString();
     const todayData = allData.filter((entry: any) =>
-      new Date(entry.createdAt).toDateString() === today && isValidUsername(entry.userId)
+      new Date(entry.createdAt).toDateString() === today && isValidUsername(entry.username || entry.userId)
     );
 
     console.log('Today leaderboard:', todayData.length, 'entries');
@@ -130,7 +131,7 @@ async function getTodayLeaderboard(): Promise<LeaderboardEntry[]> {
     // Transform the response to match expected format
     return todayData.map((entry: any, index: number) => ({
       rank: index + 1,
-      username: entry.userId,
+      username: entry.username || entry.userId,
       score: entry.score,
       gameId: 'unknown',
       createdAt: entry.createdAt

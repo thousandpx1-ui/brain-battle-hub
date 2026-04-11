@@ -24,7 +24,7 @@ function formatScore(score: number): string {
 
 export default function Leaderboard() {
   const { username, profileImage, profileFrame, oldUsernames, userId } = useAppState();
-  const [leaderboard, setLeaderboard] = useState<Array<{userId: string; score: number}>>([]);
+  const [leaderboard, setLeaderboard] = useState<Array<{userId: string; username?: string; score: number}>>([]);
   const [loading, setLoading] = useState(true);
 
   // Load leaderboard
@@ -32,6 +32,7 @@ export default function Leaderboard() {
     setLoading(true);
     try {
       const players = await loadLeaderboardRealtime();
+      console.log('📊 Leaderboard data received:', players);
       setLeaderboard(players);
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
@@ -104,6 +105,7 @@ export default function Leaderboard() {
           <div className="flex flex-col gap-3 pb-8">
             {leaderboard.map((entry, i) => {
               const isMe = entry.userId === userId;
+              const displayName = entry.username || entry.userId;
               const medalEmoji = i === 0 ? "🥇" :
                                   i === 1 ? "🥈" :
                                   i === 2 ? "🥉" : null;
@@ -123,14 +125,14 @@ export default function Leaderboard() {
                       {medalEmoji ? (
                         <span className="text-2xl">{medalEmoji}</span>
                       ) : (
-                        <span className="font-black text-sm text-gray-400">{entry.userId.charAt(0).toUpperCase()}</span>
+                        <span className="font-black text-sm text-gray-400">{displayName.charAt(0).toUpperCase()}</span>
                       )}
                     </AvatarFallback>
                   </Avatar>
 
                    <div className="flex-1 min-w-0">
                      <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>
-                       {entry.userId} {isMe && "(You)"}
+                       {displayName} {isMe && "(You)"}
                      </p>
                    </div>
 
