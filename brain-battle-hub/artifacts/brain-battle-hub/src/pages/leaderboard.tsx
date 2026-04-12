@@ -105,18 +105,16 @@ export default function Leaderboard() {
           <div className="flex flex-col gap-3 pb-8">
             {leaderboard.map((entry, i) => {
               const isMe = entry.userId === userId;
-              const displayName = entry.username || entry.userId;
-              
-              // DEBUG: Log what we're rendering
-              if (i < 3) {
-                console.log(`🎨 Rendering entry ${i}:`, { 
-                  userId: entry.userId, 
-                  username: entry.username, 
-                  displayName, 
-                  isMe,
-                  score: entry.score 
-                });
-              }
+              // Smart username resolution:
+              // 1. Use entry.username if it exists and doesn't look like a userId
+              // 2. If it's the current user, use their actual username from app state
+              // 3. Fall back to userId
+              const looksLikeUserId = entry.username?.startsWith('user_');
+              const displayName = isMe 
+                ? username || entry.userId  // Current user: use their actual username
+                : (entry.username && !looksLikeUserId) 
+                  ? entry.username  // Other user with valid username
+                  : entry.userId;  // Fallback to userId
               
               const medalEmoji = i === 0 ? "🥇" :
                                   i === 1 ? "🥈" :
