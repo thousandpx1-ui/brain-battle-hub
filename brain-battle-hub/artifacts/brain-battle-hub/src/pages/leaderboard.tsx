@@ -24,7 +24,7 @@ function formatScore(score: number): string {
 
 export default function Leaderboard() {
   const { username, profileImage, profileFrame, oldUsernames, userId } = useAppState();
-  const [leaderboard, setLeaderboard] = useState<Array<{userId: string; score: number}>>([]);
+  const [leaderboard, setLeaderboard] = useState<Array<{userId: string; score: number; profileFrame?: string | null}>>([]);
   const [loading, setLoading] = useState(true);
 
   // Load leaderboard
@@ -108,26 +108,44 @@ export default function Leaderboard() {
               const medalEmoji = i === 0 ? "🥇" :
                                   i === 1 ? "🥈" :
                                   i === 2 ? "🥉" : null;
+              
+              // Map profileFrame to CSS styles (matching profile.tsx)
+              const frameStyles: Record<string, string> = {
+                'gold': 'border-4 border-yellow-400',
+                'silver': 'border-4 border-gray-400',
+                'bronze': 'border-4 border-amber-600',
+                'blue': 'border-4 border-blue-500',
+                'red': 'border-4 border-red-500',
+                'green': 'border-4 border-green-500',
+                'purple': 'border-4 border-purple-500',
+                'rainbow': 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 p-0.5',
+                'black': 'border-4 border-black',
+              };
+              
+              const frameClass = entry.profileFrame ? frameStyles[entry.profileFrame] : '';
+              const borderColor = isMe ? 'border-primary' : (frameClass ? '' : 'border-gray-200');
 
               return (
                 <div
                   key={`${entry.userId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  <Avatar className={`w-10 h-10 mr-4 border-2 ${isMe ? 'border-primary' : 'border-gray-200'}`}>
-                    <AvatarFallback className={`rounded-full flex items-center justify-center ${
-                      i === 0 ? 'bg-yellow-100' :
-                      i === 1 ? 'bg-gray-100' :
-                      i === 2 ? 'bg-amber-100' :
-                      'bg-gray-50'
-                    }`}>
-                      {medalEmoji ? (
-                        <span className="text-2xl">{medalEmoji}</span>
-                      ) : (
-                        <span className="font-black text-sm text-gray-400">{displayName.charAt(0).toUpperCase()}</span>
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className={`w-10 h-10 mr-4 rounded-full flex items-center justify-center ${frameClass || ''}`}>
+                    <Avatar className={`w-full h-full border-2 ${borderColor}`}>
+                      <AvatarFallback className={`rounded-full flex items-center justify-center ${
+                        i === 0 ? 'bg-yellow-100' :
+                        i === 1 ? 'bg-gray-100' :
+                        i === 2 ? 'bg-amber-100' :
+                        'bg-gray-50'
+                      }`}>
+                        {medalEmoji ? (
+                          <span className="text-2xl">{medalEmoji}</span>
+                        ) : (
+                          <span className="font-black text-sm text-gray-400">{displayName.charAt(0).toUpperCase()}</span>
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
 
                    <div className="flex-1 min-w-0">
                      <p className={`font-bold truncate ${isMe ? 'text-primary' : 'text-gray-900'}`}>
