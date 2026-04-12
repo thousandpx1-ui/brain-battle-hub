@@ -13,6 +13,7 @@ import { saveScore } from "@/lib/d1-client";
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
+import { cacheMyUsername } from "@/lib/user-name-cache";
 import { InterstitialAd } from "@/components/interstitial-ad";
 import { RewardAd } from "@/components/reward-ad";
 import { Trophy, RotateCcw, Play, ChevronLeft } from "lucide-react";
@@ -39,6 +40,11 @@ export default function Game() {
     setScore(finalScore);
     setGameState("gameover");
     incrementGamesPlayed();
+
+    // Cache the username so leaderboard can look it up
+    if (username && userId) {
+      cacheMyUsername(userId, username);
+    }
 
     // Always save to local leaderboard
     if (username) {
@@ -85,6 +91,7 @@ export default function Game() {
     const doubled = score * 2;
     setScore(doubled);
     if (username) {
+      cacheMyUsername(userId, username);
       addLocalScore({ gameId: game.id, username, score: doubled });
       await saveScoreRealtime(doubled, userId, username);
       await saveScore(doubled, username, profileFrame);

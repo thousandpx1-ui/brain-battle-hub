@@ -5,6 +5,7 @@ import { Trophy, Star } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 
 import { loadLeaderboardRealtime } from "@/lib/realtime-leaderboard";
+import { getUsername, cacheMyUsername } from "@/lib/user-name-cache";
 
 function formatScore(score: number): string {
   const num = Math.floor(score);
@@ -31,8 +32,12 @@ export default function Leaderboard() {
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
+      // Cache current user's username so it can be looked up
+      if (username && userId) {
+        cacheMyUsername(userId, username);
+      }
+      
       const players = await loadLeaderboardRealtime();
-      console.log('📊 Leaderboard data received:', players);
       setLeaderboard(players);
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
@@ -105,16 +110,24 @@ export default function Leaderboard() {
           <div className="flex flex-col gap-3 pb-8">
             {leaderboard.map((entry, i) => {
               const isMe = entry.userId === userId;
-              // Smart username resolution:
-              // 1. Use entry.username if it exists and doesn't look like a userId
-              // 2. If it's the current user, use their actual username from app state
-              // 3. Fall back to userId
-              const looksLikeUserId = entry.username?.startsWith('user_');
-              const displayName = isMe 
-                ? username || entry.userId  // Current user: use their actual username
-                : (entry.username && !looksLikeUserId) 
-                  ? entry.username  // Other user with valid username
-                  : entry.userId;  // Fallback to userId
+              
+              // Resolve username in this priority:
+              // 1. If it's the current user → use their actual username from app state
+              // 2. If backend returned a username (not userId-like) → use it
+              // 3. Look it up in our frontend cache
+              // 4. Fall back to userId
+              let displayName: string;
+              
+              if (isMe) {
+                // Current user: always use their actual username
+                displayName = username || entry.userId;
+              } else if (entry.username && !entry.username.startsWith('user_')) {
+                // Backend returned a real username
+                displayName = entry.username;
+              } else {
+                // Try the cache, fall back to userId
+                displayName = getUsername(entry.userId, entry.userId);
+              }
               
               const medalEmoji = i === 0 ? "🥇" :
                                   i === 1 ? "🥈" :
