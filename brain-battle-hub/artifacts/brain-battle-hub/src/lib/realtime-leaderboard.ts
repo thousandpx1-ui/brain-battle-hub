@@ -1,14 +1,13 @@
 const API_URL = "https://mute-art-58b0.thousandpx1.workers.dev";
 
-export async function saveScoreRealtime(score: number, userId: string, username?: string) {
+export async function saveScoreRealtime(score: number, username: string) {
   await fetch(`${API_URL}/save-score`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      userId: userId,
-      username: username || userId,
+      userId: username,
       score: score
     })
   });

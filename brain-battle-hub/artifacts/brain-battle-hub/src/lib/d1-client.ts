@@ -42,14 +42,7 @@ function isValidUsername(username: string): boolean {
 async function saveScore(score: number, username?: string | null, profileFrame?: string | null): Promise<any> {
 
   try {
-    // Use SAME userId key as the rest of the app (useAppState)
-    let userId = localStorage.getItem("userId");
-    if (!userId) {
-      userId = "user_" + Math.random().toString(36).substring(2, 8);
-      localStorage.setItem("userId", userId);
-    }
-
-    let finalUsername = username || userId;
+    let finalUsername = username || "player";
 
     // Validate username - don't save if it looks like a game name
     if (!isValidUsername(finalUsername)) {
@@ -62,8 +55,7 @@ async function saveScore(score: number, username?: string | null, profileFrame?:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId: userId,
-        username: finalUsername,
+        userId: finalUsername,
         score: score,
         profileFrame: profileFrame || null
       })

@@ -5,7 +5,6 @@ import { Trophy, Star } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 
 import { loadLeaderboardRealtime } from "@/lib/realtime-leaderboard";
-import { getUsername, cacheMyUsername } from "@/lib/user-name-cache";
 
 function formatScore(score: number): string {
   const num = Math.floor(score);
@@ -25,18 +24,13 @@ function formatScore(score: number): string {
 
 export default function Leaderboard() {
   const { username, profileImage, profileFrame, oldUsernames, userId } = useAppState();
-  const [leaderboard, setLeaderboard] = useState<Array<{userId: string; username?: string; score: number}>>([]);
+  const [leaderboard, setLeaderboard] = useState<Array<{userId: string; score: number}>>([]);
   const [loading, setLoading] = useState(true);
 
   // Load leaderboard
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      // Cache current user's username so it can be looked up
-      if (username && userId) {
-        cacheMyUsername(userId, username);
-      }
-      
       const players = await loadLeaderboardRealtime();
       setLeaderboard(players);
     } catch (error) {
@@ -65,7 +59,7 @@ export default function Leaderboard() {
  
 
   // Player rank
-  const playerEntry = leaderboard.find(entry => entry.userId === userId);
+  const playerEntry = leaderboard.find(entry => entry.userId === username);
   const playerTotalScore = playerEntry ? playerEntry.score : 0;
   const playerRank = playerEntry ? leaderboard.indexOf(playerEntry) + 1 : 0;
   const totalPlayers = leaderboard.length;
@@ -82,7 +76,7 @@ export default function Leaderboard() {
             Real-time Leaderboard
           </div>
 
-          {userId && playerTotalScore > 0 && (
+          {username && playerTotalScore > 0 && (
             <div className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -109,26 +103,8 @@ export default function Leaderboard() {
         <div className="flex-1 p-6 overflow-y-auto">
           <div className="flex flex-col gap-3 pb-8">
             {leaderboard.map((entry, i) => {
-              const isMe = entry.userId === userId;
-              
-              // Resolve username in this priority:
-              // 1. If it's the current user → use their actual username from app state
-              // 2. If backend returned a username (not userId-like) → use it
-              // 3. Look it up in our frontend cache
-              // 4. Fall back to userId
-              let displayName: string;
-              
-              if (isMe) {
-                // Current user: always use their actual username
-                displayName = username || entry.userId;
-              } else if (entry.username && !entry.username.startsWith('user_')) {
-                // Backend returned a real username
-                displayName = entry.username;
-              } else {
-                // Try the cache, fall back to userId
-                displayName = getUsername(entry.userId, entry.userId);
-              }
-              
+              const isMe = entry.userId === username;
+              const displayName = entry.userId;
               const medalEmoji = i === 0 ? "🥇" :
                                   i === 1 ? "🥈" :
                                   i === 2 ? "🥉" : null;
