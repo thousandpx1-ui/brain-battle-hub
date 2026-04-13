@@ -8,6 +8,7 @@ import { DontBlink } from "@/games/DontBlink";
 import { FakeTapTrap } from "@/games/FakeTapTrap";
 import { IllusionFinder } from "@/games/IllusionFinder";
 import { RiskOrSafe } from "@/games/RiskOrSafe";
+import { SimonSays } from "@/games/SimonSays";
 
 import { saveScore } from "@/lib/d1-client";
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
@@ -99,6 +100,7 @@ export default function Game() {
       case "taptrap": return <FakeTapTrap onGameOver={handleGameOver} />;
       case "illusion": return <IllusionFinder onGameOver={handleGameOver} />;
       case "risk": return <RiskOrSafe onGameOver={handleGameOver} />;
+      case "simon": return <SimonSays onGameOver={handleGameOver} />;
       default: return <div>Unknown Game</div>;
     }
   };

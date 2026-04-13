@@ -1,4 +1,4 @@
-import { Brain, Eye, Coins } from "lucide-react";
+import { Brain, Eye, Coins, Gamepad2 } from "lucide-react";
 
 export const GAMES = [
   {
@@ -21,6 +21,13 @@ export const GAMES = [
     description: "Bank your points or risk it all for double.",
     gradient: "game-gradient-3",
     icon: Coins,
+  },
+  {
+    id: "simon",
+    name: "Simon Says",
+    description: "Watch the color sequence and repeat it from memory.",
+    gradient: "game-gradient-4",
+    icon: Gamepad2,
   },
 ];
 
