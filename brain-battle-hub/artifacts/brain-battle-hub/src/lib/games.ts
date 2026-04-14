@@ -1,4 +1,4 @@
-import { Brain, Eye, Coins, Gamepad2 } from "lucide-react";
+import { Brain, Eye, Gamepad2 } from "lucide-react";
 
 export const GAMES = [
   {
@@ -14,13 +14,6 @@ export const GAMES = [
     description: "Stop the moving bar exactly in the perfect zone.",
     gradient: "game-gradient-2",
     icon: Eye,
-  },
-  {
-    id: "risk",
-    name: "Risk or Safe",
-    description: "Bank your points or risk it all for double.",
-    gradient: "game-gradient-3",
-    icon: Coins,
   },
   {
     id: "simon",

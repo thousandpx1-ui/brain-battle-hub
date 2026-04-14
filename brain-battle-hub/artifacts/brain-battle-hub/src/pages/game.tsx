@@ -7,7 +7,6 @@ import { MemoryCollapse } from "@/games/MemoryCollapse";
 import { DontBlink } from "@/games/DontBlink";
 import { FakeTapTrap } from "@/games/FakeTapTrap";
 import { IllusionFinder } from "@/games/IllusionFinder";
-import { RiskOrSafe } from "@/games/RiskOrSafe";
 import { SimonSays } from "@/games/SimonSays";
 
 import { saveScore } from "@/lib/d1-client";
@@ -99,7 +98,6 @@ export default function Game() {
       case "blink": return <DontBlink onGameOver={handleGameOver} />;
       case "taptrap": return <FakeTapTrap onGameOver={handleGameOver} />;
       case "illusion": return <IllusionFinder onGameOver={handleGameOver} />;
-      case "risk": return <RiskOrSafe onGameOver={handleGameOver} />;
       case "simon": return <SimonSays onGameOver={handleGameOver} />;
       default: return <div>Unknown Game</div>;
     }

@@ -13,8 +13,6 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mute-art-58b0
 
 // Known game names to filter out from leaderboard
 const GAME_NAMES = [
-  'RiskOrSafe',
-  'Risk or Safe',
   'Memory Collapse',
   'DontBlink',
   'FakeTapTrap',
