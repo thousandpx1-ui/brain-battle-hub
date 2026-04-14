@@ -24,7 +24,6 @@ A mobile-first brain training game web app with 5 addictive mini puzzle games, s
 
 1. **Memory Collapse** (memory) — Sequence recall with numbered tiles
 2. **Don't Blink** (blink) — Moving bar with perfect/good zones
-3. **Risk or Safe** (risk) — Score doubling with 50/50 coin flip
 
 ## Pages
 
