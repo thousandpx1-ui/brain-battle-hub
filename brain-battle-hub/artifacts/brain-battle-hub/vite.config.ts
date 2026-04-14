@@ -10,19 +10,26 @@ const basePath = process.env.BASE_PATH || "/";
 
 const port = Number(rawPort);
 
-// Plugin to inject deploy version into service worker
+// Plugin to inject deploy version into service worker and create version.json
 function serviceWorkerVersionPlugin() {
   return {
     name: 'service-worker-version',
     closeBundle() {
       const swPath = path.resolve(__dirname, 'dist/public/sw.js');
+      const version = Date.now().toString();
+
+      // Inject version into sw.js
       if (fs.existsSync(swPath)) {
         const content = fs.readFileSync(swPath, 'utf8');
-        const version = Date.now().toString();
         const newContent = content.replace(/__DEPLOY_VERSION__/g, version);
         fs.writeFileSync(swPath, newContent, 'utf8');
         console.log(`Service Worker version injected: ${version}`);
       }
+
+      // Create version.json for the app to check
+      const versionPath = path.resolve(__dirname, 'dist/public/version.json');
+      fs.writeFileSync(versionPath, JSON.stringify({ version, timestamp: version }), 'utf8');
+      console.log(`version.json created: ${version}`);
     }
   };
 }

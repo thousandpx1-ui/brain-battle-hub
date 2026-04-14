@@ -35,6 +35,12 @@ self.addEventListener('activate', (event: Event) => {
 
 // Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event: any) => {
+  // Don't cache version.json - always serve from network
+  if (event.request.url.includes('/version.json')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {

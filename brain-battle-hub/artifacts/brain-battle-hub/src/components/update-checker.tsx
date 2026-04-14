@@ -3,13 +3,15 @@ import { RefreshCw } from "lucide-react";
 
 const STORAGE_KEY = "brain-battle-hub-last-deploy-version";
 
-// Extract the version from the service worker file by fetching it
+// Fetch version from a dedicated JSON file (not cached by SW)
 async function fetchDeployVersion(): Promise<string | null> {
   try {
-    const response = await fetch("/sw.js", { cache: "no-store" });
-    const text = await response.text();
-    const match = text.match(/DEPLOY_VERSION\s*=\s*['"]([^'"]+)['"]/);
-    return match ? match[1] : null;
+    const response = await fetch(`/version.json?_=${Date.now()}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.version || null;
   } catch {
     return null;
   }
@@ -19,79 +21,62 @@ export function UpdateChecker() {
   const [showUpdate, setShowUpdate] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
 
-  const checkForVersionUpdate = useCallback(async () => {
+  const checkForUpdate = useCallback(async () => {
     const currentVersion = await fetchDeployVersion();
     if (!currentVersion) return;
 
     const lastSeenVersion = localStorage.getItem(STORAGE_KEY);
-    
-    // If we have a version and it's different from what we last saw, show update
-    if (lastSeenVersion && currentVersion !== lastSeenVersion) {
-      setShowUpdate(true);
-    }
-    
-    // Always update the stored version
-    localStorage.setItem(STORAGE_KEY, currentVersion);
-  }, []);
 
-  const onServiceWorkerUpdate = useCallback((registration: ServiceWorkerRegistration) => {
-    const waitingWorker = registration.waiting;
-    if (waitingWorker) {
-      setWaitingWorker(waitingWorker);
+    if (!lastSeenVersion) {
+      // First visit - store version but don't show banner
+      localStorage.setItem(STORAGE_KEY, currentVersion);
+      return;
+    }
+
+    if (currentVersion !== lastSeenVersion) {
+      // New deployment detected!
       setShowUpdate(true);
+      // Update stored version so we don't show banner again until next deploy
+      localStorage.setItem(STORAGE_KEY, currentVersion);
     }
   }, []);
 
   useEffect(() => {
-    // Always check for version updates on load
-    checkForVersionUpdate();
+    if (!("serviceWorker" in navigator)) return;
 
-    if ("serviceWorker" in navigator) {
-      const checkForSwUpdates = async () => {
-        try {
-          const registration = await navigator.serviceWorker.ready;
+    // Check for version update on load
+    checkForUpdate();
 
-          // Listen for updates
-          registration.addEventListener("updatefound", () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener("statechange", () => {
-                if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                  // New service worker is waiting to activate
-                  setWaitingWorker(newWorker);
-                  setShowUpdate(true);
-                }
-              });
+    // Listen for service worker updates
+    navigator.serviceWorker.ready.then(async (registration) => {
+      // Force check for SW updates
+      await registration.update();
+
+      registration.addEventListener("updatefound", () => {
+        const installingWorker = registration.installing;
+        if (installingWorker) {
+          installingWorker.addEventListener("statechange", () => {
+            if (installingWorker.state === "installed") {
+              setWaitingWorker(installingWorker);
+              setShowUpdate(true);
             }
           });
-
-          // Force a check by unregistering and re-registering
-          // This ensures the browser compares the SW file on each load
-          registration.update();
-        } catch (error) {
-          console.log("Service worker update check failed:", error);
         }
-      };
+      });
+    });
 
-      // Initial check
-      checkForSwUpdates();
+    // Periodic check every 60 seconds
+    const interval = setInterval(checkForUpdate, 60000);
 
-      // Check every 30 seconds
-      const interval = setInterval(checkForSwUpdates, 30000);
-
-      return () => clearInterval(interval);
-    }
-    return;
-  }, [checkForVersionUpdate]);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [checkForUpdate]);
 
   const handleUpdate = useCallback(() => {
     if (waitingWorker) {
-      // Tell the waiting service worker to activate
       waitingWorker.postMessage({ type: "SKIP_WAITING" });
     }
-    // Clear the version key so it shows again on next deploy
-    localStorage.removeItem(STORAGE_KEY);
-    // Reload the page to get the new version
     window.location.reload();
   }, [waitingWorker]);
 
