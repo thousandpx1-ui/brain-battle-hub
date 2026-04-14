@@ -6,6 +6,16 @@ const ACTIVE_COLORS = ["#ff6b81", "#7bed9f", "#70a1ff", "#ffbe76"] as const;
 
 type GameState = "idle" | "showing" | "input" | "wrong" | "gameover";
 
+interface Sparkle {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  rotation: number;
+  color: string;
+  delay: number;
+}
+
 export function SimonSays({ onGameOver }: { onGameOver: (score: number) => void }) {
   const [sequence, setSequence] = useState<number[]>([]);
   const [playerInput, setPlayerInput] = useState<number[]>([]);
@@ -15,6 +25,8 @@ export function SimonSays({ onGameOver }: { onGameOver: (score: number) => void 
   const [gameState, setGameState] = useState<GameState>("idle");
   const [activeTile, setActiveTile] = useState<number | null>(null);
   const [shakeTile, setShakeTile] = useState<number | null>(null);
+  const [sparkles, setSparkles] = useState<Sparkle[]>([]);
+  const sparkleIdRef = useRef(0);
 
   const maxStrikes = 3;
   const speedRef = useRef(700);
@@ -59,9 +71,42 @@ export function SimonSays({ onGameOver }: { onGameOver: (score: number) => void 
     []
   );
 
+  const generateSparkles = (tileIndex: number) => {
+    const tilePositions = [
+      { x: 25, y: 25 }, // top-left
+      { x: 75, y: 25 }, // top-right
+      { x: 25, y: 75 }, // bottom-left
+      { x: 75, y: 75 }, // bottom-right
+    ];
+
+    const pos = tilePositions[tileIndex];
+    const color = ACTIVE_COLORS[tileIndex];
+    const newSparkles: Sparkle[] = [];
+
+    for (let i = 0; i < 8; i++) {
+      sparkleIdRef.current += 1;
+      newSparkles.push({
+        id: sparkleIdRef.current,
+        x: pos.x + (Math.random() - 0.5) * 40,
+        y: pos.y + (Math.random() - 0.5) * 40,
+        size: Math.random() * 8 + 4,
+        rotation: Math.random() * 360,
+        color,
+        delay: Math.random() * 0.15,
+      });
+    }
+
+    setSparkles((prev) => [...prev, ...newSparkles]);
+    setTimeout(() => {
+      setSparkles((prev) => prev.filter((s) => !newSparkles.find((ns) => ns.id === s.id)));
+    }, 600);
+  };
+
   const handleTap = useCallback(
     (index: number) => {
       if (gameState !== "input") return;
+
+      generateSparkles(index);
 
       const newInput = [...playerInput, index];
       setPlayerInput(newInput);
@@ -118,7 +163,7 @@ export function SimonSays({ onGameOver }: { onGameOver: (score: number) => void 
     <div className="flex flex-col items-center justify-center w-full h-full max-w-sm mx-auto">
       {gameState === "idle" && sequence.length === 0 ? (
         <div className="text-center">
-          <h2 className="text-3xl font-black mb-4">Simon Says</h2>
+          <h2 className="text-3xl font-black mb-4">Rapid Tiles</h2>
           <p className="text-gray-500 mb-8">Watch the sequence, then repeat it!</p>
           <Button onClick={startGame} className="h-14 rounded-2xl text-lg font-bold">
             Start Game
@@ -159,9 +204,7 @@ export function SimonSays({ onGameOver }: { onGameOver: (score: number) => void 
           </p>
 
           {/* 2x2 Grid */}
-          <div
-            className="grid grid-cols-2 gap-4 w-full aspect-square max-w-[280px]"
-          >
+          <div className="relative grid grid-cols-2 gap-4 w-full aspect-square max-w-[280px]">
             {[0, 1, 2, 3].map((index) => {
               const isActive = activeTile === index;
               const isShaking = shakeTile === index;
@@ -183,6 +226,32 @@ export function SimonSays({ onGameOver }: { onGameOver: (score: number) => void 
                 />
               );
             })}
+
+            {/* Sparkles overlay */}
+            {sparkles.map((sparkle) => (
+              <div
+                key={sparkle.id}
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  left: `${sparkle.x}%`,
+                  top: `${sparkle.y}%`,
+                  animation: `sparkle-pop 0.6s ease-out ${sparkle.delay}s both`,
+                }}
+              >
+                <svg
+                  width={sparkle.size}
+                  height={sparkle.size}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  style={{ transform: `rotate(${sparkle.rotation}deg)` }}
+                >
+                  <path
+                    d="M12 0L14.59 8.41L23 12L14.59 15.59L12 24L9.41 15.59L1 12L9.41 8.41L12 0Z"
+                    fill={sparkle.color}
+                  />
+                </svg>
+              </div>
+            ))}
           </div>
         </>
       )}

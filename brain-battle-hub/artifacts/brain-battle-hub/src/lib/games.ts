@@ -17,7 +17,7 @@ export const GAMES = [
   },
   {
     id: "simon",
-    name: "Simon Says",
+    name: "Rapid Tiles",
     description: "Watch the color sequence and repeat it from memory.",
     gradient: "game-gradient-4",
     icon: Gamepad2,
