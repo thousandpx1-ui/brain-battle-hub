@@ -3,11 +3,29 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import fs from "fs";
 
 const rawPort = process.env.PORT || "3000";
 const basePath = process.env.BASE_PATH || "/";
 
 const port = Number(rawPort);
+
+// Plugin to inject deploy version into service worker
+function serviceWorkerVersionPlugin() {
+  return {
+    name: 'service-worker-version',
+    closeBundle() {
+      const swPath = path.resolve(__dirname, 'dist/public/sw.js');
+      if (fs.existsSync(swPath)) {
+        const content = fs.readFileSync(swPath, 'utf8');
+        const version = Date.now().toString();
+        const newContent = content.replace(/__DEPLOY_VERSION__/g, version);
+        fs.writeFileSync(swPath, newContent, 'utf8');
+        console.log(`Service Worker version injected: ${version}`);
+      }
+    }
+  };
+}
 
 export default defineConfig({
   base: basePath,
@@ -15,6 +33,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    serviceWorkerVersionPlugin(),
   ],
   resolve: {
     alias: {

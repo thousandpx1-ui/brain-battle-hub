@@ -1,9 +1,38 @@
 import { useEffect, useState, useCallback } from "react";
 import { RefreshCw } from "lucide-react";
 
+const STORAGE_KEY = "brain-battle-hub-last-deploy-version";
+
+// Extract the version from the service worker file by fetching it
+async function fetchDeployVersion(): Promise<string | null> {
+  try {
+    const response = await fetch("/sw.js", { cache: "no-store" });
+    const text = await response.text();
+    const match = text.match(/DEPLOY_VERSION\s*=\s*['"]([^'"]+)['"]/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 export function UpdateChecker() {
   const [showUpdate, setShowUpdate] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+
+  const checkForVersionUpdate = useCallback(async () => {
+    const currentVersion = await fetchDeployVersion();
+    if (!currentVersion) return;
+
+    const lastSeenVersion = localStorage.getItem(STORAGE_KEY);
+    
+    // If we have a version and it's different from what we last saw, show update
+    if (lastSeenVersion && currentVersion !== lastSeenVersion) {
+      setShowUpdate(true);
+    }
+    
+    // Always update the stored version
+    localStorage.setItem(STORAGE_KEY, currentVersion);
+  }, []);
 
   const onServiceWorkerUpdate = useCallback((registration: ServiceWorkerRegistration) => {
     const waitingWorker = registration.waiting;
@@ -14,12 +43,14 @@ export function UpdateChecker() {
   }, []);
 
   useEffect(() => {
+    // Always check for version updates on load
+    checkForVersionUpdate();
+
     if ("serviceWorker" in navigator) {
-      // Check for updates periodically
-      const checkForUpdates = async () => {
+      const checkForSwUpdates = async () => {
         try {
           const registration = await navigator.serviceWorker.ready;
-          
+
           // Listen for updates
           registration.addEventListener("updatefound", () => {
             const newWorker = registration.installing;
@@ -33,26 +64,33 @@ export function UpdateChecker() {
               });
             }
           });
+
+          // Force a check by unregistering and re-registering
+          // This ensures the browser compares the SW file on each load
+          registration.update();
         } catch (error) {
           console.log("Service worker update check failed:", error);
         }
       };
 
       // Initial check
-      checkForUpdates();
+      checkForSwUpdates();
 
-      // Check every 60 seconds
-      const interval = setInterval(checkForUpdates, 60000);
+      // Check every 30 seconds
+      const interval = setInterval(checkForSwUpdates, 30000);
 
       return () => clearInterval(interval);
     }
-  }, []);
+    return;
+  }, [checkForVersionUpdate]);
 
   const handleUpdate = useCallback(() => {
     if (waitingWorker) {
       // Tell the waiting service worker to activate
       waitingWorker.postMessage({ type: "SKIP_WAITING" });
     }
+    // Clear the version key so it shows again on next deploy
+    localStorage.removeItem(STORAGE_KEY);
     // Reload the page to get the new version
     window.location.reload();
   }, [waitingWorker]);

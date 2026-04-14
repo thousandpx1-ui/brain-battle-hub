@@ -1,4 +1,7 @@
-const CACHE_NAME = 'brain-battle-hub-v1';
+// This version marker will be updated on each deployment
+// to ensure the update notification shows every time
+const DEPLOY_VERSION = '__DEPLOY_VERSION__';
+const CACHE_NAME = 'brain-battle-hub-' + DEPLOY_VERSION;
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
