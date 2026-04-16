@@ -4,8 +4,8 @@
 [build]
 # Command to build the frontend
 command = "pnpm install && pnpm --filter @workspace/brain-battle-hub run build"
-# Output directory from the frontend build
-pages_build_output_dir = "artifacts/brain-battle-hub/dist/public"
+# Output directory from the frontend build (relative to project root after build)
+pages_build_output_dir = "dist/public"
 # Node.js version
 node_version = "24"
 
