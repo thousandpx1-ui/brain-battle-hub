@@ -33,6 +33,7 @@ export function BlockBlast({ onGameOver }: { onGameOver: (score: number) => void
   const [fallingBlocks, setFallingBlocks] = useState<Set<string>>(new Set());
   const blockIdRef = useRef(0);
   const timerRef = useRef<number | null>(null);
+  const animationRef = useRef<number | null>(null);
 
   const createGrid = useCallback(() => {
     const newGrid: number[][] = [];
@@ -51,6 +52,7 @@ export function BlockBlast({ onGameOver }: { onGameOver: (score: number) => void
     setTime(60);
     setIsPlaying(true);
     setSelectedGroup([]);
+    setParticles([]);
   }, [createGrid]);
 
   useEffect(() => {
@@ -215,22 +217,26 @@ export function BlockBlast({ onGameOver }: { onGameOver: (score: number) => void
   useEffect(() => {
     if (particles.length === 0) return;
 
-    const anim = requestAnimationFrame(function updateParticles() {
-      setParticles((prev) =>
-        prev
+    const interval = setInterval(() => {
+      setParticles((prev) => {
+        if (prev.length === 0) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev
           .map((p) => ({
             ...p,
             x: p.x + p.vx,
             y: p.y + p.vy,
             vy: p.vy + 0.3,
-            life: p.life - 0.03,
+            life: p.life - 0.05,
           }))
-          .filter((p) => p.life > 0)
-      );
-    });
+          .filter((p) => p.life > 0);
+      });
+    }, 16);
 
-    return () => cancelAnimationFrame(anim);
-  }, [particles.length]);
+    return () => clearInterval(interval);
+  }, []);
 
   const formatTime = (t: number) => {
     const mins = Math.floor(t / 60);
