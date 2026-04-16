@@ -1,6 +1,13 @@
-import { Brain, Eye, Gamepad2 } from "lucide-react";
+import { Brain, Eye, Gamepad2, Grid3X3, Bomb } from "lucide-react";
 
 export const GAMES = [
+  {
+    id: "blockblast",
+    name: "Block Blast",
+    description: "Tap groups of 3+ matching blocks to blast them!",
+    gradient: "game-gradient-3",
+    icon: Grid3X3,
+  },
   {
     id: "memory",
     name: "Memory Collapse",

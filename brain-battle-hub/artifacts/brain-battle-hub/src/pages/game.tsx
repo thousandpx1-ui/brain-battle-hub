@@ -8,6 +8,7 @@ import { DontBlink } from "@/games/DontBlink";
 import { FakeTapTrap } from "@/games/FakeTapTrap";
 import { IllusionFinder } from "@/games/IllusionFinder";
 import { SimonSays } from "@/games/SimonSays";
+import { BlockBlast } from "@/games/BlockBlast";
 
 import { saveScore } from "@/lib/d1-client";
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
@@ -94,6 +95,7 @@ export default function Game() {
 
   const renderGameComponent = () => {
     switch (game.id) {
+      case "blockblast": return <BlockBlast onGameOver={handleGameOver} />;
       case "memory": return <MemoryCollapse onGameOver={handleGameOver} />;
       case "blink": return <DontBlink onGameOver={handleGameOver} />;
       case "taptrap": return <FakeTapTrap onGameOver={handleGameOver} />;
