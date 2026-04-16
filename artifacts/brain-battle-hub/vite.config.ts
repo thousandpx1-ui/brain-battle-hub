@@ -15,10 +15,17 @@ function serviceWorkerVersionPlugin() {
   return {
     name: 'service-worker-version',
     closeBundle() {
-      const swPath = path.resolve(__dirname, 'dist/public/sw.js');
+      const outDir = path.resolve(__dirname, 'dist/public');
+      const swPath = path.join(outDir, 'sw.js');
+      const versionPath = path.join(outDir, 'version.json');
       const version = Date.now().toString();
 
-      // Inject version into sw.js
+      // Ensure output directory exists
+      if (!fs.existsSync(outDir)) {
+        fs.mkdirSync(outDir, { recursive: true });
+      }
+
+      // Inject version into sw.js if it exists
       if (fs.existsSync(swPath)) {
         const content = fs.readFileSync(swPath, 'utf8');
         const newContent = content.replace(/__DEPLOY_VERSION__/g, version);
@@ -27,7 +34,6 @@ function serviceWorkerVersionPlugin() {
       }
 
       // Create version.json for the app to check
-      const versionPath = path.resolve(__dirname, 'dist/public/version.json');
       fs.writeFileSync(versionPath, JSON.stringify({ version, timestamp: version }), 'utf8');
       console.log(`version.json created: ${version}`);
     }
