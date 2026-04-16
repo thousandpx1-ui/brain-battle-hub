@@ -1,4 +1,4 @@
-import { Brain, Eye, Gamepad2, Bomb } from "lucide-react";
+import { Brain, Eye, Gamepad2, Bomb, Grid3X3 } from "lucide-react";
 
 export const GAMES = [
   {
@@ -21,6 +21,13 @@ export const GAMES = [
     description: "Watch the color sequence and repeat it from memory.",
     gradient: "game-gradient-4",
     icon: Gamepad2,
+  },
+  {
+    id: "colorblast",
+    name: "Color Blast",
+    description: "Match 3+ same-colored blocks to blast them and beat the timer!",
+    gradient: "game-gradient-5",
+    icon: Grid3X3,
   },
 ];
 

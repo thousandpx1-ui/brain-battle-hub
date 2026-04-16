@@ -3,6 +3,7 @@
 name = "brain-battle-hub"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
+pages_build_output_dir = "artifacts/brain-battle-hub/dist/public"
 
 [[d1_databases]]
 binding = "DB"
