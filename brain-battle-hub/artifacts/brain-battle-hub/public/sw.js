@@ -14,11 +14,11 @@ self.addEventListener('install', (event: Event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
-  // Force the waiting service worker to become the active service worker
-  (self as any).skipWaiting();
+  // Don't skip waiting - let the app control when to activate
+  // This ensures users see the update notification
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and take control immediately when activated
 self.addEventListener('activate', (event: Event) => {
   (event as any).waitUntil(
     caches.keys().then((cacheNames) => {
@@ -27,13 +27,14 @@ self.addEventListener('activate', (event: Event) => {
           .filter((cacheName) => cacheName !== CACHE_NAME)
           .map((cacheName) => caches.delete(cacheName))
       );
+    }).then(() => {
+      // Take control of all pages immediately after activation
+      return (self as any).clients.claim();
     })
   );
-  // Take control of all pages immediately
-  (self as any).clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch event - network first, fallback to cache with no-cache for HTML
 self.addEventListener('fetch', (event: any) => {
   // Don't cache version.json - always serve from network
   if (event.request.url.includes('/version.json')) {
@@ -41,6 +42,29 @@ self.addEventListener('fetch', (event: any) => {
     return;
   }
 
+  // For HTML documents, always try network first with no-cache
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-cache' })
+        .then((response) => {
+          // Cache successful responses
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // For other assets, use network first strategy
   event.respondWith(
     fetch(event.request)
       .then((response) => {
