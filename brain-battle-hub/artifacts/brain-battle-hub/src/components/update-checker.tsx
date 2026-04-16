@@ -49,7 +49,7 @@ export function UpdateChecker() {
 
     // Listen for service worker updates
     navigator.serviceWorker.ready.then(async (registration) => {
-      // Force check for SW updates
+      // Force check for SW updates immediately
       await registration.update();
 
       registration.addEventListener("updatefound", () => {
@@ -65,8 +65,14 @@ export function UpdateChecker() {
       });
     });
 
-    // Periodic check every 60 seconds
-    const interval = setInterval(checkForUpdate, 60000);
+    // Also listen for controller change (when new SW takes over)
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      // New service worker took control - reload to get fresh content
+      window.location.reload();
+    });
+
+    // Periodic check every 30 seconds for faster update detection
+    const interval = setInterval(checkForUpdate, 30000);
 
     return () => {
       clearInterval(interval);
@@ -76,8 +82,15 @@ export function UpdateChecker() {
   const handleUpdate = useCallback(() => {
     if (waitingWorker) {
       waitingWorker.postMessage({ type: "SKIP_WAITING" });
+    } else {
+      // If no waiting worker, just reload to get fresh content
+      window.location.reload();
+      return;
     }
-    window.location.reload();
+    // Reload after a short delay to ensure SW takes control
+    setTimeout(() => {
+      window.location.reload();
+    }, 200);
   }, [waitingWorker]);
 
   if (!showUpdate) return null;
