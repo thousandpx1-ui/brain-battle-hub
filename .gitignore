@@ -1,48 +1,44 @@
 ```
-# Dependency directories
+# Dependencies
 node_modules/
-.brain-battle-hub/false/
+.pnpm-store/
 
-# Build artifacts and cache
-brain-battle-hub/artifacts/
-brain-battle-hub/false/
+# Build artifacts
+dist/
+build/
+target/
 
-# Environment files
+# Cache directories
+.cache/
+.node_cache/
+.npm/
+.yarn/
+
+# Logs
+*.log
+worker.log
+
+# Environment variables
 .env
 .env.local
 .env.*
 
-# Logs
-*.log
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# OS generated files
+# OS files
 .DS_Store
 Thumbs.db
 
-# IDE specific
-.vscode/
-.idea/
+# Generated files
+brain-battle-hub/lib/api-client-react/src/generated/
+brain-battle-hub/lib/api-zod/src/generated/
+brain-battle-hub/lib/db/src/schema/
+brain-battle-hub/migrations/
 
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Node.js
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# General build outputs
-dist/
-build/
-target/
-coverage/
-*.tmp
-*.temp
-
-# Index files
-brain-battle-hub/false/v10/index/
-
+# Package manager
+pnpm-lock.yaml
 ```
