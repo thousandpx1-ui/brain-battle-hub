@@ -9,6 +9,7 @@ import { FakeTapTrap } from "@/games/FakeTapTrap";
 import { IllusionFinder } from "@/games/IllusionFinder";
 import { SimonSays } from "@/games/SimonSays";
 import { ColorBlast } from "@/games/ColorBlast";
+import { BlockBlast } from "@/games/BlockBlast";
 
 import { saveScore } from "@/lib/d1-client";
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
@@ -101,6 +102,7 @@ export default function Game() {
       case "illusion": return <IllusionFinder onGameOver={handleGameOver} />;
       case "simon": return <SimonSays onGameOver={handleGameOver} />;
       case "colorblast": return <ColorBlast onGameOver={handleGameOver} />;
+      case "blockblast": return <BlockBlast onGameOver={handleGameOver} />;
       default: return <div>Unknown Game</div>;
     }
   };
