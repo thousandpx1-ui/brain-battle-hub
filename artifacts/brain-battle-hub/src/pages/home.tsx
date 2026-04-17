@@ -33,6 +33,9 @@ export default function Home() {
   const [dailyLoading, setDailyLoading] = useState(true);
   const localScores = useLocalLeaderboard((s) => s.scores);
   const _version = useLocalLeaderboard((s) => s.version);
+  
+  // Force re-render check - v2.0.1
+  console.log("Home loaded with", GAMES.length, "games");
 
   // Fetch daily leaderboard
   const fetchDailyLeaderboard = async () => {
