@@ -132,6 +132,8 @@
 .game-gradient-2 { background: linear-gradient(135deg, #9d4edd 0%, #c77dff 100%); }
 .game-gradient-3 { background: linear-gradient(135deg, #06d6a0 0%, #48bfe3 100%); }
 .game-gradient-4 { background: linear-gradient(135deg, #ff4757 0%, #ffa502 100%); }
+.game-gradient-5 { background: linear-gradient(135deg, #00f5d4 0%, #9d4edd 100%); }
+.game-gradient-6 { background: linear-gradient(135deg, #CCFF00 0%, #00FFFF 100%); }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
