@@ -127,7 +127,10 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col gap-4 mt-4">
-          {/* DEBUG: {GAMES.length} games loaded */}
+          {/* COLOR BLAST IS HERE - 4 GAMES TOTAL */}
+          <div className="bg-red-500 text-white p-4 rounded-lg font-bold text-center">
+            🎮 UPDATE CONFIRMED: {GAMES.length} GAMES LOADED (including Color Blast!)
+          </div>
           {GAMES.map((game, i) => (
             <motion.div
               key={game.id}
