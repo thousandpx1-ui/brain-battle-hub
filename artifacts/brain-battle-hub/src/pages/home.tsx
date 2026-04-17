@@ -124,6 +124,7 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col gap-4 mt-4">
+          {/* DEBUG: {GAMES.length} games loaded */}
           {GAMES.map((game, i) => (
             <motion.div
               key={game.id}
