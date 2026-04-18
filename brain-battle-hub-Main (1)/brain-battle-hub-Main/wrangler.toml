@@ -1,0 +1,7 @@
+# Cloudflare Pages Configuration
+[build]
+command = "cd artifacts/brain-battle-hub && pnpm install && pnpm run build"
+pages_build_output_dir = "artifacts/brain-battle-hub/dist/public"
+
+[vars]
+NODE_VERSION = "24"
