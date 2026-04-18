@@ -1,283 +1,479 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const ROWS = 5;
-const COLS = 5;
-const COLORS = [1, 2, 3, 4]; // 1=Green, 2=Cyan, 3=Pink, 4=Purple
+const ROWS = 8;
+const COLS = 8;
+const START_TIME = 50;
+const MIN_GROUP_SIZE = 3;
+const POINTS_PER_BLOCK = 5;
+const TIME_BONUS_PER_BLAST = 3;
+const COLOR_IDS = [0, 1, 2, 3, 4, 5] as const;
 
-type BlockColor = number | null;
-type Grid = BlockColor[][];
+type BlockId = (typeof COLOR_IDS)[number];
+type Grid = BlockId[][];
+type Position = { row: number; col: number };
+type GamePhase = "menu" | "playing" | "gameover";
 
-function randomColor() {
-  return COLORS[Math.floor(Math.random() * COLORS.length)];
+const BLOCK_STYLES: Record<
+  BlockId,
+  { bg: string; glow: string; ring: string; label: string }
+> = {
+  0: {
+    bg: "linear-gradient(135deg, #ccff00 0%, #8fff00 100%)",
+    glow: "0 0 18px rgba(204,255,0,0.65), inset 0 1px 0 rgba(255,255,255,0.35)",
+    ring: "rgba(204,255,0,0.9)",
+    label: "Lime",
+  },
+  1: {
+    bg: "linear-gradient(135deg, #00ffff 0%, #00b8ff 100%)",
+    glow: "0 0 18px rgba(0,255,255,0.65), inset 0 1px 0 rgba(255,255,255,0.35)",
+    ring: "rgba(0,255,255,0.95)",
+    label: "Cyan",
+  },
+  2: {
+    bg: "linear-gradient(135deg, #ff00ff 0%, #ff5ac8 100%)",
+    glow: "0 0 18px rgba(255,0,255,0.6), inset 0 1px 0 rgba(255,255,255,0.35)",
+    ring: "rgba(255,0,255,0.95)",
+    label: "Magenta",
+  },
+  3: {
+    bg: "linear-gradient(135deg, #9d00ff 0%, #6100ff 100%)",
+    glow: "0 0 18px rgba(157,0,255,0.6), inset 0 1px 0 rgba(255,255,255,0.35)",
+    ring: "rgba(157,0,255,0.95)",
+    label: "Purple",
+  },
+  4: {
+    bg: "linear-gradient(135deg, #ffff00 0%, #ffbf00 100%)",
+    glow: "0 0 18px rgba(255,255,0,0.6), inset 0 1px 0 rgba(255,255,255,0.35)",
+    ring: "rgba(255,255,0,0.95)",
+    label: "Yellow",
+  },
+  5: {
+    bg: "linear-gradient(135deg, #ff7a00 0%, #ff3d00 100%)",
+    glow: "0 0 18px rgba(255,122,0,0.6), inset 0 1px 0 rgba(255,255,255,0.35)",
+    ring: "rgba(255,122,0,0.95)",
+    label: "Orange",
+  },
+};
+
+function randomBlock(): BlockId {
+  return COLOR_IDS[Math.floor(Math.random() * COLOR_IDS.length)];
 }
 
-function findGroup(grid: Grid, x: number, y: number, color: number): [number, number][] {
-  let stack: [number, number][] = [[x, y]];
-  let visited = new Set<string>();
-  let group: [number, number][] = [];
-  
-  while (stack.length) {
-    let [cx, cy] = stack.pop()!;
-    let key = `${cx},${cy}`;
-    if (visited.has(key)) continue;
-    if (cx < 0 || cx >= ROWS || cy < 0 || cy >= COLS) continue;
-    if (grid[cx][cy] !== color) continue;
+function createGrid(): Grid {
+  return Array.from({ length: ROWS }, () =>
+    Array.from({ length: COLS }, () => randomBlock()),
+  );
+}
+
+function cellKey(row: number, col: number): string {
+  return `${row},${col}`;
+}
+
+function findConnectedGroup(grid: Grid, startRow: number, startCol: number): Position[] {
+  const target = grid[startRow]?.[startCol];
+  if (target === undefined) return [];
+
+  const visited = new Set<string>();
+  const stack: Position[] = [{ row: startRow, col: startCol }];
+  const group: Position[] = [];
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    const key = cellKey(current.row, current.col);
+
+    if (
+      current.row < 0 ||
+      current.row >= ROWS ||
+      current.col < 0 ||
+      current.col >= COLS ||
+      visited.has(key) ||
+      grid[current.row][current.col] !== target
+    ) {
+      continue;
+    }
+
     visited.add(key);
-    group.push([cx, cy]);
-    stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+    group.push(current);
+
+    stack.push(
+      { row: current.row + 1, col: current.col },
+      { row: current.row - 1, col: current.col },
+      { row: current.row, col: current.col + 1 },
+      { row: current.row, col: current.col - 1 },
+    );
   }
+
   return group;
 }
 
-function applyGravity(grid: Grid): Grid {
-  const newGrid = grid.map(row => [...row]);
-  for (let col = 0; col < COLS; col++) {
-    let empty: number[] = [];
-    for (let row = ROWS - 1; row >= 0; row--) {
-      if (newGrid[row][col] === null) {
-        empty.push(row);
-      } else if (empty.length > 0) {
-        let emptyRow = empty.shift()!;
-        newGrid[emptyRow][col] = newGrid[row][col];
-        newGrid[row][col] = null;
-        empty.push(row);
-      }
-    }
-  }
-  return newGrid;
-}
+function refillGridWithoutGravity(grid: Grid, cleared: Position[]): Grid {
+  const clearedSet = new Set(cleared.map((pos) => cellKey(pos.row, pos.col)));
 
-function spawnNewBlocks(grid: Grid): Grid {
-  const newGrid = grid.map(row => [...row]);
-  for (let col = 0; col < COLS; col++) {
-    for (let row = 0; row < ROWS; row++) {
-      if (newGrid[row][col] === null) {
-        newGrid[row][col] = randomColor();
-      }
-    }
-  }
-  return newGrid;
+  return grid.map((row, rowIndex) =>
+    row.map((cell, colIndex) =>
+      clearedSet.has(cellKey(rowIndex, colIndex)) ? randomBlock() : cell,
+    ),
+  );
 }
-
-const colorClasses: Record<number, string> = {
-  1: 'bg-green-400',
-  2: 'bg-cyan-400',
-  3: 'bg-pink-400',
-  4: 'bg-purple-500',
-};
 
 export function ColorBlast({ onGameOver }: { onGameOver: (score: number) => void }) {
-  const [grid, setGrid] = useState<Grid>([]);
+  const [phase, setPhase] = useState<GamePhase>("menu");
+  const [grid, setGrid] = useState<Grid>(() => createGrid());
   const [score, setScore] = useState(0);
-  const [time, setTime] = useState(60);
-  const [activeBooster, setActiveBooster] = useState<'combo' | 'rainbow' | 'bomb' | null>(null);
-  const [poppingBlocks, setPoppingBlocks] = useState<Set<string>>(new Set());
+  const [timeLeft, setTimeLeft] = useState(START_TIME);
+  const [selectedGroup, setSelectedGroup] = useState<Set<string>>(new Set());
+  const [blastingGroup, setBlastingGroup] = useState<Set<string>>(new Set());
+  const [floatingScore, setFloatingScore] = useState<string | null>(null);
+  const [floatingTime, setFloatingTime] = useState<string | null>(null);
+  const [invalidPulse, setInvalidPulse] = useState<Set<string>>(new Set());
+  const [lastActionLabel, setLastActionLabel] = useState("Tap any neon cluster of 3+ blocks");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const gameActiveRef = useRef(true);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scorePopupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timePopupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const invalidRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gameOverSentRef = useRef(false);
 
-  const initGame = useCallback(() => {
-    const newGrid: Grid = Array.from({ length: ROWS }, () =>
-      Array.from({ length: COLS }, () => randomColor())
-    );
-    setGrid(newGrid);
+  const resetGame = useCallback(() => {
+    setGrid(createGrid());
     setScore(0);
-    setTime(60);
-    setPoppingBlocks(new Set());
-    setActiveBooster(null);
-    gameActiveRef.current = true;
+    setTimeLeft(START_TIME);
+    setSelectedGroup(new Set());
+    setBlastingGroup(new Set());
+    setFloatingScore(null);
+    setFloatingTime(null);
+    setInvalidPulse(new Set());
+    setLastActionLabel("Tap any neon cluster of 3+ blocks");
+    setPhase("playing");
+    gameOverSentRef.current = false;
   }, []);
 
   useEffect(() => {
-    initGame();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (scorePopupRef.current) clearTimeout(scorePopupRef.current);
+      if (timePopupRef.current) clearTimeout(timePopupRef.current);
+      if (invalidRef.current) clearTimeout(invalidRef.current);
+      if (blastRef.current) clearTimeout(blastRef.current);
     };
-  }, [initGame]);
+  }, []);
 
   useEffect(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (phase !== "playing") {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
     timerRef.current = setInterval(() => {
-      if (!gameActiveRef.current) return;
-      setTime(prev => {
-        if (prev <= 1) {
-          gameActiveRef.current = false;
-          clearInterval(timerRef.current!);
-          setTimeout(() => onGameOver(0), 100);
+      setTimeLeft((current) => {
+        if (current <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
           return 0;
         }
-        return prev - 1;
+
+        return current - 1;
       });
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [onGameOver]);
+  }, [phase]);
 
-  const finishMove = useCallback((updatedGrid: Grid) => {
-    const withGravity = applyGravity(updatedGrid);
-    const withNewBlocks = spawnNewBlocks(withGravity);
-    setPoppingBlocks(new Set());
-    timeoutRef.current = setTimeout(() => {
-      setGrid(withNewBlocks);
-    }, 300);
+  useEffect(() => {
+    if (phase !== "playing" || timeLeft > 0 || gameOverSentRef.current) return;
+
+    gameOverSentRef.current = true;
+    setPhase("gameover");
+    onGameOver(score);
+  }, [onGameOver, phase, score, timeLeft]);
+
+  const timeToneClass = useMemo(() => {
+    if (timeLeft <= 10) return "text-red-400 animate-pulse";
+    if (timeLeft <= 20) return "text-yellow-300";
+    return "text-cyan-300";
+  }, [timeLeft]);
+
+  const handleHover = useCallback(
+    (row: number, col: number) => {
+      if (phase !== "playing" || blastingGroup.size > 0) return;
+
+      const group = findConnectedGroup(grid, row, col);
+      if (group.length >= MIN_GROUP_SIZE) {
+        setSelectedGroup(new Set(group.map((pos) => cellKey(pos.row, pos.col))));
+      } else {
+        setSelectedGroup(new Set([cellKey(row, col)]));
+      }
+    },
+    [blastingGroup.size, grid, phase],
+  );
+
+  const clearTransientFeedback = useCallback(() => {
+    if (scorePopupRef.current) clearTimeout(scorePopupRef.current);
+    if (timePopupRef.current) clearTimeout(timePopupRef.current);
+    if (invalidRef.current) clearTimeout(invalidRef.current);
   }, []);
 
-  const handleBlockClick = useCallback((r: number, c: number) => {
-    if (!gameActiveRef.current) return;
-    setGrid(currentGrid => {
-      if (currentGrid[r][c] === null) return currentGrid;
+  const handleTap = useCallback(
+    (row: number, col: number) => {
+      if (phase !== "playing" || blastingGroup.size > 0) return;
 
-      if (activeBooster === 'bomb') {
-        const newGrid = currentGrid.map(row => [...row]);
-        let destroyedCount = 0;
-        for (let i = r - 1; i <= r + 1; i++) {
-          for (let j = c - 1; j <= c + 1; j++) {
-            if (i >= 0 && i < ROWS && j >= 0 && j < COLS && newGrid[i][j] !== null) {
-              newGrid[i][j] = null;
-              destroyedCount++;
-            }
-          }
-        }
-        setScore(prev => prev + 10);
-        setActiveBooster(null);
-        
-        const popped = new Set<string>();
-        for (let i = r - 1; i <= r + 1; i++) {
-          for (let j = c - 1; j <= c + 1; j++) {
-            if (i >= 0 && i < ROWS && j >= 0 && j < COLS) {
-              popped.add(`${i},${j}`);
-            }
-          }
-        }
-        setPoppingBlocks(popped);
-        finishMove(newGrid);
-        return newGrid;
+      const group = findConnectedGroup(grid, row, col);
+      const groupKeys = new Set(group.map((pos) => cellKey(pos.row, pos.col)));
+      setSelectedGroup(groupKeys);
+
+      if (group.length < MIN_GROUP_SIZE) {
+        clearTransientFeedback();
+        setInvalidPulse(groupKeys);
+        setLastActionLabel("Need at least 3 connected blocks");
+        invalidRef.current = setTimeout(() => {
+          setInvalidPulse(new Set());
+        }, 280);
+        return;
       }
 
-      if (activeBooster === 'rainbow') {
-        const targetColor = currentGrid[r][c];
-        if (targetColor === null) return currentGrid;
-        const newGrid = currentGrid.map(row => [...row]);
-        let removedCount = 0;
-        const popped = new Set<string>();
-        for (let i = 0; i < ROWS; i++) {
-          for (let j = 0; j < COLS; j++) {
-            if (newGrid[i][j] === targetColor) {
-              newGrid[i][j] = null;
-              removedCount++;
-              popped.add(`${i},${j}`);
-            }
-          }
-        }
-        if (removedCount > 0) {
-          setScore(prev => prev + 15);
-          setTime(prev => prev + 5);
-        }
-        setActiveBooster(null);
-        setPoppingBlocks(popped);
-        finishMove(newGrid);
-        return newGrid;
-      }
+      const blastPoints = group.length * POINTS_PER_BLOCK;
+      clearTransientFeedback();
+      setBlastingGroup(groupKeys);
+      setFloatingScore(`+${blastPoints}`);
+      setFloatingTime(`+${TIME_BONUS_PER_BLAST}s`);
+      setLastActionLabel(`${group.length} blocks blasted`);
 
-      // Normal play
-      const color = currentGrid[r][c];
-      if (color === null) return currentGrid;
-      const group = findGroup(currentGrid, r, c, color);
-      
-      if (group.length >= 3) {
-        let points = 5;
-        let timeBonus = 3;
-        
-        if (activeBooster === 'combo') {
-          points *= 2;
-          timeBonus *= 2;
-          setActiveBooster(null);
-        }
-        
-        setScore(prev => prev + points);
-        setTime(prev => prev + timeBonus);
-        
-        const newGrid = currentGrid.map(row => [...row]);
-        const popped = new Set<string>();
-        group.forEach(([gr, gc]) => {
-          newGrid[gr][gc] = null;
-          popped.add(`${gr},${gc}`);
-        });
-        setPoppingBlocks(popped);
-        finishMove(newGrid);
-        return newGrid;
-      }
-      
-      return currentGrid;
-    });
-  }, [activeBooster, finishMove]);
+      setScore((current) => current + blastPoints);
+      setTimeLeft((current) => current + TIME_BONUS_PER_BLAST);
 
-  const toggleBooster = useCallback((type: 'combo' | 'rainbow' | 'bomb') => {
-    setActiveBooster(prev => prev === type ? null : type);
-  }, []);
+      scorePopupRef.current = setTimeout(() => setFloatingScore(null), 850);
+      timePopupRef.current = setTimeout(() => setFloatingTime(null), 850);
 
-  if (grid.length === 0) return null;
+      blastRef.current = setTimeout(() => {
+        setGrid((currentGrid) => refillGridWithoutGravity(currentGrid, group));
+        setSelectedGroup(new Set());
+        setBlastingGroup(new Set());
+      }, 220);
+    },
+    [blastingGroup.size, clearTransientFeedback, grid, phase],
+  );
 
   return (
-    <div className="flex flex-col items-center w-full h-full max-w-md mx-auto">
-      {/* Header */}
-      <div className="w-full bg-amber-700 text-white p-4 rounded-xl mb-4 flex justify-between shadow-md shadow-amber-900">
-        <div className="font-bold text-lg">Score: {score}</div>
-        <div className={`font-bold text-lg ${time <= 10 ? 'text-red-300' : ''}`}>Time: {time}</div>
-      </div>
-
-      {/* Grid */}
-      <div className="grid grid-cols-5 gap-1.5 bg-amber-700 p-1.5 rounded-xl mb-4 w-full max-w-[320px]">
-        {grid.flat().map((val, idx) => {
-          const row = Math.floor(idx / COLS);
-          const col = idx % COLS;
-          const key = `${row},${col}`;
-          const isPopping = poppingBlocks.has(key);
-          
-          return (
-            <div
-              key={key}
-              data-row={row}
-              data-col={col}
-              className={`
-                aspect-square rounded-lg transition-all duration-200
-                ${val === null ? 'bg-transparent' : 
-                  `${colorClasses[val]} shadow-inner cursor-pointer hover:scale-95 active:scale-90 
-                   flex justify-end items-start p-1 text-xs font-bold text-black/30`
-                }
-                ${isPopping ? 'animate-ping opacity-0' : ''}
-              `}
-              onClick={() => val !== null && handleBlockClick(row, col)}
-            >
-              {val !== null && val}
+    <div className="mx-auto flex h-full w-full max-w-md flex-col items-center justify-start px-1 pb-6 text-white">
+      <div className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-[#07090f] shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top,#14213d_0%,#090b12_65%)] px-5 py-5">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-white/40">
+                Score
+              </p>
+              <div className="text-3xl font-black text-white">{score}</div>
             </div>
-          );
-        })}
-      </div>
+            <div className="text-right">
+              <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-white/40">
+                Time
+              </p>
+              <div className={`text-3xl font-black ${timeToneClass}`}>{timeLeft}</div>
+            </div>
+          </div>
 
-      {/* Boosters */}
-      <div className="w-full max-w-[320px] flex justify-around">
-        {[
-          { type: 'combo' as const, icon: '⚡', label: 'Combo Boost' },
-          { type: 'rainbow' as const, icon: '🌈', label: 'Rainbow' },
-          { type: 'bomb' as const, icon: '💣', label: 'Bomb' },
-        ].map(({ type, icon, label }) => (
-          <button
-            key={type}
-            onClick={() => toggleBooster(type)}
-            className={`flex flex-col items-center p-3 rounded-lg transition-all duration-200 w-24
-              ${activeBooster === type 
-                ? 'bg-blue-100 border-2 border-blue-500 -translate-y-1' 
-                : 'hover:bg-gray-100'
-              }`}
-          >
-            <span className="text-2xl mb-1">{icon}</span>
-            <span className="text-xs font-bold text-gray-600">{label}</span>
-          </button>
-        ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-200/70">
+                Goal
+              </p>
+              <p className="mt-1 text-sm font-semibold text-cyan-50">
+                Tap groups of 3+ matching blocks
+              </p>
+            </div>
+            <div className="rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/10 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-fuchsia-200/70">
+                Bonus
+              </p>
+              <p className="mt-1 text-sm font-semibold text-fuchsia-50">
+                +{POINTS_PER_BLOCK} each • +{TIME_BONUS_PER_BLAST}s blast
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 pb-5 pt-4">
+          {phase === "menu" && (
+            <div className="flex min-h-[520px] flex-col items-center justify-center text-center">
+              <div className="mb-5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.4em] text-cyan-200">
+                Block Blast
+              </div>
+              <h2 className="text-4xl font-black tracking-tight text-white">Tap. Blast. Survive.</h2>
+              <p className="mt-4 max-w-xs text-sm leading-6 text-white/65">
+                Blast neon clusters of 3 or more matching blocks before the timer ends. Every
+                successful blast adds points and bonus time.
+              </p>
+
+              <div className="mt-8 grid w-full max-w-xs gap-3 rounded-[28px] border border-white/10 bg-white/5 p-4 text-left">
+                <div className="rounded-2xl bg-black/20 p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/45">
+                    Grid
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white/90">8 × 8 neon block board</p>
+                </div>
+                <div className="rounded-2xl bg-black/20 p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/45">
+                    Rules
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white/90">
+                    Only connected groups of 3+ will blast
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-black/20 p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/45">
+                    Refill
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white/90">
+                    New blocks refill cleared cells from above
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={resetGame}
+                className="mt-8 rounded-full bg-[linear-gradient(135deg,#00ffff,#9d00ff)] px-8 py-4 text-base font-black tracking-[0.2em] text-black shadow-[0_0_30px_rgba(0,255,255,0.35)] transition-transform duration-200 hover:scale-[1.02] active:scale-95"
+              >
+                PLAY
+              </button>
+            </div>
+          )}
+
+          {(phase === "playing" || phase === "gameover") && (
+            <div className="relative">
+              <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">
+                  {phase === "gameover" ? "Final Run" : "Live Feed"}
+                </p>
+                <p className="text-right text-sm font-semibold text-white/80">{lastActionLabel}</p>
+              </div>
+
+              <div className="relative rounded-[28px] border border-white/10 bg-[#0c1018] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                <div className="grid grid-cols-8 gap-2">
+                  {grid.flatMap((row, rowIndex) =>
+                    row.map((block, colIndex) => {
+                      const key = cellKey(rowIndex, colIndex);
+                      const isSelected = selectedGroup.has(key);
+                      const isBlasting = blastingGroup.has(key);
+                      const isInvalid = invalidPulse.has(key);
+                      const style = BLOCK_STYLES[block];
+
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-label={`${style.label} block at row ${rowIndex + 1} column ${colIndex + 1}`}
+                          onMouseEnter={() => handleHover(rowIndex, colIndex)}
+                          onFocus={() => handleHover(rowIndex, colIndex)}
+                          onMouseLeave={() => setSelectedGroup(new Set())}
+                          onClick={() => handleTap(rowIndex, colIndex)}
+                          disabled={phase !== "playing"}
+                          className={`relative aspect-square rounded-[14px] border border-white/10 transition-all duration-200 ${
+                            isSelected ? "scale-105" : "scale-100"
+                          } ${isInvalid ? "animate-pulse" : ""} ${
+                            phase === "playing" ? "cursor-pointer active:scale-95" : "cursor-default opacity-80"
+                          }`}
+                          style={{
+                            background: style.bg,
+                            boxShadow: isBlasting
+                              ? `0 0 24px ${style.ring}, 0 0 48px ${style.ring}`
+                              : isSelected
+                                ? `0 0 18px ${style.ring}, ${style.glow}`
+                                : style.glow,
+                            opacity: isBlasting ? 0.2 : 1,
+                            transform: isBlasting
+                              ? "scale(0.72) rotate(8deg)"
+                              : isInvalid
+                                ? "translateX(-2px)"
+                                : undefined,
+                          }}
+                        >
+                          <span className="absolute inset-x-1 top-1 h-2 rounded-full bg-white/30 blur-[1px]" />
+                          <span className="absolute inset-0 rounded-[14px] border border-white/15" />
+                        </button>
+                      );
+                    }),
+                  )}
+                </div>
+
+                {floatingScore && (
+                  <div className="pointer-events-none absolute left-6 top-5 animate-bounce text-xl font-black text-lime-300 drop-shadow-[0_0_12px_rgba(204,255,0,0.8)]">
+                    {floatingScore}
+                  </div>
+                )}
+
+                {floatingTime && (
+                  <div className="pointer-events-none absolute right-6 top-5 animate-bounce text-xl font-black text-cyan-300 drop-shadow-[0_0_12px_rgba(0,255,255,0.8)]">
+                    {floatingTime}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-[0.22em] text-white/40">
+                  <span>Neon Colors</span>
+                  <span>{ROWS}x{COLS} Grid</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {COLOR_IDS.map((id) => {
+                    const style = BLOCK_STYLES[id];
+                    return (
+                      <div key={id} className="flex items-center gap-2 rounded-xl bg-black/20 px-3 py-2">
+                        <span
+                          className="h-4 w-4 rounded-full border border-white/20"
+                          style={{ background: style.bg, boxShadow: style.glow }}
+                        />
+                        <span className="text-xs font-semibold text-white/80">{style.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {phase === "gameover" && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-[28px] bg-[rgba(4,6,10,0.82)] backdrop-blur-sm">
+                  <div className="mx-4 w-full max-w-xs rounded-[28px] border border-white/10 bg-[#0b0f18] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+                    <div className="mb-3 text-xs font-bold uppercase tracking-[0.38em] text-fuchsia-300">
+                      Game Over
+                    </div>
+                    <h3 className="text-4xl font-black text-white">{score}</h3>
+                    <p className="mt-2 text-sm text-white/65">
+                      Final score after the clock hit zero
+                    </p>
+
+                    <div className="mt-5 grid grid-cols-2 gap-3 text-left">
+                      <div className="rounded-2xl bg-white/5 p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40">
+                          Blocks
+                        </p>
+                        <p className="mt-1 text-lg font-black text-lime-300">
+                          {Math.floor(score / POINTS_PER_BLOCK)}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white/5 p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40">
+                          Bonus
+                        </p>
+                        <p className="mt-1 text-lg font-black text-cyan-300">
+                          +{TIME_BONUS_PER_BLAST}s
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={resetGame}
+                      className="mt-6 w-full rounded-full bg-[linear-gradient(135deg,#ccff00,#00ffff)] px-6 py-3 text-sm font-black tracking-[0.24em] text-black shadow-[0_0_24px_rgba(0,255,255,0.3)] transition-transform duration-200 hover:scale-[1.02] active:scale-95"
+                    >
+                      RESTART
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
