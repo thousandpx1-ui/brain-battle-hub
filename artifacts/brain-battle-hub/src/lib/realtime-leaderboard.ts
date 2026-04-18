@@ -26,24 +26,49 @@ function isValidRealtimeUsername(username?: string | null): boolean {
   return true;
 }
 
-export async function saveScoreRealtime(score: number, username: string, profileFrame?: string | null) {
+export async function saveScoreRealtime(
+  score: number,
+  username: string,
+  profileFrame?: string | null,
+) {
   const normalizedUsername = normalizeUsername(username);
 
   if (!isValidRealtimeUsername(normalizedUsername)) {
-    console.warn("Skipping realtime leaderboard save for invalid username:", username);
+    console.warn(
+      "Skipping realtime leaderboard save for invalid username:",
+      username,
+    );
     return null;
   }
+
+  let currentScore = 0;
+  try {
+    const leaderboard = await loadLeaderboardRealtime();
+    const existingEntry = leaderboard.find(
+      (e) => e.userId === normalizedUsername,
+    );
+    currentScore = existingEntry?.score || 0;
+  } catch (e) {
+    console.warn(
+      "Could not fetch current score, proceeding with new score only",
+    );
+  }
+
+  const newTotalScore = currentScore + score;
+  console.log(
+    `Score update for ${normalizedUsername}: ${currentScore} + ${score} = ${newTotalScore}`,
+  );
 
   const response = await fetch(`${API_URL}/save-score`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       userId: normalizedUsername,
-      score,
-      profileFrame: profileFrame || null
-    })
+      score: newTotalScore,
+      profileFrame: profileFrame || null,
+    }),
   });
 
   if (!response.ok) {
