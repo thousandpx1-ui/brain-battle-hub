@@ -9,7 +9,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-[430px] min-h-[100dvh] bg-white relative pb-32 shadow-2xl flex flex-col">
       <InstallButton />
-      <main className="flex-1 flex flex-col relative w-full h-full overflow-x-hidden">
+      <main className="flex-1 flex flex-col relative w-full h-full overflow-x-hidden overflow-y-auto">
         {children}
       </main>
       
