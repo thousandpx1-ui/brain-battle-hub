@@ -20,13 +20,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Home className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium">Home</span>
           </Link>
-          <Link href="/profile" className={`flex flex-col items-center justify-center w-full h-full ${location === "/profile" ? "text-primary" : "text-gray-400"}`}>
-            <User className="w-6 h-6 mb-1" />
-            <span className="text-[10px] font-medium">Profile</span>
+          <Link href="/games" className={`flex flex-col items-center justify-center w-full h-full ${location === "/games" ? "text-primary" : "text-gray-400"}`}>
+            <Gamepad2 className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium">Games</span>
           </Link>
           <Link href="/leaderboard" className={`flex flex-col items-center justify-center w-full h-full ${location === "/leaderboard" ? "text-primary" : "text-gray-400"}`}>
             <Trophy className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium">Rank</span>
+          </Link>
+          <Link href="/profile" className={`flex flex-col items-center justify-center w-full h-full ${location === "/profile" ? "text-primary" : "text-gray-400"}`}>
+            <User className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium">Profile</span>
           </Link>
         </nav>
       </div>
