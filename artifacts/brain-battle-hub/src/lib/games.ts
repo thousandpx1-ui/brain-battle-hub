@@ -24,8 +24,8 @@ export const GAMES = [
   },
   {
     id: "colorblast",
-    name: "Color Blast",
-    description: "Match 3+ same-colored blocks to blast them and beat the timer!",
+    name: "Block Blast",
+    description: "Tap connected neon blocks, blast groups of 3+, and race the timer.",
     gradient: "game-gradient-5",
     icon: Grid3X3,
   },
