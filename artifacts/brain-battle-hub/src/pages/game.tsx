@@ -10,7 +10,6 @@ import { IllusionFinder } from "@/games/IllusionFinder";
 import { SimonSays } from "@/games/SimonSays";
 import { ColorBlast } from "@/games/ColorBlast";
 
-import { saveScore } from "@/lib/d1-client";
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
@@ -84,15 +83,6 @@ export default function Game() {
         console.log("✅ Score saved to real-time leaderboard");
       } catch (error) {
         console.error("❌ Failed to save to real-time leaderboard:", error);
-      }
-
-      try {
-        console.log("💾 Attempting to save to Appwrite database...");
-        await saveScore(scoreToPersist, username, profileFrame);
-        console.log("✅ Score saved to database successfully");
-      } catch (error) {
-        console.error("❌ Failed to save score to database:", error);
-        console.log("🔄 Score will only appear in local leaderboard");
       }
 
       lastPersistedScoreRef.current = scoreToPersist;

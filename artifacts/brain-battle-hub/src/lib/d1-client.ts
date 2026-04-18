@@ -50,28 +50,7 @@ async function saveScore(
       return null;
     }
 
-    // Fetch current score and add to it
-    let currentScore = 0;
-    try {
-      const leaderboardResponse = await fetch(`${API_BASE_URL}/leaderboard`, {
-        cache: "no-store",
-      });
-      if (leaderboardResponse.ok) {
-        const leaderboardData = await leaderboardResponse.json();
-        const existingEntry = leaderboardData.find(
-          (e: any) => (e.username || e.userId) === finalUsername,
-        );
-        currentScore = existingEntry?.score || 0;
-      }
-    } catch (e) {
-      console.warn("Could not fetch current score from leaderboard");
-    }
-
-    const newTotalScore = currentScore + score;
-    console.log(
-      `D1 Score update for ${finalUsername}: ${currentScore} + ${score} = ${newTotalScore}`,
-    );
-
+    // Note: Scores should be cumulative - the caller should handle adding to existing score
     const response = await fetch(`${API_BASE_URL}/save-score`, {
       method: "POST",
       headers: {
@@ -79,7 +58,7 @@ async function saveScore(
       },
       body: JSON.stringify({
         userId: finalUsername,
-        score: newTotalScore,
+        score,
         profileFrame: profileFrame || null,
       }),
     });
