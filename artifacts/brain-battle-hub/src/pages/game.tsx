@@ -36,6 +36,7 @@ export default function Game() {
 
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [showRewardAd, setShowRewardAd] = useState(false);
+  const [scoreSavedInPlay, setScoreSavedInPlay] = useState(false);
 
   const latestScoreRef = useRef(0);
   const lastPersistedScoreRef = useRef(0);
@@ -119,6 +120,7 @@ export default function Game() {
     hasCountedGameRef.current = false;
     setScore(0);
     setGameState("playing");
+    setScoreSavedInPlay(false);
   };
 
   const handleScoreChange = (nextScore: number) => {
@@ -164,7 +166,19 @@ export default function Game() {
     latestScoreRef.current = 0;
     lastPersistedScoreRef.current = 0;
     hasCountedGameRef.current = false;
+    setScoreSavedInPlay(false);
   };
+
+  const handleSaveScoreInPlay = useCallback(async () => {
+    if (
+      gameStateRef.current === "playing" &&
+      latestScoreRef.current > 0 &&
+      !scoreSavedInPlay
+    ) {
+      await persistRunScore(latestScoreRef.current);
+      setScoreSavedInPlay(true);
+    }
+  }, [scoreSavedInPlay]);
 
   const handleBackClick = async () => {
     if (gameStateRef.current === "playing") {
@@ -308,7 +322,22 @@ export default function Game() {
             <ChevronLeft className="w-6 h-6" />
           </Button>
           <h1 className="flex-1 text-center font-bold text-lg">{game.name}</h1>
-          <div className="w-10" />
+          {gameState === "playing" &&
+            !scoreSavedInPlay &&
+            latestScoreRef.current > 0 && (
+              <Button
+                type="button"
+                onClick={handleSaveScoreInPlay}
+                className="rounded-full bg-lime-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-black hover:bg-lime-400"
+              >
+                Save Score
+              </Button>
+            )}
+          {scoreSavedInPlay && (
+            <span className="text-xs font-bold uppercase tracking-wider text-lime-500">
+              ✓ Saved
+            </span>
+          )}
         </div>
 
         <div className="flex-1 p-6 flex flex-col items-center justify-center relative">
