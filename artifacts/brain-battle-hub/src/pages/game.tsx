@@ -186,31 +186,63 @@ export default function Game() {
     await persistRunScore(doubled);
   };
 
+  const persistScoreOnDisconnect = useCallback(() => {
+    if (gameStateRef.current === "playing" && latestScoreRef.current > 0) {
+      console.log(
+        "🔌 Player disconnect detected, saving score:",
+        latestScoreRef.current,
+      );
+      persistRunScoreSync(latestScoreRef.current);
+    }
+  }, [persistRunScoreSync]);
+
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (gameStateRef.current === "playing") {
-        persistRunScoreSync(latestScoreRef.current);
-      }
+      persistScoreOnDisconnect();
     };
 
     const handlePopState = () => {
-      if (gameStateRef.current === "playing") {
-        persistRunScoreSync(latestScoreRef.current);
+      persistScoreOnDisconnect();
+    };
+
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === "hidden" &&
+        gameStateRef.current === "playing"
+      ) {
+        persistScoreOnDisconnect();
       }
+    };
+
+    const handleOnline = () => {
+      if (
+        gameStateRef.current === "playing" &&
+        latestScoreRef.current > lastPersistedScoreRef.current
+      ) {
+        persistScoreOnDisconnect();
+      }
+    };
+
+    const handleOffline = () => {
+      console.log("⚠️ Network offline - score cached for later sync");
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("popstate", handlePopState);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("popstate", handlePopState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
 
-      if (gameStateRef.current === "playing") {
-        persistRunScoreSync(latestScoreRef.current);
-      }
+      persistScoreOnDisconnect();
     };
-  }, [persistRunScoreSync]);
+  }, [persistScoreOnDisconnect]);
 
   const renderGameComponent = () => {
     switch (game.id) {
