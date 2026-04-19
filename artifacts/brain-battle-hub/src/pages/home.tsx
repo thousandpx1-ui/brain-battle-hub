@@ -51,18 +51,31 @@ export default function Home() {
 
       const totalScoreMap = new Map();
 
+      // Compute local sums first (since local scores are individual runs)
+      const localSumMap = new Map();
+      for (const entry of todayScores) {
+        const existing = localSumMap.get(entry.username);
+        if (existing) {
+          existing.score += entry.score;
+        } else {
+          localSumMap.set(entry.username, { ...entry });
+        }
+      }
+
       // Add database data first
       for (const entry of data) {
         totalScoreMap.set(entry.username, { ...entry });
       }
 
-      // Add local data (will combine scores if user exists in both)
-      for (const entry of todayScores) {
-        const existing = totalScoreMap.get(entry.username);
+      // Merge local sums into totalScoreMap
+      for (const [username, entry] of localSumMap.entries()) {
+        const existing = totalScoreMap.get(username);
         if (existing) {
+          // If the DB score is lagging behind the local sum, use the local sum
+          // Note: we take the max because DB score already includes past runs!
           existing.score = Math.max(existing.score, entry.score);
         } else {
-          totalScoreMap.set(entry.username, { ...entry });
+          totalScoreMap.set(username, { ...entry });
         }
       }
 
@@ -80,7 +93,7 @@ export default function Home() {
       for (const entry of todayScores) {
         const existing = totalScoreMap.get(entry.username);
         if (existing) {
-          existing.score = Math.max(existing.score, entry.score);
+          existing.score += entry.score;
         } else {
           totalScoreMap.set(entry.username, { ...entry });
         }
