@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 
-export function DontBlink({ onGameOver }: { onGameOver: (score: number) => void }) {
+export function DontBlink({
+  onGameOver,
+  onScoreChange,
+}: {
+  onGameOver: (score: number) => void;
+  onScoreChange?: (score: number) => void;
+}) {
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [barPosition, setBarPosition] = useState(0);
@@ -45,11 +51,13 @@ export function DontBlink({ onGameOver }: { onGameOver: (score: number) => void 
       // Perfect
       const newScore = score + 50;
       setScore(newScore);
+      onScoreChange?.(newScore);
       setTimeout(() => nextRound(), 800);
     } else if (barPosition >= goodZone.min && barPosition <= goodZone.max) {
       // Good
       const newScore = score + 30;
       setScore(newScore);
+      onScoreChange?.(newScore);
       setTimeout(() => nextRound(), 800);
     } else {
       // Miss - lose a life

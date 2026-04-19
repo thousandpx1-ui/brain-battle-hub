@@ -14,7 +14,13 @@ const RIDDLES = [
   { q: "What begins with T, ends with T, and has T in it?", opts: ["Teapot", "Tent", "Tentacle", "Toast"], ans: 0 },
 ];
 
-export function IllusionFinder({ onGameOver }: { onGameOver: (score: number) => void }) {
+export function IllusionFinder({
+  onGameOver,
+  onScoreChange,
+}: {
+  onGameOver: (score: number) => void;
+  onScoreChange?: (score: number) => void;
+}) {
   const [score, setScore] = useState(0);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState(15); // More time per question
@@ -37,7 +43,11 @@ export function IllusionFinder({ onGameOver }: { onGameOver: (score: number) => 
       const streakBonus = Math.min(newStreak * 2, 20); // Up to 20 points for streak
       const earned = 15 + timeBonus + streakBonus;
       
-      setScore(s => s + earned);
+      setScore(s => {
+        const newScore = s + earned;
+        onScoreChange?.(newScore);
+        return newScore;
+      });
       setStreak(newStreak);
 
       if (currentIdx + 1 >= RIDDLES.length) {

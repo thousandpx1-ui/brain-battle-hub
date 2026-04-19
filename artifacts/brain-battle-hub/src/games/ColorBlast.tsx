@@ -171,8 +171,10 @@ function refillGridWithoutGravity(grid: Grid, cleared: Position[]): Grid {
 
 export function ColorBlast({
   onGameOver,
+  onScoreChange,
 }: {
   onGameOver: (score: number) => void;
+  onScoreChange?: (score: number) => void;
 }) {
   const [phase, setPhase] = useState<GamePhase>("menu");
   const [grid, setGrid] = useState<Grid>(() => createGrid());
@@ -332,7 +334,11 @@ export function ColorBlast({
       setFloatingTime(`+${TIME_BONUS_PER_BLAST}s`);
       setLastActionLabel(`${group.length} blocks blasted`);
 
-      setScore((current) => current + blastPoints);
+      setScore((current) => {
+        const next = current + blastPoints;
+        onScoreChange?.(next);
+        return next;
+      });
       setTimeLeft((current) => current + TIME_BONUS_PER_BLAST);
 
       scorePopupRef.current = setTimeout(() => setFloatingScore(null), 850);

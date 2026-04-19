@@ -24,7 +24,13 @@ function randomPos(containerEl: HTMLDivElement): { x: number; y: number } {
   };
 }
 
-export function FakeTapTrap({ onGameOver }: { onGameOver: (score: number) => void }) {
+export function FakeTapTrap({
+  onGameOver,
+  onScoreChange,
+}: {
+  onGameOver: (score: number) => void;
+  onScoreChange?: (score: number) => void;
+}) {
   const [score, setScore] = useState(0);
   const [buttons, setButtons] = useState<TapButton[]>([]);
   const [ready, setReady] = useState(false);
@@ -114,6 +120,7 @@ export function FakeTapTrap({ onGameOver }: { onGameOver: (score: number) => voi
         const next = scoreRef.current + basePoints + streakBonus;
         scoreRef.current = next;
         setScore(next);
+        onScoreChange?.(next);
         // Spawn fresh round right away
         setTimeout(() => spawnRound(), 80);
       } else {

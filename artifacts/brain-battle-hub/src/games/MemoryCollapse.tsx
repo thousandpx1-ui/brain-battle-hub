@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
-export function MemoryCollapse({ onGameOver }: { onGameOver: (score: number) => void }) {
+export function MemoryCollapse({
+  onGameOver,
+  onScoreChange,
+}: {
+  onGameOver: (score: number) => void;
+  onScoreChange?: (score: number) => void;
+}) {
   const [level, setLevel] = useState(1);
   const [sequence, setSequence] = useState<number[]>([]);
   const [playerSequence, setPlayerSequence] = useState<number[]>([]);
@@ -10,7 +16,8 @@ export function MemoryCollapse({ onGameOver }: { onGameOver: (score: number) => 
 
   useEffect(() => {
     startLevel(level);
-  }, [level]);
+    onScoreChange?.((level - 1) * 25 + 100);
+  }, [level, onScoreChange]);
 
   const startLevel = (currentLevel: number) => {
     const numTiles = 2 + currentLevel; // Starts with 3 tiles

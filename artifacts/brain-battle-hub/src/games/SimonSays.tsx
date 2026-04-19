@@ -16,7 +16,13 @@ interface Sparkle {
   delay: number;
 }
 
-export function SimonSays({ onGameOver }: { onGameOver: (score: number) => void }) {
+export function SimonSays({
+  onGameOver,
+  onScoreChange,
+}: {
+  onGameOver: (score: number) => void;
+  onScoreChange?: (score: number) => void;
+}) {
   const [sequence, setSequence] = useState<number[]>([]);
   const [playerInput, setPlayerInput] = useState<number[]>([]);
   const [level, setLevel] = useState(1);
@@ -141,6 +147,7 @@ export function SimonSays({ onGameOver }: { onGameOver: (score: number) => void 
         // Level complete
         const newScore = score + 10 * level;
         setScore(newScore);
+        onScoreChange?.(newScore);
         speedRef.current = Math.max(300, speedRef.current - 20);
         setLevel(level + 1);
         setGameState("idle");

@@ -178,7 +178,7 @@ export default function Game() {
       await persistRunScore(latestScoreRef.current);
       setScoreSavedInPlay(true);
     }
-  }, [scoreSavedInPlay]);
+  }, [scoreSavedInPlay, persistRunScore]);
 
   const handleBackClick = async () => {
     if (gameStateRef.current === "playing") {
