@@ -228,7 +228,15 @@ export function ColorBlast({
       return;
     }
 
-    timerRef.current = setInterval(() => {
+    const getTickInterval = () => {
+      if (score >= 10000) return 600;
+      if (score >= 5000) return 700;
+      if (score >= 2500) return 800;
+      if (score >= 1000) return 900;
+      return 1000;
+    };
+
+    const interval = setInterval(() => {
       setTimeLeft((current) => {
         if (current <= 1) {
           if (timerRef.current) clearInterval(timerRef.current);
@@ -237,12 +245,14 @@ export function ColorBlast({
 
         return current - 1;
       });
-    }, 1000);
+    }, getTickInterval());
+
+    timerRef.current = interval;
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [phase]);
+  }, [phase, score]);
 
   useEffect(() => {
     if (phase !== "playing" || timeLeft > 0 || gameOverSentRef.current) return;
@@ -355,6 +365,11 @@ export function ColorBlast({
               <div className={`text-3xl font-black ${timeToneClass}`}>
                 {timeLeft}
               </div>
+              {score >= 1000 && (
+                <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-orange-400 animate-pulse">
+                  Speed UP!
+                </div>
+              )}
             </div>
           </div>
 
