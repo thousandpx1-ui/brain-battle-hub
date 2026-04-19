@@ -322,17 +322,15 @@ export default function Game() {
             <ChevronLeft className="w-6 h-6" />
           </Button>
           <h1 className="flex-1 text-center font-bold text-lg">{game.name}</h1>
-          {gameState === "playing" &&
-            !scoreSavedInPlay &&
-            latestScoreRef.current > 0 && (
-              <Button
-                type="button"
-                onClick={handleSaveScoreInPlay}
-                className="rounded-full bg-lime-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-black hover:bg-lime-400"
-              >
-                Save Score
-              </Button>
-            )}
+          {gameState === "playing" && !scoreSavedInPlay && (
+            <Button
+              type="button"
+              onClick={handleSaveScoreInPlay}
+              className="rounded-full bg-lime-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-black hover:bg-lime-400"
+            >
+              Save Score
+            </Button>
+          )}
           {scoreSavedInPlay && (
             <span className="text-xs font-bold uppercase tracking-wider text-lime-500">
               ✓ Saved
