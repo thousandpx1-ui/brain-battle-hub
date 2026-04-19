@@ -1,5 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
-import { RefreshCw } from "lucide-react";
+import { useEffect, useCallback } from "react";
 
 const STORAGE_KEY = "brain-battle-hub-last-deploy-version";
 
@@ -18,9 +17,6 @@ async function fetchDeployVersion(): Promise<string | null> {
 }
 
 export function UpdateChecker() {
-  const [showUpdate, setShowUpdate] = useState(false);
-  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
-
   const checkForUpdate = useCallback(async () => {
     const currentVersion = await fetchDeployVersion();
     if (!currentVersion) return;
@@ -28,16 +24,22 @@ export function UpdateChecker() {
     const lastSeenVersion = localStorage.getItem(STORAGE_KEY);
 
     if (!lastSeenVersion) {
-      // First visit - store version but don't show banner
+      // First visit - store version
       localStorage.setItem(STORAGE_KEY, currentVersion);
       return;
     }
 
     if (currentVersion !== lastSeenVersion) {
-      // New deployment detected!
-      setShowUpdate(true);
-      // Update stored version so we don't show banner again until next deploy
+      // New deployment detected! Update stored version
       localStorage.setItem(STORAGE_KEY, currentVersion);
+      
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.update();
+        });
+      } else {
+        window.location.reload();
+      }
     }
   }, []);
 
@@ -47,64 +49,29 @@ export function UpdateChecker() {
     // Check for version update on load
     checkForUpdate();
 
-    // Listen for service worker updates
-    navigator.serviceWorker.ready.then(async (registration) => {
-      // Force check for SW updates immediately
-      await registration.update();
-
-      registration.addEventListener("updatefound", () => {
-        const installingWorker = registration.installing;
-        if (installingWorker) {
-          installingWorker.addEventListener("statechange", () => {
-            if (installingWorker.state === "installed") {
-              setWaitingWorker(installingWorker);
-              setShowUpdate(true);
-            }
-          });
-        }
-      });
-    });
-
-    // Also listen for controller change (when new SW takes over)
+    let refreshing = false;
+    // Listen for controller change (when new SW takes over and claims clients)
     navigator.serviceWorker.addEventListener("controllerchange", () => {
+      // Prevent multiple reloads
+      if (refreshing) return;
+      refreshing = true;
       // New service worker took control - reload to get fresh content
       window.location.reload();
     });
 
     // Periodic check every 30 seconds for faster update detection
-    const interval = setInterval(checkForUpdate, 30000);
+    const interval = setInterval(() => {
+      checkForUpdate();
+      // Also force the SW to check for updates
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.update();
+      });
+    }, 30000);
 
     return () => {
       clearInterval(interval);
     };
   }, [checkForUpdate]);
 
-  const handleUpdate = useCallback(() => {
-    if (waitingWorker) {
-      waitingWorker.postMessage({ type: "SKIP_WAITING" });
-    } else {
-      // If no waiting worker, just reload to get fresh content
-      window.location.reload();
-      return;
-    }
-    // Reload after a short delay to ensure SW takes control
-    setTimeout(() => {
-      window.location.reload();
-    }, 200);
-  }, [waitingWorker]);
-
-  if (!showUpdate) return null;
-
-  return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-primary text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
-      <RefreshCw className="w-5 h-5 animate-spin" />
-      <span className="text-sm font-medium">New update available!</span>
-      <button
-        onClick={handleUpdate}
-        className="bg-white text-primary px-3 py-1 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
-      >
-        Update Now
-      </button>
-    </div>
-  );
+  return null;
 }

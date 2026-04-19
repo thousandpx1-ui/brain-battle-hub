@@ -9,13 +9,12 @@ const ASSETS_TO_CACHE = [
 
 // Install event - cache assets
 self.addEventListener('install', (event: Event) => {
+  (self as any).skipWaiting();
   (event as any).waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
-  // Don't skip waiting - let the app control when to activate
-  // This ensures users see the update notification
 });
 
 // Activate event - clean up old caches and take control immediately when activated
