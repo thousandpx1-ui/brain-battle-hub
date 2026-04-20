@@ -1,4 +1,5 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "brain-battle-hub-last-deploy-version";
 
@@ -17,6 +18,8 @@ async function fetchDeployVersion(): Promise<string | null> {
 }
 
 export function UpdateChecker() {
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
   const checkForUpdate = useCallback(async () => {
     const currentVersion = await fetchDeployVersion();
     if (!currentVersion) return;
@@ -30,15 +33,13 @@ export function UpdateChecker() {
     }
 
     if (currentVersion !== lastSeenVersion) {
-      // New deployment detected! Update stored version
-      localStorage.setItem(STORAGE_KEY, currentVersion);
+      // New deployment detected!
+      setUpdateAvailable(true);
       
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.update();
         });
-      } else {
-        window.location.reload();
       }
     }
   }, []);
@@ -52,11 +53,11 @@ export function UpdateChecker() {
     let refreshing = false;
     // Listen for controller change (when new SW takes over and claims clients)
     navigator.serviceWorker.addEventListener("controllerchange", () => {
-      // Prevent multiple reloads
+      // Prevent multiple triggers
       if (refreshing) return;
       refreshing = true;
-      // New service worker took control - reload to get fresh content
-      window.location.reload();
+      // Show update UI instead of automatic reload
+      setUpdateAvailable(true);
     });
 
     // Periodic check every 30 seconds for faster update detection
@@ -73,5 +74,32 @@ export function UpdateChecker() {
     };
   }, [checkForUpdate]);
 
-  return null;
+  const handleUpdate = async () => {
+    const currentVersion = await fetchDeployVersion();
+    if (currentVersion) {
+      localStorage.setItem(STORAGE_KEY, currentVersion);
+    }
+    window.location.reload();
+  };
+
+  if (!updateAvailable) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-[100] bg-background border border-border rounded-lg shadow-lg p-4 flex flex-col gap-3 max-w-[300px] animate-in slide-in-from-bottom-5 fade-in duration-300">
+      <div>
+        <h3 className="font-semibold text-foreground">Update Available</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          A new version of the app is available. Update now to see the latest features.
+        </p>
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button variant="outline" size="sm" onClick={() => setUpdateAvailable(false)}>
+          Dismiss
+        </Button>
+        <Button size="sm" onClick={handleUpdate}>
+          Update Now
+        </Button>
+      </div>
+    </div>
+  );
 }
