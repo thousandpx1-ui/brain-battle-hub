@@ -79,6 +79,7 @@ export default function Game() {
   };
 
   const handleRewardDouble = () => {
+    window.open("https://omg10.com/4/10900602", "_blank");
     setShowRewardAd(true);
   };
 

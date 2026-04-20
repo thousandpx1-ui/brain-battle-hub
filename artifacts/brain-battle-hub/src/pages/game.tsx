@@ -191,6 +191,9 @@ export default function Game() {
 
   const handleRewardDouble = async () => {
     if (hasDoubled || score === 0) return;
+    
+    window.open("https://omg10.com/4/10900602", "_blank");
+
     setHasDoubled(true);
     const doubled = score * 2;
     setScore(doubled);
