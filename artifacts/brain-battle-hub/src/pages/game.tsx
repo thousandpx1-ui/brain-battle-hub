@@ -14,7 +14,6 @@ import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { InterstitialAd } from "@/components/interstitial-ad";
-import { RewardAd } from "@/components/reward-ad";
 import { Trophy, RotateCcw, Play, ChevronLeft } from "lucide-react";
 
 type GameState = "start" | "playing" | "gameover";
@@ -35,7 +34,7 @@ export default function Game() {
   const addLocalScore = useLocalLeaderboard((s) => s.addScore);
 
   const [showInterstitial, setShowInterstitial] = useState(false);
-  const [showRewardAd, setShowRewardAd] = useState(false);
+  const [hasDoubled, setHasDoubled] = useState(false);
   const [scoreSavedInPlay, setScoreSavedInPlay] = useState(false);
 
   const latestScoreRef = useRef(0);
@@ -121,6 +120,7 @@ export default function Game() {
     setScore(0);
     setGameState("playing");
     setScoreSavedInPlay(false);
+    setHasDoubled(false);
   };
 
   const handleScoreChange = (nextScore: number) => {
@@ -167,6 +167,7 @@ export default function Game() {
     lastPersistedScoreRef.current = 0;
     hasCountedGameRef.current = false;
     setScoreSavedInPlay(false);
+    setHasDoubled(false);
   };
 
   const handleSaveScoreInPlay = useCallback(async () => {
@@ -188,12 +189,9 @@ export default function Game() {
     setLocation("/");
   };
 
-  const handleRewardDouble = () => {
-    setShowRewardAd(true);
-  };
-
-  const onRewardComplete = async () => {
-    setShowRewardAd(false);
+  const handleRewardDouble = async () => {
+    if (hasDoubled || score === 0) return;
+    setHasDoubled(true);
     const doubled = score * 2;
     setScore(doubled);
     latestScoreRef.current = Math.max(latestScoreRef.current, doubled);
@@ -373,14 +371,16 @@ export default function Game() {
               </div>
 
               <div className="flex flex-col gap-3 w-full">
-                <Button
-                  onClick={handleRewardDouble}
-                  variant="outline"
-                  className="h-14 rounded-2xl text-lg font-bold border-2 border-purple-200 text-purple-600 bg-purple-50 hover:bg-purple-100"
-                >
-                  <Play className="w-5 h-5 mr-2 fill-current" />
-                  Watch Ad to 2x Score
-                </Button>
+                {!hasDoubled && score > 0 && (
+                  <Button
+                    onClick={handleRewardDouble}
+                    variant="outline"
+                    className="h-14 rounded-2xl text-lg font-bold border-2 border-purple-200 text-purple-600 bg-purple-50 hover:bg-purple-100"
+                  >
+                    <Play className="w-5 h-5 mr-2 fill-current" />
+                    Watch Ad to 2x Score
+                  </Button>
+                )}
 
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <Button
@@ -407,11 +407,6 @@ export default function Game() {
       <InterstitialAd
         open={showInterstitial}
         onOpenChange={setShowInterstitial}
-      />
-      <RewardAd
-        open={showRewardAd}
-        onReward={onRewardComplete}
-        onCancel={() => setShowRewardAd(false)}
       />
     </Layout>
   );
