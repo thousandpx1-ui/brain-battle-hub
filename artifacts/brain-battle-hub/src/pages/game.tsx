@@ -9,6 +9,7 @@ import { FakeTapTrap } from "@/games/FakeTapTrap";
 import { IllusionFinder } from "@/games/IllusionFinder";
 import { SimonSays } from "@/games/SimonSays";
 import { ColorBlast } from "@/games/ColorBlast";
+import { MatchPairs } from "@/games/MatchPairs";
 
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { useAppState } from "@/hooks/useAppState";
@@ -299,6 +300,13 @@ export default function Game() {
       case "colorblast":
         return (
           <ColorBlast
+            onGameOver={handleGameOver}
+            onScoreChange={handleScoreChange}
+          />
+        );
+      case "matchpairs":
+        return (
+          <MatchPairs
             onGameOver={handleGameOver}
             onScoreChange={handleScoreChange}
           />

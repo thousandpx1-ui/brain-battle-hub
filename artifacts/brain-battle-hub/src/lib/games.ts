@@ -1,4 +1,4 @@
-import { Brain, Eye, Gamepad2, Bomb, Grid3X3 } from "lucide-react";
+import { Brain, Eye, Gamepad2, Bomb, Grid3X3, Layers } from "lucide-react";
 
 export const GAMES = [
   {
@@ -7,6 +7,13 @@ export const GAMES = [
     description: "Recall the sequence of numbered tiles before they vanish.",
     gradient: "game-gradient-1",
     icon: Brain,
+  },
+  {
+    id: "matchpairs",
+    name: "Match Pairs",
+    description: "Find all matching pairs before time runs out!",
+    gradient: "game-gradient-3",
+    icon: Layers,
   },
   {
     id: "blink",
