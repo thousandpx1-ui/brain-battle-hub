@@ -1,6 +1,5 @@
 import { Link, useLocation } from "wouter";
 import { Home, Gamepad2, Trophy, User } from "lucide-react";
-import { AdBanner } from "./ad-banner";
 import { InstallButton } from "./install-button";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -14,7 +13,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
       
       <div className="fixed bottom-0 w-full max-w-[430px] z-50 bg-white border-t border-gray-100 pb-safe">
-        <AdBanner />
         <nav className="flex justify-around items-center h-16 px-4">
           <Link href="/" className={`flex flex-col items-center justify-center w-full h-full ${location === "/" ? "text-primary" : "text-gray-400"}`}>
             <Home className="w-6 h-6 mb-1" />
