@@ -18,22 +18,15 @@ export function InstallButton() {
       return;
     }
 
+    // Always make it installable initially to show the button on all browsers
+    setIsInstallable(true);
+
     // Check if device is iOS
     const ua = window.navigator.userAgent;
     const isIOSDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     
-    // Check if device is mobile
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                     ('ontouchstart' in window) ||
-                     (navigator.maxTouchPoints > 0);
-
-    if (!isMobile) {
-      return;
-    }
-
     if (isIOSDevice && !(window.navigator as any).standalone) {
       setIsIOS(true);
-      setIsInstallable(true);
     }
 
     // Listen for the beforeinstallprompt event
@@ -69,19 +62,25 @@ export function InstallButton() {
       return;
     }
 
-    if (!deferredPrompt) return;
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
 
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
+      setDeferredPrompt(null);
+      setIsInstallable(false);
     } else {
-      console.log('User dismissed the install prompt');
+      // Fallback for browsers without beforeinstallprompt support
+      toast({
+        title: "Install App",
+        description: "Please look for the 'Install' or 'Add to Home Screen' option in your browser's menu.",
+      });
     }
-
-    setDeferredPrompt(null);
-    setIsInstallable(false);
   };
 
   const handleDismiss = () => {
