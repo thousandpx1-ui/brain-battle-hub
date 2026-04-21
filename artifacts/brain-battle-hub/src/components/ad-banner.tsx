@@ -1,19 +1,28 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function AdBanner() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const s = document.createElement('script');
-    s.dataset.zone = '10900308';
-    s.src = 'https://nap5k.com/tag.min.js';
-    const target = [document.documentElement, document.body].filter(Boolean).pop();
-    if (target) {
-      target.appendChild(s);
+    if (containerRef.current && !containerRef.current.querySelector('#container-836d0910390e32d491359194be026e10')) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.dataset.cfasync = 'false';
+      script.src = 'https://pl29207351.profitablecpmratenetwork.com/836d0910390e32d491359194be026e10/invoke.js';
+      
+      const div = document.createElement('div');
+      div.id = 'container-836d0910390e32d491359194be026e10';
+      
+      containerRef.current.appendChild(script);
+      containerRef.current.appendChild(div);
     }
   }, []);
 
   return (
-    <div className="w-full h-[50px] bg-gray-100 flex items-center justify-center border-t border-b border-gray-200">
-      <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Advertisement</p>
+    <div 
+      ref={containerRef}
+      className="w-full min-h-[50px] bg-gray-100 flex flex-col items-center justify-center border-t border-b border-gray-200"
+    >
     </div>
   );
 }
