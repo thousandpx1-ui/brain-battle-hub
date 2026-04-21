@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 
-const EMOJIS = ["🍎", "🍌", "🍒", "🍇", "🍉", "🍓", "🥝", "🍍"];
+const ALL_EMOJIS = [
+  "🍎", "🍌", "🍒", "🍇", "🍉", "🍓", "🥝", "🍍", 
+  "🥥", "🍋", "🍊", "🍑", "🍄", "🥕", "🌽", "🥦",
+  "🍔", "🍕", "🍩", "🍦", "🌮", "🍣", "🍪", "🥑"
+];
 
-type GameState = "idle" | "playing" | "gameover" | "victory";
+type GameState = "idle" | "playing" | "gameover" | "victory" | "level_complete";
 
 interface Card {
   id: number;
@@ -29,6 +33,7 @@ export function MatchPairs({
   onGameOver: (score: number) => void;
   onScoreChange?: (score: number) => void;
 }) {
+  const [level, setLevel] = useState<number>(1);
   const [cards, setCards] = useState<Card[]>([]);
   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
   const [matchedPairs, setMatchedPairs] = useState<number>(0);
@@ -41,8 +46,26 @@ export function MatchPairs({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const sparkleIdRef = useRef(0);
 
-  const initGame = useCallback(() => {
-    const shuffled = [...EMOJIS, ...EMOJIS]
+  const getLevelConfig = useCallback((lvl: number) => {
+    // lvl 1: 4 pairs, 30s
+    // lvl 2: 6 pairs, 40s
+    // lvl 3: 8 pairs, 50s
+    // lvl 4: 10 pairs, 60s
+    // lvl 5: 12 pairs, 70s
+    // above lvl 5: 12 pairs, decreasing time
+    const pairs = Math.min(4 + Math.floor((lvl - 1) / 1) * 2, 12);
+    let time = 30 + (lvl - 1) * 10;
+    if (lvl > 5) {
+        time = Math.max(15, 70 - (lvl - 5) * 5);
+    }
+    return { pairs, time };
+  }, []);
+
+  const startLevel = useCallback((lvl: number) => {
+    const { pairs, time } = getLevelConfig(lvl);
+    // Shuffle emojis and pick required pairs
+    const selectedEmojis = [...ALL_EMOJIS].sort(() => Math.random() - 0.5).slice(0, pairs);
+    const shuffled = [...selectedEmojis, ...selectedEmojis]
       .sort(() => Math.random() - 0.5)
       .map((emoji, index) => ({
         id: index,
@@ -54,10 +77,15 @@ export function MatchPairs({
     setFlippedIndices([]);
     setMatchedPairs(0);
     setMoves(0);
-    setTimeLeft(50);
-    setScore(0);
+    setTimeLeft(time);
     setGameState("playing");
-  }, []);
+  }, [getLevelConfig]);
+
+  const initGame = useCallback(() => {
+    setLevel(1);
+    setScore(0);
+    startLevel(1);
+  }, [startLevel]);
 
   useEffect(() => {
     if (gameState === "playing") {
@@ -137,11 +165,16 @@ export function MatchPairs({
           setFlippedIndices([]);
           setMatchedPairs((p) => {
             const newPairs = p + 1;
-            const newScore = score + 100;
+            // More points for higher levels
+            const basePoints = 100;
+            const levelMultiplier = 1 + (level - 1) * 0.5;
+            const newScore = score + Math.floor(basePoints * levelMultiplier);
             setScore(newScore);
             onScoreChange?.(newScore);
-            if (newPairs === EMOJIS.length) {
-              setGameState("victory");
+            
+            const { pairs } = getLevelConfig(level);
+            if (newPairs === pairs) {
+              setGameState("level_complete");
             }
             return newPairs;
           });
@@ -221,6 +254,10 @@ export function MatchPairs({
         <>
           <div className="w-full flex justify-between items-center mb-6">
             <div className="text-center">
+              <p className="text-xs text-gray-400 font-bold uppercase">Level</p>
+              <p className="text-2xl font-black text-blue-500">{level}</p>
+            </div>
+            <div className="text-center">
               <p className="text-xs text-gray-400 font-bold uppercase">Time</p>
               <p className={`text-2xl font-black ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : ''}`}>{timeLeft}s</p>
             </div>
@@ -230,15 +267,15 @@ export function MatchPairs({
             </div>
             <div className="text-center">
               <p className="text-xs text-gray-400 font-bold uppercase">Pairs</p>
-              <p className="text-2xl font-black text-primary">{matchedPairs}/{EMOJIS.length}</p>
+              <p className="text-2xl font-black text-primary">{matchedPairs}/{getLevelConfig(level).pairs}</p>
             </div>
           </div>
 
-          <div className="relative w-full aspect-square max-w-[320px] grid grid-cols-4 gap-3 mb-6">
+          <div className={`relative w-full max-w-[320px] grid ${getLevelConfig(level).pairs >= 10 ? 'grid-cols-5 gap-2' : 'grid-cols-4 gap-3'} mb-6 mx-auto`}>
             {cards.map((card, index) => (
               <div 
                 key={card.id} 
-                className="relative w-full h-full cursor-pointer perspective-[1000px]"
+                className="relative w-full aspect-square cursor-pointer perspective-[1000px]"
                 onClick={(e) => handleCardClick(index, e)}
               >
                 <div 
@@ -257,7 +294,7 @@ export function MatchPairs({
                   </div>
                   {/* Back (Revealed state) */}
                   <div 
-                    className={`absolute inset-0 bg-card border rounded-xl flex items-center justify-center shadow-md text-4xl transition-all duration-300 ${
+                    className={`absolute inset-0 bg-card border rounded-xl flex items-center justify-center shadow-md ${getLevelConfig(level).pairs >= 10 ? 'text-2xl' : 'text-4xl'} transition-all duration-300 ${
                       card.isMatched ? 'ring-4 ring-green-400 ring-opacity-50 shadow-[0_0_15px_rgba(74,222,128,0.5)] scale-105' : ''
                     }`}
                     style={{ 
@@ -303,20 +340,31 @@ export function MatchPairs({
         </>
       )}
 
-      {(gameState === "gameover" || gameState === "victory") && (
+      {(gameState === "gameover" || gameState === "victory" || gameState === "level_complete") && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-background p-8 rounded-3xl text-center max-w-[80%] border">
-            <h2 className={`text-3xl font-black mb-2 ${gameState === "victory" ? "text-green-500" : "text-red-500"}`}>
-              {gameState === "victory" ? "You Won!" : "Time's Up!"}
+          <div className="bg-background p-8 rounded-3xl text-center w-[80%] max-w-sm border shadow-2xl">
+            <h2 className={`text-3xl font-black mb-2 ${gameState === "level_complete" ? "text-blue-500" : gameState === "victory" ? "text-green-500" : "text-red-500"}`}>
+              {gameState === "level_complete" ? "Level Complete!" : gameState === "victory" ? "You Won!" : "Time's Up!"}
             </h2>
-            <p className="text-muted-foreground mb-6">
-              Moves: {moves} <br />
-              Pairs: {matchedPairs}/{EMOJIS.length} <br />
-              Score: {score}
-            </p>
-            <Button onClick={initGame} className="h-12 w-full rounded-xl font-bold">
-              Play Again
-            </Button>
+            <div className="text-muted-foreground mb-6 space-y-1">
+              <p>Level: <span className="font-bold text-foreground">{level}</span></p>
+              <p>Moves: <span className="font-bold text-foreground">{moves}</span></p>
+              <p>Pairs: <span className="font-bold text-foreground">{matchedPairs}/{getLevelConfig(level).pairs}</span></p>
+              <p className="text-xl mt-2 text-primary font-black">Score: {score}</p>
+            </div>
+            {gameState === "level_complete" ? (
+              <Button onClick={() => {
+                const nextLevel = level + 1;
+                setLevel(nextLevel);
+                startLevel(nextLevel);
+              }} className="h-12 w-full rounded-xl font-bold bg-blue-500 hover:bg-blue-600 text-white">
+                Next Level
+              </Button>
+            ) : (
+              <Button onClick={initGame} className="h-12 w-full rounded-xl font-bold">
+                Play Again
+              </Button>
+            )}
           </div>
         </div>
       )}
