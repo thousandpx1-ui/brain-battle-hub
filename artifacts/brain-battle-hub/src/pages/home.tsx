@@ -6,6 +6,7 @@ import { GAMES } from "@/lib/games";
 import { useAppState } from "@/hooks/useAppState";
 import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
+import { AdBanner } from "@/components/ad-banner";
 
 import { getFullLeaderboard } from "@/lib/d1-client";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
@@ -218,6 +219,9 @@ export default function Home() {
           </div>
         )}
 
+        <div className="mt-4 -mx-6">
+          <AdBanner />
+        </div>
       </div>
 
       <UsernameModal open={showUsername} onOpenChange={setShowUsername} />
