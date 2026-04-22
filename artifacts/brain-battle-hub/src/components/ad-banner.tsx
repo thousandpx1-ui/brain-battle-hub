@@ -16,9 +16,9 @@ export function AdBanner() {
   return (
     <div 
       ref={containerRef}
-      className="w-full aspect-[2/1] flex flex-col items-center justify-center border-t border-gray-200"
+      className="w-full aspect-[2/1] flex flex-col items-center justify-center border-t border-gray-200 overflow-hidden relative"
     >
-      <div id="container-836d0910390e32d491359194be026e10" className="w-full h-full"></div>
+      <div id="container-836d0910390e32d491359194be026e10" className="w-full h-full relative z-10"></div>
     </div>
   );
 }
