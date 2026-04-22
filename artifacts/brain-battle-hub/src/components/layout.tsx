@@ -38,5 +38,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </nav>
       </div>
     </div>
+    </div>
   );
 }
