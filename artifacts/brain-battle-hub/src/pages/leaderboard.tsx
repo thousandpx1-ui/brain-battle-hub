@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy, Star } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
 
@@ -122,7 +122,8 @@ export default function Leaderboard() {
                 'black': 'border-4 border-black',
               };
               
-              const frameClass = entry.profileFrame ? frameStyles[entry.profileFrame] : '';
+              const displayFrame = isMe ? profileFrame : entry.profileFrame;
+              const frameClass = displayFrame ? frameStyles[displayFrame] : '';
               const borderColor = isMe ? 'border-primary' : (frameClass ? '' : 'border-gray-200');
 
               return (
@@ -130,21 +131,46 @@ export default function Leaderboard() {
                   key={`${entry.userId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  <div className={`w-10 h-10 mr-4 rounded-full flex items-center justify-center ${frameClass || ''}`}>
-                    <Avatar className={`w-full h-full border-2 ${borderColor}`}>
-                      <AvatarFallback className={`rounded-full flex items-center justify-center ${
-                        i === 0 ? 'bg-yellow-100' :
-                        i === 1 ? 'bg-gray-100' :
-                        i === 2 ? 'bg-amber-100' :
-                        'bg-gray-50'
-                      }`}>
-                        {medalEmoji ? (
-                          <span className="text-2xl">{medalEmoji}</span>
-                        ) : (
-                          <span className="font-black text-sm text-gray-400">{displayName.charAt(0).toUpperCase()}</span>
+                  <div className={`w-12 h-12 mr-4 rounded-full shrink-0 flex items-center justify-center ${frameClass || ''}`}>
+                    {displayFrame === 'rainbow' ? (
+                      <div className="bg-white rounded-full p-0.5 w-full h-full flex items-center justify-center">
+                        <Avatar className={`w-full h-full border-2 ${borderColor}`}>
+                          {isMe && profileImage && (
+                            <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
+                          )}
+                          <AvatarFallback className={`rounded-full flex items-center justify-center ${
+                            i === 0 ? 'bg-yellow-100' :
+                            i === 1 ? 'bg-gray-100' :
+                            i === 2 ? 'bg-amber-100' :
+                            'bg-gray-50'
+                          }`}>
+                            {medalEmoji ? (
+                              <span className="text-xl">{medalEmoji}</span>
+                            ) : (
+                              <span className="font-black text-sm text-gray-400">{displayName.charAt(0).toUpperCase()}</span>
+                            )}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    ) : (
+                      <Avatar className={`w-full h-full border-2 ${borderColor}`}>
+                        {isMe && profileImage && (
+                          <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
                         )}
-                      </AvatarFallback>
-                    </Avatar>
+                        <AvatarFallback className={`rounded-full flex items-center justify-center ${
+                          i === 0 ? 'bg-yellow-100' :
+                          i === 1 ? 'bg-gray-100' :
+                          i === 2 ? 'bg-amber-100' :
+                          'bg-gray-50'
+                        }`}>
+                          {medalEmoji ? (
+                            <span className="text-xl">{medalEmoji}</span>
+                          ) : (
+                            <span className="font-black text-sm text-gray-400">{displayName.charAt(0).toUpperCase()}</span>
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
                   </div>
 
                    <div className="flex-1 min-w-0">
