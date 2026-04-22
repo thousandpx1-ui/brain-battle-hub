@@ -24,7 +24,7 @@ function formatScore(score: number): string {
 
 export default function Leaderboard() {
   const { username, profileImage, profileFrame, oldUsernames, userId } = useAppState();
-  const [leaderboard, setLeaderboard] = useState<Array<{userId: string; score: number; profileFrame?: string | null}>>([]);
+  const [leaderboard, setLeaderboard] = useState<Array<{userId: string; score: number; profileFrame?: string | null; profileImage?: string | null}>>([]);
   const [loading, setLoading] = useState(true);
 
   // Load leaderboard
@@ -123,6 +123,7 @@ export default function Leaderboard() {
               };
               
               const displayFrame = isMe ? profileFrame : entry.profileFrame;
+              const displayImage = isMe ? profileImage : entry.profileImage;
               const frameClass = displayFrame ? frameStyles[displayFrame] : '';
               const borderColor = isMe ? 'border-primary' : (frameClass ? '' : 'border-gray-200');
 
@@ -135,8 +136,8 @@ export default function Leaderboard() {
                     {displayFrame === 'rainbow' ? (
                       <div className="bg-white rounded-full p-0.5 w-full h-full flex items-center justify-center">
                         <Avatar className={`w-full h-full border-2 ${borderColor}`}>
-                          {isMe && profileImage && (
-                            <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
+                          {displayImage && (
+                            <AvatarImage src={displayImage} alt={displayName} className="object-cover" />
                           )}
                           <AvatarFallback className={`rounded-full flex items-center justify-center ${
                             i === 0 ? 'bg-yellow-100' :
@@ -154,8 +155,8 @@ export default function Leaderboard() {
                       </div>
                     ) : (
                       <Avatar className={`w-full h-full border-2 ${borderColor}`}>
-                        {isMe && profileImage && (
-                          <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
+                        {displayImage && (
+                          <AvatarImage src={displayImage} alt={displayName} className="object-cover" />
                         )}
                         <AvatarFallback className={`rounded-full flex items-center justify-center ${
                           i === 0 ? 'bg-yellow-100' :

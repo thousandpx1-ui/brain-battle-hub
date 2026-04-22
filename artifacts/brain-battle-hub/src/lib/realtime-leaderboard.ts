@@ -30,6 +30,7 @@ export async function saveScoreRealtime(
   score: number,
   username: string,
   profileFrame?: string | null,
+  profileImage?: string | null,
 ) {
   const normalizedUsername = normalizeUsername(username);
 
@@ -68,6 +69,7 @@ export async function saveScoreRealtime(
       userId: normalizedUsername,
       score: newTotalScore,
       profileFrame: profileFrame || null,
+      profileImage: profileImage || null,
     }),
   });
 
@@ -92,6 +94,7 @@ export async function loadLeaderboardRealtime() {
       userId: normalizeUsername(entry.userId || entry.username),
       score: Number(entry.score) || 0,
       profileFrame: entry.profileFrame || null,
+      profileImage: entry.profileImage || null,
     }))
     .filter((entry) => isValidRealtimeUsername(entry.userId))
     .sort((a, b) => b.score - a.score);

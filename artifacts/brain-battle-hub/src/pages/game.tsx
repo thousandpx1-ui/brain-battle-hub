@@ -29,6 +29,7 @@ export default function Game() {
   const {
     username,
     profileFrame,
+    profileImage,
     gamesPlayedSession,
     incrementGamesPlayed,
     userId,
@@ -89,7 +90,7 @@ export default function Game() {
           score: scoreToPersist,
           profileFrame,
         });
-        await saveScoreRealtime(scoreToPersist, saveName, profileFrame);
+        await saveScoreRealtime(scoreToPersist, saveName, profileFrame, profileImage);
         console.log("✅ Score saved to real-time leaderboard");
       } catch (error) {
         console.error("❌ Failed to save to real-time leaderboard:", error);
@@ -98,7 +99,7 @@ export default function Game() {
       lastPersistedScoreRef.current = scoreToPersist;
       return true;
     },
-    [addLocalScore, game, profileFrame, userId, username],
+    [addLocalScore, game, profileFrame, profileImage, userId, username],
   );
 
   const persistRunScoreSync = useCallback(
@@ -111,7 +112,7 @@ export default function Game() {
 
       try {
         const saveName = username || userId || "player";
-        saveScoreRealtime(scoreToPersist, saveName, profileFrame).catch((err) =>
+        saveScoreRealtime(scoreToPersist, saveName, profileFrame, profileImage).catch((err) =>
           console.error("Failed to save realtime score on back:", err),
         );
       } catch (error) {
@@ -120,7 +121,7 @@ export default function Game() {
 
       lastPersistedScoreRef.current = scoreToPersist;
     },
-    [addLocalScore, game, profileFrame, userId, username],
+    [addLocalScore, game, profileFrame, profileImage, userId, username],
   );
 
   const handleStart = () => {

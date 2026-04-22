@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
+import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { Camera, User } from "lucide-react";
 
 const frames = [
@@ -37,7 +38,7 @@ function formatScore(score: number): string {
 }
 
 export default function Profile() {
-  const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame } = useAppState();
+  const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame, userId } = useAppState();
   const { scores, updateUsername } = useLocalLeaderboard();
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
@@ -58,15 +59,50 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setProfileImage(event.target?.result as string);
+      reader.onload = async (event) => {
+        const newImage = event.target?.result as string;
+        setProfileImage(newImage);
+
+        // Sync to backend
+        if (username || userId) {
+          const saveName = username || userId || "player";
+          try {
+            await saveScoreRealtime(0, saveName, selectedFrame, newImage);
+          } catch (err) {
+            console.error("Failed to sync profile image to realtime leaderboard", err);
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const removeImage = () => {
+  const removeImage = async () => {
     setProfileImage(null);
+
+    // Sync to backend
+    if (username || userId) {
+      const saveName = username || userId || "player";
+      try {
+        await saveScoreRealtime(0, saveName, selectedFrame, null);
+      } catch (err) {
+        console.error("Failed to sync profile image removal to realtime leaderboard", err);
+      }
+    }
+  };
+
+  const handleSaveFrame = async () => {
+    setProfileFrame(selectedFrame);
+
+    // Sync to backend
+    if (username || userId) {
+      const saveName = username || userId || "player";
+      try {
+        await saveScoreRealtime(0, saveName, selectedFrame, profileImage);
+      } catch (err) {
+        console.error("Failed to sync profile frame to realtime leaderboard", err);
+      }
+    }
   };
 
   // Calculate stats
@@ -146,7 +182,7 @@ export default function Profile() {
                 ))}
               </div>
               {selectedFrame !== profileFrame && (
-                <Button onClick={() => setProfileFrame(selectedFrame)} className="w-full">
+                <Button onClick={handleSaveFrame} className="w-full">
                   Save Frame Changes
                 </Button>
               )}
