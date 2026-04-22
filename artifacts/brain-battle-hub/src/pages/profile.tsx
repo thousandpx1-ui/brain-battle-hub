@@ -6,7 +6,20 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
-import { Camera, User } from "lucide-react";
+import { User } from "lucide-react";
+
+const customAvatars = [
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Felix",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Aneka",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Jude",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Oliver",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Sophie",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Max",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Bella",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Luna",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Charlie",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=Milo",
+];
 
 const frames = [
   { id: 'none', name: 'None', style: '' },
@@ -55,38 +68,16 @@ export default function Profile() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const newImage = event.target?.result as string;
-        setProfileImage(newImage);
-
-        // Sync to backend
-        if (username || userId) {
-          const saveName = username || userId || "player";
-          try {
-            await saveScoreRealtime(0, saveName, selectedFrame, newImage);
-          } catch (err) {
-            console.error("Failed to sync profile image to realtime leaderboard", err);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = async () => {
-    setProfileImage(null);
+  const handleSaveAvatar = async (avatarUrl: string) => {
+    setProfileImage(avatarUrl);
 
     // Sync to backend
     if (username || userId) {
       const saveName = username || userId || "player";
       try {
-        await saveScoreRealtime(0, saveName, selectedFrame, null);
+        await saveScoreRealtime(0, saveName, selectedFrame, avatarUrl);
       } catch (err) {
-        console.error("Failed to sync profile image removal to realtime leaderboard", err);
+        console.error("Failed to sync profile image to realtime leaderboard", err);
       }
     }
   };
@@ -120,46 +111,45 @@ export default function Profile() {
           <div className="bg-white rounded-2xl p-6 shadow-sm space-y-6">
             {/* Avatar Section */}
             <div className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <div className={`${frames.find(f => f.id === selectedFrame)?.style || ''}`}>
-                  {selectedFrame === 'rainbow' ? (
-                    <div className="bg-white rounded-full p-1">
-                      <Avatar className="w-22 h-22">
-                        <AvatarImage src={profileImage || undefined} alt={username || "User"} />
-                        <AvatarFallback className="text-xl">
-                          <User className="w-7 h-7" />
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                  ) : (
-                    <Avatar className="w-24 h-24">
+              <div className={`${frames.find(f => f.id === selectedFrame)?.style || ''}`}>
+                {selectedFrame === 'rainbow' ? (
+                  <div className="bg-white rounded-full p-1">
+                    <Avatar className="w-22 h-22">
                       <AvatarImage src={profileImage || undefined} alt={username || "User"} />
-                      <AvatarFallback className="text-2xl">
-                        <User className="w-8 h-8" />
+                      <AvatarFallback className="text-xl">
+                        <User className="w-7 h-7" />
                       </AvatarFallback>
                     </Avatar>
-                  )}
-                </div>
-                <label className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors">
-                  <Camera className="w-4 h-4" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
+                  </div>
+                ) : (
+                  <Avatar className="w-24 h-24">
+                    <AvatarImage src={profileImage || undefined} alt={username || "User"} />
+                    <AvatarFallback className="text-2xl">
+                      <User className="w-8 h-8" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
               </div>
-              {profileImage && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={removeImage}
-                  className="text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  Remove Photo
-                </Button>
-              )}
+            </div>
+
+            {/* Custom Avatars Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">Choose Avatar</label>
+              <div className="grid grid-cols-5 gap-2">
+                {customAvatars.map((avatar) => (
+                  <button
+                    key={avatar}
+                    onClick={() => handleSaveAvatar(avatar)}
+                    className={`p-1 rounded-lg border-2 flex items-center justify-center ${
+                      profileImage === avatar
+                        ? 'border-primary bg-primary/10'
+                        : 'border-gray-200 hover:border-gray-300'
+                    } transition-colors`}
+                  >
+                    <img src={avatar} alt="Avatar" className="w-10 h-10 rounded-full" />
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Profile Frame Section */}
