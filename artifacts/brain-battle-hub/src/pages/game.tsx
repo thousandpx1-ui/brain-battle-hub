@@ -10,6 +10,7 @@ import { IllusionFinder } from "@/games/IllusionFinder";
 import { SimonSays } from "@/games/SimonSays";
 import { ColorBlast } from "@/games/ColorBlast";
 import { MatchPairs } from "@/games/MatchPairs";
+import { NeonBounce } from "@/games/NeonBounce";
 
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { useAppState } from "@/hooks/useAppState";
@@ -315,6 +316,13 @@ export default function Game() {
       case "matchpairs":
         return (
           <MatchPairs
+            onGameOver={handleGameOver}
+            onScoreChange={handleScoreChange}
+          />
+        );
+      case "neonbounce":
+        return (
+          <NeonBounce
             onGameOver={handleGameOver}
             onScoreChange={handleScoreChange}
           />

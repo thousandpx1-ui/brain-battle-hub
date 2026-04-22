@@ -1,4 +1,4 @@
-import { Brain, Eye, Gamepad2, Bomb, Grid3X3, Layers } from "lucide-react";
+import { Brain, Eye, Gamepad2, Bomb, Grid3X3, Layers, Activity } from "lucide-react";
 
 export const GAMES = [
   {
@@ -35,6 +35,13 @@ export const GAMES = [
     description: "Tap connected neon blocks, blast groups of 3+, and race the timer.",
     gradient: "game-gradient-5",
     icon: Grid3X3,
+  },
+  {
+    id: "neonbounce",
+    name: "Neon Bounce",
+    description: "Keep the glowing ball bouncing! Move the paddle to prevent it from falling.",
+    gradient: "game-gradient-1", // Reusing a gradient since we only have up to 5 probably, or just game-gradient-1
+    icon: Activity,
   },
 ];
 
