@@ -30,8 +30,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <User className="w-6 h-6 mb-1" />
               <span className="text-[10px] font-medium">Profile</span>
             </Link>
-          </nav>
-        </div>
+        </nav>
       </div>
     </div>
   );
