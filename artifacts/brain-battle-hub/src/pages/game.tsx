@@ -33,6 +33,14 @@ export default function Game() {
     userId,
   } = useAppState();
   const addLocalScore = useLocalLeaderboard((s) => s.addScore);
+  const localScores = useLocalLeaderboard((s) => s.scores);
+
+  const bestScore = Math.max(
+    localScores
+      .filter((s) => s.gameId === game?.id && s.username === username)
+      .reduce((max, s) => Math.max(max, s.score), 0),
+    score
+  );
 
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [hasDoubled, setHasDoubled] = useState(false);
@@ -365,11 +373,21 @@ export default function Game() {
                 <Play className="w-5 h-5 fill-white" />
                 PLAY NOW
               </Button>
+              {bestScore > 0 && (
+                <div className="mt-6 text-sm font-bold text-gray-400 uppercase tracking-widest">
+                  Best Score: {bestScore}
+                </div>
+              )}
             </div>
           )}
 
           {gameState === "playing" && (
-            <div className="w-full flex-1">{renderGameComponent()}</div>
+            <div className="w-full flex-1 flex flex-col">
+              <div className="w-full flex-1">{renderGameComponent()}</div>
+              <div className="w-full py-4 mt-auto text-center text-sm font-bold text-gray-400 uppercase tracking-widest">
+                Best Score: {bestScore}
+              </div>
+            </div>
           )}
 
           {gameState === "gameover" && (
@@ -379,6 +397,12 @@ export default function Game() {
                   Final Score
                 </p>
                 <h2 className="text-6xl font-black text-primary">{score}</h2>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-gray-400 font-bold uppercase tracking-widest text-xs mb-1">
+                    Best Score
+                  </p>
+                  <p className="text-xl font-bold text-gray-700">{bestScore}</p>
+                </div>
               </div>
 
               <div className="flex flex-col gap-3 w-full">
