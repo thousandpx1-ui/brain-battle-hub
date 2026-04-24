@@ -79,7 +79,7 @@ export default function Game() {
   };
 
   const handleRewardDouble = () => {
-    window.open("https://omg10.com/4/10900602", "_blank");
+    window.open("https://www.profitablecpmratenetwork.com/kegnjhbu47?key=94705897a820e4a9b1cc8aa8e47d4ce4", "_blank");
     setShowRewardAd(true);
   };
 

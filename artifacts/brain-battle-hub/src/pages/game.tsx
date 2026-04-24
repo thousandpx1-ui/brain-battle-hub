@@ -202,12 +202,11 @@ export default function Game() {
 
   const handleRewardDouble = async () => {
     if (hasDoubled || score === 0) return;
-    
-    window.open("https://omg10.com/4/10900602", "_blank");
+
+    window.open("https://www.profitablecpmratenetwork.com/kegnjhbu47?key=94705897a820e4a9b1cc8aa8e47d4ce4", "_blank");
 
     setHasDoubled(true);
-    const doubled = score * 2;
-    setScore(doubled);
+    const doubled = score * 2;    setScore(doubled);
     latestScoreRef.current = Math.max(latestScoreRef.current, doubled);
     await persistRunScore(doubled);
   };
