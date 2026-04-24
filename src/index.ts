@@ -11,6 +11,12 @@ export default {
       } catch (e) {
         // Ignore error if column already exists
       }
+      
+      try {
+        await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN profile_frame TEXT").run();
+      } catch (e) {
+        // Ignore error if column already exists
+      }
 
       const existing = await env.DB.prepare(
         "SELECT score FROM leaderboard WHERE user_id = ?"
@@ -20,16 +26,34 @@ export default {
         // Only update if new score is higher
         if (score > existing.score) {
           await env.DB.prepare(
-            "UPDATE leaderboard SET score = ?, profile_frame = ?, profile_image = ?, created_at = ? WHERE user_id = ?"
+            `UPDATE leaderboard SET 
+              score = ?, 
+              profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
+              profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END, 
+              created_at = ? 
+             WHERE user_id = ?`
           )
-            .bind(score, profileFrame || null, profileImage || null, new Date().toISOString(), userId)
+            .bind(
+              score, 
+              profileFrame || null, profileFrame || null, profileFrame || null,
+              profileImage || null, profileImage || null, profileImage || null,
+              new Date().toISOString(), 
+              userId
+            )
             .run();
         } else {
           // Even if score is not higher, update profile settings if provided
           await env.DB.prepare(
-            "UPDATE leaderboard SET profile_frame = ?, profile_image = ? WHERE user_id = ?"
+            `UPDATE leaderboard SET 
+              profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
+              profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END 
+             WHERE user_id = ?`
           )
-            .bind(profileFrame || null, profileImage || null, userId)
+            .bind(
+              profileFrame || null, profileFrame || null, profileFrame || null,
+              profileImage || null, profileImage || null, profileImage || null,
+              userId
+            )
             .run();
         }
       } else {
@@ -49,6 +73,12 @@ export default {
     if (url.pathname === "/leaderboard") {
       try {
         await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN profile_image TEXT").run();
+      } catch (e) {
+        // Ignore
+      }
+      
+      try {
+        await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN profile_frame TEXT").run();
       } catch (e) {
         // Ignore
       }

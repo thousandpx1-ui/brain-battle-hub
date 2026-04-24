@@ -159,9 +159,9 @@ export default function Profile() {
                 {frames.map((frame) => (
                   <button
                     key={frame.id}
-                    onClick={() => setSelectedFrame(frame.id === 'none' ? null : frame.id)}
+                    onClick={() => setSelectedFrame(frame.id === 'none' ? 'none' : frame.id)}
                     className={`h-16 p-2 rounded-lg border-2 flex flex-col items-center justify-center ${
-                      (selectedFrame === frame.id || (frame.id === 'none' && !selectedFrame))
+                      (selectedFrame === frame.id || (frame.id === 'none' && (!selectedFrame || selectedFrame === 'none')))
                         ? 'border-primary bg-primary/10'
                         : 'border-gray-200 hover:border-gray-300'
                     } transition-colors`}
