@@ -70,6 +70,8 @@ export async function saveScoreRealtime(
       score: newTotalScore,
       profileFrame: profileFrame || null,
       profileImage: profileImage || null,
+      frame: profileFrame || null,
+      avatar: profileImage || null,
     }),
   });
 
@@ -90,12 +92,16 @@ export async function loadLeaderboardRealtime() {
   const data = await res.json();
 
   return (Array.isArray(data) ? data : [])
-    .map((entry) => ({
-      userId: normalizeUsername(entry.userId || entry.username),
-      score: Number(entry.score) || 0,
-      profileFrame: entry.profileFrame || null,
-      profileImage: entry.profileImage || null,
-    }))
+    .map((entry) => {
+      const pFrame = entry.profileFrame || entry.frame || null;
+      const pImage = entry.profileImage || entry.avatar || null;
+      return {
+        userId: normalizeUsername(entry.userId || entry.username),
+        score: Number(entry.score) || 0,
+        profileFrame: pFrame === 'none' ? null : pFrame,
+        profileImage: pImage === 'none' ? null : pImage,
+      };
+    })
     .filter((entry) => isValidRealtimeUsername(entry.userId))
     .sort((a, b) => b.score - a.score);
 }

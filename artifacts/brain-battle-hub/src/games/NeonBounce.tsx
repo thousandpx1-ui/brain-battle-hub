@@ -18,7 +18,7 @@ export function NeonBounce({ onGameOver, onScoreChange }: NeonBounceProps) {
     lastTime: 0,
   });
 
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(0);
 
   const initGame = useCallback(() => {
     const canvas = canvasRef.current;
