@@ -34,6 +34,16 @@ const frames = [
   { id: 'black', name: 'Black', style: 'border-4 border-black rounded-full' },
 ];
 
+const premiumFrames = [
+  { id: 'premium-classic', name: 'Classic Ring', style: 'rounded-full p-[3px] bg-gradient-to-br from-yellow-200 via-yellow-400 to-yellow-600 shadow-md' },
+  { id: 'premium-decor', name: 'Decor Ring', style: 'rounded-full border-[3px] border-dotted border-yellow-500 ring-2 ring-yellow-400 ring-offset-2 bg-yellow-50 p-0.5' },
+  { id: 'premium-hybrid', name: 'Hybrid Sq.', style: 'rounded-xl bg-gradient-to-br from-amber-700 via-amber-500 to-amber-700 p-[3px] shadow-md relative flex items-center justify-center before:absolute before:inset-0 before:border before:border-amber-300/60 before:rounded-xl before:m-0.5' },
+  { id: 'premium-star', name: 'Star Burst', style: 'relative z-10 p-[4px] rounded-full flex items-center justify-center before:absolute before:inset-0 before:bg-gradient-to-br before:from-yellow-400 before:to-orange-500 before:-z-10 before:rounded-md after:absolute after:inset-0 after:bg-gradient-to-br after:from-orange-500 after:to-red-600 after:rotate-45 after:-z-10 after:rounded-md shadow-[0_0_15px_rgba(249,115,22,0.4)]' },
+  { id: 'premium-royal', name: 'Royal VIP', style: 'relative z-10 p-1.5 rounded-full bg-gradient-to-br from-indigo-900 via-purple-800 to-fuchsia-900 ring-2 ring-purple-400 ring-offset-2 ring-offset-purple-100 before:absolute before:inset-[-3px] before:bg-gradient-to-br before:from-purple-500 before:to-indigo-500 before:rotate-45 before:-z-10 before:rounded-xl shadow-[0_0_20px_rgba(192,38,211,0.5)] border-[2px] border-fuchsia-300' },
+];
+
+const allFrames = [...frames, ...premiumFrames];
+
 function formatScore(score: number): string {
   const num = Math.floor(score);
 
@@ -111,7 +121,7 @@ export default function Profile() {
           <div className="bg-white rounded-2xl p-6 shadow-sm space-y-6">
             {/* Avatar Section */}
             <div className="flex flex-col items-center space-y-4">
-              <div className={`${frames.find(f => f.id === selectedFrame)?.style || ''}`}>
+              <div className={`${allFrames.find(f => f.id === selectedFrame)?.style || ''} transition-all duration-300`}>
                 {selectedFrame === 'rainbow' ? (
                   <div className="bg-white rounded-full p-1">
                     <Avatar className="w-22 h-22">
@@ -152,25 +162,52 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Profile Frame Section */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">Profile Frame</label>
-              <div className="grid grid-cols-5 gap-2">
-                {frames.map((frame) => (
-                  <button
-                    key={frame.id}
-                    onClick={() => setSelectedFrame(frame.id === 'none' ? 'none' : frame.id)}
-                    className={`h-16 p-2 rounded-lg border-2 flex flex-col items-center justify-center ${
-                      (selectedFrame === frame.id || (frame.id === 'none' && (!selectedFrame || selectedFrame === 'none')))
-                        ? 'border-primary bg-primary/10'
-                        : 'border-gray-200 hover:border-gray-300'
-                    } transition-colors`}
-                  >
-                    <div className={`w-8 h-8 mx-auto ${frame.style}`}></div>
-                    <div className="text-xs mt-1 text-center">{frame.name}</div>
-                  </button>
-                ))}
+            {/* Profile Frames */}
+            <div className="space-y-6">
+              {/* Basic Frames */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-700">Basic Frames</label>
+                <div className="grid grid-cols-5 gap-2">
+                  {frames.map((frame) => (
+                    <button
+                      key={frame.id}
+                      onClick={() => setSelectedFrame(frame.id === 'none' ? 'none' : frame.id)}
+                      className={`h-16 p-1.5 rounded-lg border-2 flex flex-col items-center justify-center overflow-hidden ${
+                        (selectedFrame === frame.id || (frame.id === 'none' && (!selectedFrame || selectedFrame === 'none')))
+                          ? 'border-primary bg-primary/10'
+                          : 'border-gray-200 hover:border-gray-300'
+                      } transition-colors`}
+                    >
+                      <div className={`w-7 h-7 shrink-0 mx-auto ${frame.style}`}></div>
+                      <div className="text-[10px] mt-1 text-center truncate w-full">{frame.name}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Premium Frames Section */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  Premium Frames <span className="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Pro</span>
+                </label>
+                <div className="grid grid-cols-5 gap-2">
+                  {premiumFrames.map((frame) => (
+                    <button
+                      key={frame.id}
+                      onClick={() => setSelectedFrame(frame.id)}
+                      className={`h-16 p-1.5 rounded-lg border-2 flex flex-col items-center justify-center overflow-hidden ${
+                        selectedFrame === frame.id
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      } transition-colors`}
+                    >
+                      <div className={`w-7 h-7 shrink-0 mx-auto ${frame.style}`}></div>
+                      <div className="text-[10px] mt-1 text-center truncate w-full font-medium text-purple-800">{frame.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {selectedFrame !== profileFrame && (
                 <Button onClick={handleSaveFrame} className="w-full">
                   Save Frame Changes
