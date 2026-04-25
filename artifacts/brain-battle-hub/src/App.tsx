@@ -29,7 +29,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" attribute="class">
+      <ThemeProvider defaultTheme="light" forcedTheme="light" attribute="class">
         <TooltipProvider>
           <WouterRouter base={(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}>
             <Router />
