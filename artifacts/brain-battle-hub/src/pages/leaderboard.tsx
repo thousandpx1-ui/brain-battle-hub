@@ -132,7 +132,10 @@ export default function Leaderboard() {
                   key={`${entry.userId}-${entry.score}-${i}`}
                   className={`flex items-center p-4 rounded-2xl bg-white shadow-sm border ${isMe ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-gray-100'}`}
                 >
-                  <div className={`w-12 h-12 mr-4 rounded-full shrink-0 flex items-center justify-center ${frameClass || ''}`}>
+                  <div className={`w-12 h-12 mr-4 rounded-full shrink-0 flex items-center justify-center relative ${frameClass || ''}`}>
+                    {displayFrame === 'premium-metallic' && (
+                      <img src="/frames/metallic-frame.png" alt="frame" className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none scale-125" />
+                    )}
                     {displayFrame === 'rainbow' ? (
                       <div className="bg-white rounded-full p-0.5 w-full h-full flex items-center justify-center">
                         <Avatar className={`w-full h-full border-2 ${borderColor}`}>

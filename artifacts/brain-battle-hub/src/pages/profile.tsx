@@ -35,11 +35,7 @@ const frames = [
 ];
 
 const premiumFrames = [
-  { id: 'premium-classic', name: 'Classic Ring', style: 'rounded-full p-[3px] bg-gradient-to-br from-yellow-200 via-yellow-400 to-yellow-600 shadow-md' },
-  { id: 'premium-decor', name: 'Decor Ring', style: 'rounded-full border-[3px] border-dotted border-yellow-500 ring-2 ring-yellow-400 ring-offset-2 bg-yellow-50 p-0.5' },
-  { id: 'premium-hybrid', name: 'Hybrid Sq.', style: 'rounded-xl bg-gradient-to-br from-amber-700 via-amber-500 to-amber-700 p-[3px] shadow-md relative flex items-center justify-center before:absolute before:inset-0 before:border before:border-amber-300/60 before:rounded-xl before:m-0.5' },
-  { id: 'premium-star', name: 'Star Burst', style: 'relative z-10 p-[4px] rounded-full flex items-center justify-center before:absolute before:inset-0 before:bg-gradient-to-br before:from-yellow-400 before:to-orange-500 before:-z-10 before:rounded-md after:absolute after:inset-0 after:bg-gradient-to-br after:from-orange-500 after:to-red-600 after:rotate-45 after:-z-10 after:rounded-md shadow-[0_0_15px_rgba(249,115,22,0.4)]' },
-  { id: 'premium-royal', name: 'Royal VIP', style: 'relative z-10 p-1.5 rounded-full bg-gradient-to-br from-indigo-900 via-purple-800 to-fuchsia-900 ring-2 ring-purple-400 ring-offset-2 ring-offset-purple-100 before:absolute before:inset-[-3px] before:bg-gradient-to-br before:from-purple-500 before:to-indigo-500 before:rotate-45 before:-z-10 before:rounded-xl shadow-[0_0_20px_rgba(192,38,211,0.5)] border-[2px] border-fuchsia-300' },
+  { id: 'premium-metallic', name: 'Metallic', style: '', image: '/frames/metallic-frame.png' },
 ];
 
 const allFrames = [...frames, ...premiumFrames];
@@ -121,25 +117,43 @@ export default function Profile() {
           <div className="bg-white rounded-2xl p-6 shadow-sm space-y-6">
             {/* Avatar Section */}
             <div className="flex flex-col items-center space-y-4">
-              <div className={`${allFrames.find(f => f.id === selectedFrame)?.style || ''} transition-all duration-300`}>
-                {selectedFrame === 'rainbow' ? (
-                  <div className="bg-white rounded-full p-1">
-                    <Avatar className="w-22 h-22">
-                      <AvatarImage src={profileImage || undefined} alt={username || "User"} />
-                      <AvatarFallback className="text-xl">
-                        <User className="w-7 h-7" />
-                      </AvatarFallback>
-                    </Avatar>
+              {(() => {
+                const currentFrame = allFrames.find(f => f.id === selectedFrame);
+                if (currentFrame && 'image' in currentFrame && currentFrame.image) {
+                  return (
+                    <div className="relative w-32 h-32 flex items-center justify-center">
+                      <img src={currentFrame.image} alt="Frame" className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none scale-125" />
+                      <Avatar className="w-24 h-24 relative z-0">
+                        <AvatarImage src={profileImage || undefined} alt={username || "User"} />
+                        <AvatarFallback className="text-2xl">
+                          <User className="w-8 h-8" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  );
+                }
+                return (
+                  <div className={`${currentFrame?.style || ''} transition-all duration-300`}>
+                    {selectedFrame === 'rainbow' ? (
+                      <div className="bg-white rounded-full p-1">
+                        <Avatar className="w-22 h-22">
+                          <AvatarImage src={profileImage || undefined} alt={username || "User"} />
+                          <AvatarFallback className="text-xl">
+                            <User className="w-7 h-7" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    ) : (
+                      <Avatar className="w-24 h-24">
+                        <AvatarImage src={profileImage || undefined} alt={username || "User"} />
+                        <AvatarFallback className="text-2xl">
+                          <User className="w-8 h-8" />
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
                   </div>
-                ) : (
-                  <Avatar className="w-24 h-24">
-                    <AvatarImage src={profileImage || undefined} alt={username || "User"} />
-                    <AvatarFallback className="text-2xl">
-                      <User className="w-8 h-8" />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
+                );
+              })()}
             </div>
 
             {/* Custom Avatars Selection */}
@@ -201,7 +215,14 @@ export default function Profile() {
                           : 'border-gray-200 hover:border-gray-300'
                       } transition-colors`}
                     >
-                      <div className={`w-7 h-7 shrink-0 mx-auto ${frame.style}`}></div>
+                      {'image' in frame && frame.image ? (
+                        <div className="w-8 h-8 shrink-0 mx-auto relative flex items-center justify-center">
+                          <img src={frame.image} alt="frame" className="absolute inset-0 w-full h-full object-contain pointer-events-none scale-125" />
+                          <div className="w-5 h-5 bg-gray-200 rounded-full"></div>
+                        </div>
+                      ) : (
+                        <div className={`w-7 h-7 shrink-0 mx-auto ${frame.style}`}></div>
+                      )}
                       <div className="text-[10px] mt-1 text-center truncate w-full font-medium text-purple-800">{frame.name}</div>
                     </button>
                   ))}
