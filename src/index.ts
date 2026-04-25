@@ -8,15 +8,15 @@ export default {
 
       try {
         await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN profile_image TEXT").run();
-      } catch (e) {
-        // Ignore error if column already exists
-      }
+      } catch (e) {}
       
       try {
         await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN profile_frame TEXT").run();
-      } catch (e) {
-        // Ignore error if column already exists
-      }
+      } catch (e) {}
+      
+      try {
+        await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0").run();
+      } catch (e) {}
 
       const existing = await env.DB.prepare(
         "SELECT score FROM leaderboard WHERE user_id = ?"
@@ -58,10 +58,66 @@ export default {
         }
       } else {
         await env.DB.prepare(
-          "INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+          "INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins) VALUES (?, ?, ?, ?, ?, ?, 0)"
         )
           .bind(userId, userId, score, profileFrame || null, profileImage || null, new Date().toISOString())
           .run();
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // 🪙 GET BALANCE
+    if (url.pathname === "/balance") {
+      const userId = url.searchParams.get("userId");
+      if (!userId) return new Response("Missing userId", { status: 400 });
+
+      try {
+        await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0").run();
+      } catch (e) {}
+
+      const user = await env.DB.prepare("SELECT coins FROM leaderboard WHERE user_id = ?").bind(userId).first();
+      return new Response(JSON.stringify({ coins: user ? (user.coins || 0) : 0 }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // 🪙 ADD REWARD
+    if (url.pathname === "/reward" && request.method === "POST") {
+      const { userId, amount } = await request.json();
+      if (!userId || typeof amount !== "number") return new Response("Invalid input", { status: 400 });
+
+      try {
+        await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0").run();
+      } catch (e) {}
+
+      const existing = await env.DB.prepare("SELECT user_id FROM leaderboard WHERE user_id = ?").bind(userId).first();
+      
+      if (existing) {
+        await env.DB.prepare("UPDATE leaderboard SET coins = COALESCE(coins, 0) + ? WHERE user_id = ?").bind(amount, userId).run();
+      } else {
+        await env.DB.prepare("INSERT INTO leaderboard (user_id, username, score, coins, created_at) VALUES (?, ?, 0, ?, ?)").bind(userId, userId, amount, new Date().toISOString()).run();
+      }
+
+      return new Response(JSON.stringify({ success: true, amount }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // 👤 CREATE USER
+    if (url.pathname === "/create-user" && request.method === "POST") {
+      const { id, username } = await request.json();
+      if (!id) return new Response("Missing id", { status: 400 });
+
+      try {
+        await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0").run();
+      } catch (e) {}
+
+      const existing = await env.DB.prepare("SELECT user_id FROM leaderboard WHERE user_id = ?").bind(id).first();
+      if (!existing) {
+        await env.DB.prepare("INSERT INTO leaderboard (user_id, username, score, coins, created_at) VALUES (?, ?, 0, 0, ?)").bind(id, username || id, new Date().toISOString()).run();
       }
 
       return new Response(JSON.stringify({ success: true }), {

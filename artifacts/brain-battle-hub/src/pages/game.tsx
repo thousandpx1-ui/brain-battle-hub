@@ -14,6 +14,7 @@ import { NeonBounce } from "@/games/NeonBounce";
 
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { useAppState } from "@/hooks/useAppState";
+import { useCoins } from "@/hooks/useCoins";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { InterstitialAd } from "@/components/interstitial-ad";
 import { Trophy, RotateCcw, Play, ChevronLeft } from "lucide-react";
@@ -34,6 +35,7 @@ export default function Game() {
     incrementGamesPlayed,
     userId,
   } = useAppState();
+  const { addReward } = useCoins();
   const addLocalScore = useLocalLeaderboard((s) => s.addScore);
   const localScores = useLocalLeaderboard((s) => s.scores);
 
@@ -47,6 +49,7 @@ export default function Game() {
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [hasDoubled, setHasDoubled] = useState(false);
   const [scoreSavedInPlay, setScoreSavedInPlay] = useState(false);
+  const [earnedCoins, setEarnedCoins] = useState(0);
 
   const latestScoreRef = useRef(0);
   const lastPersistedScoreRef = useRef(0);
@@ -132,6 +135,7 @@ export default function Game() {
     setGameState("playing");
     setScoreSavedInPlay(false);
     setHasDoubled(false);
+    setEarnedCoins(0);
   };
 
   const handleScoreChange = (nextScore: number) => {
@@ -160,6 +164,12 @@ export default function Game() {
     setGameState("gameover");
 
     await persistRunScore(normalizedFinalScore);
+    
+    // Reward coins based on final score
+    const newCoins = await addReward(normalizedFinalScore, 0);
+    if (newCoins > 0) {
+      setEarnedCoins(newCoins);
+    }
 
     if (!hasCountedGameRef.current) {
       incrementGamesPlayed();
@@ -179,6 +189,7 @@ export default function Game() {
     hasCountedGameRef.current = false;
     setScoreSavedInPlay(false);
     setHasDoubled(false);
+    setEarnedCoins(0);
   };
 
   const handleSaveScoreInPlay = useCallback(async () => {
@@ -206,9 +217,17 @@ export default function Game() {
     window.open("https://www.profitablecpmratenetwork.com/kegnjhbu47?key=94705897a820e4a9b1cc8aa8e47d4ce4", "_blank");
 
     setHasDoubled(true);
-    const doubled = score * 2;    setScore(doubled);
+    const originalScore = score;
+    const doubled = score * 2;
+    setScore(doubled);
     latestScoreRef.current = Math.max(latestScoreRef.current, doubled);
     await persistRunScore(doubled);
+    
+    // Award additional coins for the doubled amount
+    const extraCoins = await addReward(doubled, originalScore);
+    if (extraCoins > 0) {
+      setEarnedCoins(prev => prev + extraCoins);
+    }
   };
 
   const persistScoreOnDisconnect = useCallback(() => {
@@ -405,6 +424,11 @@ export default function Game() {
                   Final Score
                 </p>
                 <h2 className="text-6xl font-black text-primary">{score}</h2>
+                {earnedCoins > 0 && (
+                  <div className="mt-2 text-yellow-600 font-bold text-lg animate-in slide-in-from-bottom-2">
+                    +🪙 {earnedCoins} Coins
+                  </div>
+                )}
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <p className="text-gray-400 font-bold uppercase tracking-widest text-xs mb-1">
                     Best Score

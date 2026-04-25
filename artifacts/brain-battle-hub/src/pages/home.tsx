@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Layout } from "@/components/layout";
 import { GAMES } from "@/lib/games";
 import { useAppState } from "@/hooks/useAppState";
+import { useCoins } from "@/hooks/useCoins";
 import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
 import { AdBanner } from "@/components/ad-banner";
@@ -29,6 +30,7 @@ function formatScore(score: number): string {
 
 export default function Home() {
   const { username, streak, updateStreak } = useAppState();
+  const { coins } = useCoins();
   const [showUsername, setShowUsername] = useState(false);
   const [dailyLeaderboard, setDailyLeaderboard] = useState<Array<{username: string; score: number; createdAt?: string}>>([]);
   const [dailyLoading, setDailyLoading] = useState(true);
@@ -125,6 +127,13 @@ export default function Home() {
   return (
     <Layout>
       <div className="flex-1 p-6 flex flex-col gap-6 pt-10">
+        <div className="flex items-center gap-2 -mb-2">
+          <div className="bg-yellow-50 px-3 py-1.5 rounded-full flex items-center gap-1 border border-yellow-200">
+            <span className="text-lg leading-none">🪙</span>
+            <span className="font-bold text-yellow-700 text-sm">{coins.toLocaleString()}</span>
+          </div>
+        </div>
+
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">

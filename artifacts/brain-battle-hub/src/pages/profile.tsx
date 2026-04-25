@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAppState } from "@/hooks/useAppState";
+import { useCoins } from "@/hooks/useCoins";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { User } from "lucide-react";
@@ -61,6 +62,7 @@ function formatScore(score: number): string {
 export default function Profile() {
   const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame, userId } = useAppState();
   const { scores, updateUsername } = useLocalLeaderboard();
+  const { coins } = useCoins();
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
   const [selectedFrame, setSelectedFrame] = useState(profileFrame);
@@ -284,9 +286,17 @@ export default function Profile() {
             {/* Stats Section */}
             <div className="pt-4 border-t border-gray-100">
               <h3 className="text-lg font-semibold mb-3">Game Stats</h3>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-primary">{formatScore(totalScore)}</div>
-                <div className="text-sm text-gray-600">Total Score</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-primary">{formatScore(totalScore)}</div>
+                  <div className="text-sm text-gray-600">Total Score</div>
+                </div>
+                <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <div className="text-2xl font-bold text-yellow-700 flex items-center justify-center gap-1">
+                    <span>🪙</span> {coins.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-yellow-600 font-medium">Total Coins</div>
+                </div>
               </div>
             </div>
           </div>
