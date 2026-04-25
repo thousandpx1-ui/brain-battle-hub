@@ -2,16 +2,12 @@ import { Link, useLocation } from "wouter";
 import { Home, Gamepad2, Trophy, User } from "lucide-react";
 import { InstallButton } from "./install-button";
 import { GlobalAdBanner } from "./global-ad-banner";
-import { ThemeToggle } from "./theme-toggle";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
   return (
     <div className="mx-auto w-full max-w-[430px] min-h-[100dvh] bg-background relative pb-[140px] shadow-2xl flex flex-col">
-      <div className="absolute top-4 right-4 z-50">
-        <ThemeToggle />
-      </div>
       <InstallButton />
       <main className="flex-1 flex flex-col relative w-full h-full overflow-x-hidden overflow-y-auto">
         {children}

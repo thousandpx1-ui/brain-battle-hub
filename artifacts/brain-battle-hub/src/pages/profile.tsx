@@ -21,7 +21,9 @@ const customAvatars = [
   "https://api.dicebear.com/7.x/bottts/svg?seed=Milo",
 ];
 
-const frames = [
+type Frame = { id: string; name: string; style: string; image?: string };
+
+const frames: Frame[] = [
   { id: 'none', name: 'None', style: '' },
   { id: 'gold', name: 'Gold', style: 'border-4 border-yellow-400 rounded-full' },
   { id: 'silver', name: 'Silver', style: 'border-4 border-gray-400 rounded-full' },
@@ -34,11 +36,11 @@ const frames = [
   { id: 'black', name: 'Black', style: 'border-4 border-black rounded-full' },
 ];
 
-const premiumFrames = [
+const premiumFrames: Frame[] = [
   { id: 'premium-metallic', name: 'Metallic', style: '', image: '/frames/metallic-frame.png' },
 ];
 
-const allFrames = [...frames, ...premiumFrames];
+const allFrames: Frame[] = [...frames, ...premiumFrames];
 
 function formatScore(score: number): string {
   const num = Math.floor(score);
