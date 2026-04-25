@@ -134,7 +134,7 @@ export default function Leaderboard() {
                 >
                   <div className={`w-12 h-12 mr-4 rounded-full shrink-0 flex items-center justify-center relative ${frameClass || ''}`}>
                     {displayFrame === 'premium-metallic' && (
-                      <img src="/frames/metallic-frame.png" alt="frame" className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none scale-125" />
+                      <img src="/frames/metallic-frame.png" alt="frame" className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none scale-[1.65]" />
                     )}
                     {displayFrame === 'rainbow' ? (
                       <div className="bg-white rounded-full p-0.5 w-full h-full flex items-center justify-center">
