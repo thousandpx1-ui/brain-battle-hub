@@ -31,6 +31,5 @@ export async function getCoinBalance(userId: string) {
 }
 
 export function calculateCoins(score: number): number {
-  return Math.floor(score / 1000) * 5;
+  return Math.floor(score / 100) * 5; // Reward 5 coins for every 100 points
 }
-

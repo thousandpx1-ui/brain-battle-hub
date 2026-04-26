@@ -1,26 +1,42 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Dispatch, SetStateAction } from "react";
 import { createCoinUser, getCoinBalance, rewardCoins, calculateCoins } from "@/lib/coins";
 import { useAppState } from "./useAppState";
+
+// Keep multiple instances of the hook in sync
+let globalCoins = 0;
+const coinListeners = new Set<Dispatch<SetStateAction<number>>>();
 
 export function useCoins() {
   const { userId, username } = useAppState();
   const activeId = username || userId || "player";
   
-  const [coins, setCoins] = useState<number>(0);
+  const [coins, setCoins] = useState<number>(globalCoins);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    coinListeners.add(setCoins);
+    return () => {
+      coinListeners.delete(setCoins);
+    };
+  }, []);
+
+  const updateGlobalCoins = useCallback((newAmount: number) => {
+    globalCoins = newAmount;
+    coinListeners.forEach((listener) => listener(newAmount));
+  }, []);
 
   const fetchBalance = useCallback(async () => {
     if (!activeId) return;
     try {
       setLoading(true);
       const balance = await getCoinBalance(activeId);
-      setCoins(balance);
+      updateGlobalCoins(balance);
     } catch (err) {
       console.error("Failed to fetch coins:", err);
     } finally {
       setLoading(false);
     }
-  }, [activeId]);
+  }, [activeId, updateGlobalCoins]);
 
   useEffect(() => {
     if (activeId) {

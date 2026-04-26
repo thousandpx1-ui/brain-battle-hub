@@ -67,13 +67,15 @@ export const useLocalLeaderboard = create<LocalLeaderboardState>()(
       name: "brain-battle-leaderboard",
       storage: createSyncStorage(),
       migrate: (persisted: any) => {
-        // Add version field to existing state if missing
-        if (persisted && persisted.state) {
-          if (typeof persisted.state.version !== "number") {
-            persisted.state.version = 0;
-          }
+        if (!persisted) return { scores: [], version: 0 };
+        
+        if (typeof persisted.version !== "number") {
+          persisted.version = 0;
         }
-        return persisted?.state || {};
+        if (!Array.isArray(persisted.scores)) {
+          persisted.scores = [];
+        }
+        return persisted;
       },
     }
   )
