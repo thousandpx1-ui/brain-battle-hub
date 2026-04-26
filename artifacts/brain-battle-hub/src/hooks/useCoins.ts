@@ -3,9 +3,7 @@ import { createCoinUser, getCoinBalance, rewardCoins, calculateCoins } from "@/l
 import { useAppState } from "./useAppState";
 
 export function useCoins() {
-  const { username } = useAppState();
-  // We use username as userId in the leaderboard and coins system
-  const userId = username;
+  const { userId, username } = useAppState();
   
   const [coins, setCoins] = useState<number>(0);
   const [loading, setLoading] = useState(false);
@@ -26,10 +24,10 @@ export function useCoins() {
   useEffect(() => {
     if (userId) {
       // Ensure user is created
-      createCoinUser(userId, userId).catch(console.error);
+      createCoinUser(userId, username || "Player").catch(console.error);
       fetchBalance();
     }
-  }, [userId, fetchBalance]);
+  }, [userId, username, fetchBalance]);
 
   const addReward = useCallback(async (currentScore: number, previousScore: number = 0) => {
     if (!userId) return 0;

@@ -9,7 +9,7 @@ interface LeaderboardEntry {
   profileFrame?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mute-art-58b0.thousandpx1.workers.dev';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend-api.thousandpx1.workers.dev';
 
 // Get or create persistent user ID
 function getUserId(): string {

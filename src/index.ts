@@ -2,6 +2,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
     // 🟢 SAVE SCORE (update if higher, prevent duplicates)
     if (url.pathname === "/save-score") {
       const { userId, score, profileFrame, profileImage } = await request.json();
@@ -65,14 +75,14 @@ export default {
       }
 
       return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
 
     // 🪙 GET BALANCE
     if (url.pathname === "/balance") {
       const userId = url.searchParams.get("userId");
-      if (!userId) return new Response("Missing userId", { status: 400 });
+      if (!userId) return new Response("Missing userId", { status: 400, headers: corsHeaders });
 
       try {
         await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0").run();
@@ -80,14 +90,14 @@ export default {
 
       const user = await env.DB.prepare("SELECT coins FROM leaderboard WHERE user_id = ?").bind(userId).first();
       return new Response(JSON.stringify({ coins: user ? (user.coins || 0) : 0 }), {
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
 
     // 🪙 ADD REWARD
     if (url.pathname === "/reward" && request.method === "POST") {
       const { userId, amount } = await request.json();
-      if (!userId || typeof amount !== "number") return new Response("Invalid input", { status: 400 });
+      if (!userId || typeof amount !== "number") return new Response("Invalid input", { status: 400, headers: corsHeaders });
 
       try {
         await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0").run();
@@ -102,14 +112,14 @@ export default {
       }
 
       return new Response(JSON.stringify({ success: true, amount }), {
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
 
     // 👤 CREATE USER
     if (url.pathname === "/create-user" && request.method === "POST") {
       const { id, username } = await request.json();
-      if (!id) return new Response("Missing id", { status: 400 });
+      if (!id) return new Response("Missing id", { status: 400, headers: corsHeaders });
 
       try {
         await env.DB.prepare("ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0").run();
@@ -121,7 +131,7 @@ export default {
       }
 
       return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
 
@@ -144,13 +154,13 @@ export default {
       ).all();
 
       return new Response(JSON.stringify(results), {
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
 
     // root test
     if (url.pathname === "/") {
-      return new Response("API running 🚀");
+      return new Response("API running 🚀", { headers: corsHeaders });
     }
 
     // Service Worker for Monetag
@@ -164,11 +174,12 @@ importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw')`;
       return new Response(swContent, {
         headers: { 
           "Content-Type": "application/javascript",
-          "Cache-Control": "public, max-age=3600"
+          "Cache-Control": "public, max-age=3600",
+          ...corsHeaders
         }
       });
     }
 
-    return new Response("Not found", { status: 404 });
+    return new Response("Not found", { status: 404, headers: corsHeaders });
   }
 };
