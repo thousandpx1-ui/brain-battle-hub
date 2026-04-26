@@ -11,7 +11,7 @@ interface LeaderboardEntry {
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "https://backend-api.thousandpx1.workers.dev";
+  "https://mute-art-58b0.thousandpx1.workers.dev";
 
 // Known game names to filter out from leaderboard
 const GAME_NAMES = [

@@ -4,33 +4,34 @@ import { useAppState } from "./useAppState";
 
 export function useCoins() {
   const { userId, username } = useAppState();
+  const activeId = username || userId || "player";
   
   const [coins, setCoins] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
   const fetchBalance = useCallback(async () => {
-    if (!userId) return;
+    if (!activeId) return;
     try {
       setLoading(true);
-      const balance = await getCoinBalance(userId);
+      const balance = await getCoinBalance(activeId);
       setCoins(balance);
     } catch (err) {
       console.error("Failed to fetch coins:", err);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [activeId]);
 
   useEffect(() => {
-    if (userId) {
+    if (activeId) {
       // Ensure user is created
-      createCoinUser(userId, username || "Player").catch(console.error);
+      createCoinUser(activeId, username || "Player").catch(console.error);
       fetchBalance();
     }
-  }, [userId, username, fetchBalance]);
+  }, [activeId, username, fetchBalance]);
 
   const addReward = useCallback(async (currentScore: number, previousScore: number = 0) => {
-    if (!userId) return 0;
+    if (!activeId) return 0;
     const currentCoins = calculateCoins(currentScore);
     const previousCoins = calculateCoins(previousScore);
     const amount = currentCoins - previousCoins;
@@ -38,14 +39,14 @@ export function useCoins() {
     if (amount <= 0) return 0;
 
     try {
-      await rewardCoins(userId, amount);
+      await rewardCoins(activeId, amount);
       await fetchBalance();
       return amount;
     } catch (err) {
       console.error("Failed to add reward:", err);
       return 0;
     }
-  }, [userId, fetchBalance]);
+  }, [activeId, fetchBalance]);
 
   return { coins, loading, addReward, refreshCoins: fetchBalance };
 }
