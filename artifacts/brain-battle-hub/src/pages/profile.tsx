@@ -69,11 +69,12 @@ export default function Profile() {
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (tempName.trim().length > 2 && username) {
-      const oldName = username;
+    if (tempName.trim().length > 2) {
       const newName = tempName.trim();
       setUsername(newName);
-      updateUsername(oldName, newName);
+      if (username) {
+        updateUsername(username, newName);
+      }
       setEditingName(false);
     }
   };

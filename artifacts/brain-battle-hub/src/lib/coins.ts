@@ -38,7 +38,7 @@ export async function rewardCoins(userId: string, amount: number) {
 
 export async function getCoinBalance(userId: string) {
   const localKey = `bb_coins_${userId}`;
-  const data = await coinsApi(`/balance?userId=${userId}`);
+  const data = await coinsApi(`/balance?userId=${encodeURIComponent(userId)}`);
   
   const localCoins = parseInt(localStorage.getItem(localKey) || "0", 10);
   

@@ -4,11 +4,12 @@ import { useAppState } from "./useAppState";
 
 // Keep multiple instances of the hook in sync
 let globalCoins = 0;
+let isFetchingBalance = false;
 const coinListeners = new Set<Dispatch<SetStateAction<number>>>();
 
 export function useCoins() {
   const { userId, username } = useAppState();
-  const activeId = username || userId || "player";
+  const activeId = username || userId || "player"; // Tie coins back to username to sync with the backend leaderboard row
   
   const [coins, setCoins] = useState<number>(globalCoins);
   const [loading, setLoading] = useState(false);
@@ -20,20 +21,48 @@ export function useCoins() {
     };
   }, []);
 
+  // Auto-migrate identity and coins when username changes
+  useEffect(() => {
+    const lastKnownId = localStorage.getItem("bb_last_known_id");
+    if (lastKnownId && lastKnownId !== activeId) {
+      // Migrate local coins
+      const oldLocalKey = `bb_coins_${lastKnownId}`;
+      const newLocalKey = `bb_coins_${activeId}`;
+      const oldCoins = parseInt(localStorage.getItem(oldLocalKey) || "0", 10);
+      
+      if (oldCoins > 0) {
+         const newCoins = parseInt(localStorage.getItem(newLocalKey) || "0", 10);
+         localStorage.setItem(newLocalKey, Math.max(oldCoins, newCoins).toString());
+      }
+
+      // Migrate backend leaderboard row
+      const API_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-api.thousandpx1.workers.dev";
+      fetch(`${API_URL}/migrate-user`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldId: lastKnownId, newId: activeId })
+      }).catch(console.error);
+    }
+    
+    localStorage.setItem("bb_last_known_id", activeId);
+  }, [activeId]);
+
   const updateGlobalCoins = useCallback((newAmount: number) => {
     globalCoins = newAmount;
     coinListeners.forEach((listener) => listener(newAmount));
   }, []);
 
   const fetchBalance = useCallback(async () => {
-    if (!activeId) return;
+    if (!activeId || isFetchingBalance) return;
     try {
+      isFetchingBalance = true;
       setLoading(true);
       const balance = await getCoinBalance(activeId);
       updateGlobalCoins(balance);
     } catch (err) {
       console.error("Failed to fetch coins:", err);
     } finally {
+      isFetchingBalance = false;
       setLoading(false);
     }
   }, [activeId, updateGlobalCoins]);
