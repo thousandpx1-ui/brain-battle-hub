@@ -93,8 +93,11 @@ export default function Game() {
           score: scoreToPersist,
           profileFrame,
         });
-        await saveScoreRealtime(scoreToPersist, saveName, profileFrame, profileImage);
+        const result = await saveScoreRealtime(scoreToPersist, saveName, profileFrame, profileImage);
         console.log("✅ Score saved to real-time leaderboard");
+        
+        lastPersistedScoreRef.current = scoreToPersist;
+        return result;
       } catch (error) {
         console.error("❌ Failed to save to real-time leaderboard:", error);
       }
@@ -163,10 +166,16 @@ export default function Game() {
     setScore(normalizedFinalScore);
     setGameState("gameover");
 
-    await persistRunScore(normalizedFinalScore);
+    const persistResult = await persistRunScore(normalizedFinalScore);
     
-    // Reward coins based on final score
-    const newCoins = await addReward(normalizedFinalScore, 0);
+    // Reward coins based on total score accumulation
+    let newCoins = 0;
+    if (persistResult && typeof persistResult === 'object' && persistResult.newTotalScore !== undefined) {
+      newCoins = await addReward(persistResult.newTotalScore, persistResult.previousTotalScore);
+    } else {
+      newCoins = await addReward(normalizedFinalScore, 0);
+    }
+
     if (newCoins > 0) {
       setEarnedCoins(newCoins);
     }
@@ -221,10 +230,16 @@ export default function Game() {
     const doubled = score * 2;
     setScore(doubled);
     latestScoreRef.current = Math.max(latestScoreRef.current, doubled);
-    await persistRunScore(doubled);
+    const persistResult = await persistRunScore(doubled);
     
     // Award additional coins for the doubled amount
-    const extraCoins = await addReward(doubled, originalScore);
+    let extraCoins = 0;
+    if (persistResult && typeof persistResult === 'object' && persistResult.newTotalScore !== undefined) {
+      extraCoins = await addReward(persistResult.newTotalScore, persistResult.previousTotalScore);
+    } else {
+      extraCoins = await addReward(doubled, originalScore);
+    }
+
     if (extraCoins > 0) {
       setEarnedCoins(prev => prev + extraCoins);
     }

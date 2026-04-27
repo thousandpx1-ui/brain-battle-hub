@@ -79,7 +79,8 @@ export async function saveScoreRealtime(
     throw new Error(`Failed to save realtime score: ${response.status}`);
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return { ...responseData, newTotalScore, previousTotalScore: currentScore };
 }
 
 export async function loadLeaderboardRealtime() {
