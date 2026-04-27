@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://coin-system.thousandpx1.workers.dev";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://users.thousandpx1.workers.dev";
 
 export async function coinsApi(path: string, method = "GET", body: any = null) {
   try {

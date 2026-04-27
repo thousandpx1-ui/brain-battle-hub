@@ -36,7 +36,7 @@ export function useCoins() {
       }
 
       // Migrate backend leaderboard row
-      const API_URL = import.meta.env.VITE_API_BASE_URL || "https://coin-system.thousandpx1.workers.dev";
+      const API_URL = import.meta.env.VITE_API_BASE_URL || "https://users.thousandpx1.workers.dev";
       fetch(`${API_URL}/migrate-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
