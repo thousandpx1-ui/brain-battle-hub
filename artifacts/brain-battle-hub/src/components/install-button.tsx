@@ -18,15 +18,13 @@ export function InstallButton() {
       return;
     }
 
-    // Always make it installable initially to show the button on all browsers
-    setIsInstallable(true);
-
     // Check if device is iOS
     const ua = window.navigator.userAgent;
     const isIOSDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     
     if (isIOSDevice && !(window.navigator as any).standalone) {
       setIsIOS(true);
+      setIsInstallable(true);
     }
 
     // Listen for the beforeinstallprompt event
