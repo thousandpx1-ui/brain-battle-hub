@@ -8,9 +8,9 @@ const ASSETS_TO_CACHE = [
 ];
 
 // Install event - cache assets
-self.addEventListener('install', (event: Event) => {
-  (self as any).skipWaiting();
-  (event as any).waitUntil(
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+  event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
@@ -18,8 +18,8 @@ self.addEventListener('install', (event: Event) => {
 });
 
 // Activate event - clean up old caches and take control immediately when activated
-self.addEventListener('activate', (event: Event) => {
-  (event as any).waitUntil(
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
@@ -28,13 +28,13 @@ self.addEventListener('activate', (event: Event) => {
       );
     }).then(() => {
       // Take control of all pages immediately after activation
-      return (self as any).clients.claim();
+      return self.clients.claim();
     })
   );
 });
 
 // Fetch event - network first, fallback to cache with no-cache for HTML
-self.addEventListener('fetch', (event: any) => {
+self.addEventListener('fetch', (event) => {
   // Don't cache version.json - always serve from network
   if (event.request.url.includes('/version.json')) {
     event.respondWith(fetch(event.request));
@@ -84,8 +84,8 @@ self.addEventListener('fetch', (event: any) => {
 });
 
 // Listen for messages from the app
-self.addEventListener('message', (event: any) => {
+self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    (self as any).skipWaiting();
+    self.skipWaiting();
   }
 });
