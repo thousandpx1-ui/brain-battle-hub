@@ -66,6 +66,30 @@ export default function Profile() {
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
   const [selectedFrame, setSelectedFrame] = useState(profileFrame);
+  const [totalScore, setTotalScore] = useState(0);
+
+  useEffect(() => {
+    async function fetchScore() {
+      if (!username) return;
+      try {
+        const { loadLeaderboardRealtime } = await import("@/lib/realtime-leaderboard");
+        const players = await loadLeaderboardRealtime();
+        const player = players.find(p => p.userId === username);
+        if (player) {
+          setTotalScore(player.score);
+        } else {
+          // Fallback to local
+          const userScores = scores.filter(score => score.username === username);
+          setTotalScore(userScores.reduce((sum, score) => sum + score.score, 0));
+        }
+      } catch (err) {
+        console.error(err);
+        const userScores = scores.filter(score => score.username === username);
+        setTotalScore(userScores.reduce((sum, score) => sum + score.score, 0));
+      }
+    }
+    fetchScore();
+  }, [username, scores]);
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();

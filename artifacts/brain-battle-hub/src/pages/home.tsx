@@ -44,48 +44,17 @@ export default function Home() {
   const fetchDailyLeaderboard = async () => {
     setDailyLoading(true);
     try {
-      const data = await getFullLeaderboard('daily');
+      const { loadLeaderboardRealtime } = await import("@/lib/realtime-leaderboard");
+      const players = await loadLeaderboardRealtime();
+      
+      const top5 = players
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(p => ({ username: p.userId, score: p.score }));
 
-      // Always combine database data with local data
-      const today = new Date().toDateString();
-      const todayScores = localScores.filter(entry =>
-        new Date(entry.createdAt).toDateString() === today
-      );
-
-      const totalScoreMap = new Map();
-
-      // Compute local sums first (since local scores are individual runs)
-      const localSumMap = new Map();
-      for (const entry of todayScores) {
-        const existing = localSumMap.get(entry.username);
-        if (existing) {
-          existing.score += entry.score;
-        } else {
-          localSumMap.set(entry.username, { ...entry });
-        }
-      }
-
-      // Add database data first
-      for (const entry of data) {
-        totalScoreMap.set(entry.username, { ...entry });
-      }
-
-      // Merge local sums into totalScoreMap
-      for (const [username, entry] of localSumMap.entries()) {
-        const existing = totalScoreMap.get(username);
-        if (existing) {
-          // If the DB score is lagging behind the local sum, use the local sum
-          // Note: we take the max because DB score already includes past runs!
-          existing.score = Math.max(existing.score, entry.score);
-        } else {
-          totalScoreMap.set(username, { ...entry });
-        }
-      }
-
-      const combinedData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-      const top5 = combinedData.slice(0, 5);
       setDailyLeaderboard(top5);
     } catch (error) {
+      console.error("Failed to load leaderboard on home", error);
       // Fallback to local only if database completely fails
       const today = new Date().toDateString();
       const todayScores = localScores.filter(entry =>
