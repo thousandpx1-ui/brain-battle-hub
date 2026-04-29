@@ -218,16 +218,18 @@ export function NeonBounce({ onGameOver, onScoreChange }: NeonBounceProps) {
   }, [gameState, initGame, draw, resizeCanvas]);
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full select-none relative">
+    <div className="relative w-full flex-1 h-full flex flex-col bg-slate-900 overflow-hidden shadow-inner touch-none select-none">
       {gameState === "idle" && (
-        <div className="text-center absolute z-10 bg-white/90 dark:bg-gray-900/90 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 backdrop-blur-sm max-w-xs w-[90%]">
-          <h2 className="text-3xl font-black mb-4">Neon Bounce</h2>
-          <p className="text-gray-500 mb-8 text-sm max-w-[220px] mx-auto">
-            Keep the glowing ball bouncing! Move the paddle to prevent it from falling.
-          </p>
-          <Button onClick={startGame} className="h-14 w-full rounded-2xl text-lg font-bold">
-            Start Game
-          </Button>
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="text-center bg-white/90 dark:bg-gray-900/90 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 backdrop-blur-sm max-w-xs w-[90%]">
+            <h2 className="text-3xl font-black mb-4">Neon Bounce</h2>
+            <p className="text-gray-500 mb-8 text-sm max-w-[220px] mx-auto">
+              Keep the glowing ball bouncing! Move the paddle to prevent it from falling.
+            </p>
+            <Button onClick={startGame} className="h-14 w-full rounded-2xl text-lg font-bold">
+              Start Game
+            </Button>
+          </div>
         </div>
       )}
 
@@ -240,7 +242,7 @@ export function NeonBounce({ onGameOver, onScoreChange }: NeonBounceProps) {
         </div>
       )}
 
-      <div ref={containerRef} className="relative overflow-hidden bg-slate-900 w-full h-full touch-none shadow-2xl flex-1">
+      <div ref={containerRef} className="relative w-full flex-1 h-full touch-none">
         <canvas
           ref={canvasRef}
           className="w-full h-full touch-none block"
