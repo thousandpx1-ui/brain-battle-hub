@@ -150,7 +150,7 @@ export default {
       }
       
       const { results } = await env.DB.prepare(
-        "SELECT user_id as userId, MAX(score) as score, profile_frame as profileFrame, profile_image as profileImage FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50"
+        "SELECT user_id as userId, username, MAX(score) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50"
       ).all();
 
       return new Response(JSON.stringify(results), {
