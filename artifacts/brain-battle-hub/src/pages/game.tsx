@@ -32,8 +32,6 @@ export default function Game() {
     username,
     profileFrame,
     profileImage,
-    gamesPlayedSession,
-    incrementGamesPlayed,
     userId,
   } = useAppState();
   const { addReward } = useCoins();
@@ -169,22 +167,13 @@ export default function Game() {
 
     const persistResult = await persistRunScore(normalizedFinalScore);
     
-    // Reward 5 coins for playing a game if not already saved
-    if (!scoreSavedInPlay) {
-      let newCoins = await addReward(5);
-      if (newCoins > 0) {
-        setEarnedCoins((prev) => prev + newCoins);
+      // Reward 5 coins for playing a game if not already saved
+      if (!scoreSavedInPlay) {
+        let newCoins = await addReward(5);
+        if (newCoins > 0) {
+          setEarnedCoins((prev) => prev + newCoins);
+        }
       }
-    }
-
-    if (!hasCountedGameRef.current) {
-      incrementGamesPlayed();
-      hasCountedGameRef.current = true;
-
-      if (gamesPlayedSession > 0 && gamesPlayedSession % 3 === 0) {
-        setShowInterstitial(true);
-      }
-    }
   };
 
   const handleRetry = () => {
