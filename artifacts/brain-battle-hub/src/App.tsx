@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UpdateChecker } from "@/components/update-checker";
+import { AdBlockDetector } from "@/components/ad-block-detector";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Leaderboard from "@/pages/leaderboard";
@@ -36,6 +37,7 @@ function App() {
           </WouterRouter>
           <Toaster />
           <UpdateChecker />
+          <AdBlockDetector />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
