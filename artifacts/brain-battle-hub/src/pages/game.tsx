@@ -434,7 +434,7 @@ export default function Game() {
 
           {gameState === "playing" && (
             <div className="w-full flex-1 flex flex-col">
-              <div className="w-full flex-1">{renderGameComponent()}</div>
+              <div className="w-full flex-1 flex flex-col">{renderGameComponent()}</div>
               <div className="w-full py-4 mt-auto text-center text-sm font-bold text-gray-400 uppercase tracking-widest">
                 Best Score: {bestScore}
               </div>
