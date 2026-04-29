@@ -142,13 +142,16 @@ export function FruitSlice({ onGameOver, onScoreChange }: Props) {
         const radius = isBomb ? 25 : 30 + Math.random() * 10;
         const x = Math.random() * (width - radius * 2) + radius;
         
+        const targetHeight = height * (0.6 + Math.random() * 0.3);
+        const initialVy = -Math.sqrt(2 * 0.2 * targetHeight);
+
         objectsRef.current.push({
           id: objectIdRef.current++,
           type: isBomb ? "bomb" : "fruit",
           x,
           y: height + radius,
-          vx: (width / 2 - x) * 0.01 + (Math.random() - 0.5) * 2,
-          vy: -(12 + Math.random() * 4),
+          vx: (width / 2 - x) * (0.015 + Math.random() * 0.01),
+          vy: initialVy,
           radius,
           color: isBomb ? "#111" : COLORS[Math.floor(Math.random() * COLORS.length)],
           sliced: false,
@@ -353,7 +356,7 @@ export function FruitSlice({ onGameOver, onScoreChange }: Props) {
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-slate-900 rounded-3xl overflow-hidden shadow-inner touch-none">
+    <div className="relative w-full h-full flex flex-col bg-slate-900 overflow-hidden shadow-inner touch-none">
       <div className="absolute top-4 left-4 z-10 flex gap-1">
         {Array.from({ length: 3 }).map((_, i) => (
           <div
