@@ -356,7 +356,7 @@ export function FruitSlice({ onGameOver, onScoreChange }: Props) {
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-slate-900 overflow-hidden shadow-inner touch-none">
+    <div className="relative w-full h-full max-w-md mx-auto flex flex-col bg-slate-900 overflow-hidden shadow-inner touch-none">
       <div className="absolute top-4 left-4 z-10 flex gap-1">
         {Array.from({ length: 3 }).map((_, i) => (
           <div
