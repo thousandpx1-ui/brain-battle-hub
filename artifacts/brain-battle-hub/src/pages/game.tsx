@@ -168,11 +168,12 @@ export default function Game() {
 
     const persistResult = await persistRunScore(normalizedFinalScore);
     
-    // Reward 5 coins for playing a game
-    let newCoins = await addReward(5);
-
-    if (newCoins > 0) {
-      setEarnedCoins(newCoins);
+    // Reward 5 coins for playing a game if not already saved
+    if (!scoreSavedInPlay) {
+      let newCoins = await addReward(5);
+      if (newCoins > 0) {
+        setEarnedCoins((prev) => prev + newCoins);
+      }
     }
 
     if (!hasCountedGameRef.current) {
@@ -204,12 +205,22 @@ export default function Game() {
     ) {
       await persistRunScore(latestScoreRef.current);
       setScoreSavedInPlay(true);
+      let newCoins = await addReward(5);
+      if (newCoins > 0) {
+        setEarnedCoins((prev) => prev + newCoins);
+      }
     }
-  }, [scoreSavedInPlay, persistRunScore]);
+  }, [scoreSavedInPlay, persistRunScore, addReward]);
 
   const handleBackClick = async () => {
     if (gameStateRef.current === "playing") {
       await persistRunScore(latestScoreRef.current);
+      if (!scoreSavedInPlay && latestScoreRef.current > 0) {
+        let newCoins = await addReward(5);
+        if (newCoins > 0) {
+          setEarnedCoins((prev) => prev + newCoins);
+        }
+      }
     }
 
     setLocation("/");

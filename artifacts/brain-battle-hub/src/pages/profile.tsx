@@ -297,7 +297,7 @@ export default function Profile() {
                     <span>🪙</span> {coins.toLocaleString()}
                   </div>
                   <div className="text-sm text-yellow-600 font-medium">Total Coins</div>
-                  <div className="text-xs text-yellow-600 mt-1 opacity-80">[+5 coins for every 1k scores]</div>
+
                 </div>
               </div>
             </div>
