@@ -11,6 +11,7 @@ import { SimonSays } from "@/games/SimonSays";
 import { ColorBlast } from "@/games/ColorBlast";
 import { MatchPairs } from "@/games/MatchPairs";
 import { NeonBounce } from "@/games/NeonBounce";
+import { FruitSlice } from "@/games/FruitSlice";
 
 import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
 import { useAppState } from "@/hooks/useAppState";
@@ -358,6 +359,13 @@ export default function Game() {
       case "neonbounce":
         return (
           <NeonBounce
+            onGameOver={handleGameOver}
+            onScoreChange={handleScoreChange}
+          />
+        );
+      case "fruitslice":
+        return (
+          <FruitSlice
             onGameOver={handleGameOver}
             onScoreChange={handleScoreChange}
           />

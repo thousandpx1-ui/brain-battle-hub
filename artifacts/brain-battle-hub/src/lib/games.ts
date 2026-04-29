@@ -1,4 +1,4 @@
-import { Brain, Eye, Gamepad2, Bomb, Grid3X3, Layers, Activity } from "lucide-react";
+import { Brain, Eye, Gamepad2, Bomb, Grid3X3, Layers, Activity, Sword } from "lucide-react";
 
 export const GAMES = [
   {
@@ -42,6 +42,13 @@ export const GAMES = [
     description: "Keep the glowing ball bouncing! Move the paddle to prevent it from falling.",
     gradient: "game-gradient-1", // Reusing a gradient since we only have up to 5 probably, or just game-gradient-1
     icon: Activity,
+  },
+  {
+    id: "fruitslice",
+    name: "Fruit Slice",
+    description: "Swipe to slice the flying fruits, but avoid the bombs!",
+    gradient: "game-gradient-2",
+    icon: Sword,
   },
 ];
 
