@@ -406,7 +406,7 @@ export default function Game() {
           )}
         </div>
 
-        <div className={`flex-1 flex flex-col items-center justify-center relative ${gameState === "playing" && game.id === "fruitslice" ? "p-0" : "p-6"}`}>
+        <div className={`flex-1 flex flex-col items-center justify-center relative ${gameState === "playing" && (game.id === "fruitslice" || game.id === "neonbounce") ? "p-0" : "p-6"}`}>
           {gameState === "start" && (
             <div className="w-full max-w-sm flex flex-col items-center text-center">
               <div

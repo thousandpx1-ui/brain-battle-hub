@@ -8,6 +8,7 @@ interface NeonBounceProps {
 
 export function NeonBounce({ onGameOver, onScoreChange }: NeonBounceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [gameState, setGameState] = useState<"idle" | "playing" | "gameover">("idle");
   const [currentScore, setCurrentScore] = useState(0);
 
@@ -20,7 +21,25 @@ export function NeonBounce({ onGameOver, onScoreChange }: NeonBounceProps) {
 
   const animationRef = useRef<number>(0);
 
+  const resizeCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    // Only resize if different to avoid clearing canvas unnecessarily
+    if (canvas.width !== container.clientWidth || canvas.height !== container.clientHeight) {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      
+      // Keep paddle at the bottom on resize
+      if (gameState === "playing") {
+        gameRef.current.paddle.y = canvas.height - 24;
+      }
+    }
+  }, [gameState]);
+
   const initGame = useCallback(() => {
+    resizeCanvas();
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -41,7 +60,7 @@ export function NeonBounce({ onGameOver, onScoreChange }: NeonBounceProps) {
       lastTime: performance.now(),
     };
     setCurrentScore(0);
-  }, []);
+  }, [resizeCanvas]);
 
   const startGame = () => {
     initGame();
@@ -188,18 +207,20 @@ export function NeonBounce({ onGameOver, onScoreChange }: NeonBounceProps) {
     };
   }, [gameState, update, draw]);
 
-  // Initial setup
+  // Initial setup and resize listener
   useEffect(() => {
+    window.addEventListener("resize", resizeCanvas);
     if (gameState === "idle") {
       initGame();
       draw();
     }
-  }, [gameState, initGame, draw]);
+    return () => window.removeEventListener("resize", resizeCanvas);
+  }, [gameState, initGame, draw, resizeCanvas]);
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full max-w-sm mx-auto select-none">
+    <div className="flex flex-col items-center justify-center w-full h-full select-none relative">
       {gameState === "idle" && (
-        <div className="text-center absolute z-10 bg-white/90 dark:bg-gray-900/90 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 backdrop-blur-sm">
+        <div className="text-center absolute z-10 bg-white/90 dark:bg-gray-900/90 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 backdrop-blur-sm max-w-xs w-[90%]">
           <h2 className="text-3xl font-black mb-4">Neon Bounce</h2>
           <p className="text-gray-500 mb-8 text-sm max-w-[220px] mx-auto">
             Keep the glowing ball bouncing! Move the paddle to prevent it from falling.
@@ -211,19 +232,17 @@ export function NeonBounce({ onGameOver, onScoreChange }: NeonBounceProps) {
       )}
 
       {gameState === "playing" && (
-        <div className="w-full flex justify-center items-center mb-4 px-2">
-          <div className="text-center bg-gray-100 dark:bg-gray-800 px-6 py-2 rounded-full shadow-inner">
+        <div className="absolute top-4 left-0 right-0 w-full flex justify-center items-center z-10 pointer-events-none px-2">
+          <div className="text-center bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm px-6 py-2 rounded-full shadow-inner pointer-events-auto">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Score</p>
             <p className="text-2xl font-black text-primary leading-none">{currentScore}</p>
           </div>
         </div>
       )}
 
-      <div className="relative border-4 border-gray-200 dark:border-gray-800 rounded-[2rem] overflow-hidden bg-slate-900 w-full aspect-[3/4] max-w-[320px] touch-none shadow-2xl">
+      <div ref={containerRef} className="relative overflow-hidden bg-slate-900 w-full h-full touch-none shadow-2xl flex-1">
         <canvas
           ref={canvasRef}
-          width={320}
-          height={426}
           className="w-full h-full touch-none block"
           onMouseMove={handlePointerMove}
           onTouchMove={handlePointerMove}

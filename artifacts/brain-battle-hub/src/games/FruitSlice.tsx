@@ -47,7 +47,7 @@ export function FruitSlice({ onGameOver, onScoreChange }: Props) {
   const objectsRef = useRef<GameObject[]>([]);
   const particlesRef = useRef<Particle[]>([]);
   const trailRef = useRef<Point[]>([]);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const lastSpawnTimeRef = useRef<number>(0);
   const spawnRateRef = useRef<number>(1500);
   const objectIdRef = useRef<number>(0);
