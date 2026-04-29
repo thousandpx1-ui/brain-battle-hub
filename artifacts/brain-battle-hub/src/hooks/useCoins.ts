@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, Dispatch, SetStateAction } from "react";
-import { createCoinUser, getCoinBalance, rewardCoins, calculateCoins } from "@/lib/coins";
+import { createCoinUser, getCoinBalance, rewardCoins } from "@/lib/coins";
 import { useAppState } from "./useAppState";
 
 // Keep multiple instances of the hook in sync
@@ -75,11 +75,8 @@ export function useCoins() {
     }
   }, [activeId, username, fetchBalance]);
 
-  const addReward = useCallback(async (currentScore: number, previousScore: number = 0) => {
+  const addReward = useCallback(async (amount: number) => {
     if (!activeId) return 0;
-    const currentCoins = calculateCoins(currentScore);
-    const previousCoins = calculateCoins(previousScore);
-    const amount = currentCoins - previousCoins;
     
     if (amount <= 0) return 0;
 

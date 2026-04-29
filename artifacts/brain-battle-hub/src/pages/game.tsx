@@ -168,13 +168,8 @@ export default function Game() {
 
     const persistResult = await persistRunScore(normalizedFinalScore);
     
-    // Reward coins based on total score accumulation
-    let newCoins = 0;
-    if (persistResult && typeof persistResult === 'object' && persistResult.newTotalScore !== undefined) {
-      newCoins = await addReward(persistResult.newTotalScore, persistResult.previousTotalScore);
-    } else {
-      newCoins = await addReward(normalizedFinalScore, 0);
-    }
+    // Reward 5 coins for playing a game
+    let newCoins = await addReward(5);
 
     if (newCoins > 0) {
       setEarnedCoins(newCoins);
@@ -232,13 +227,8 @@ export default function Game() {
     latestScoreRef.current = Math.max(latestScoreRef.current, doubled);
     const persistResult = await persistRunScore(doubled);
     
-    // Award additional coins for the doubled amount
-    let extraCoins = 0;
-    if (persistResult && typeof persistResult === 'object' && persistResult.newTotalScore !== undefined) {
-      extraCoins = await addReward(persistResult.newTotalScore, persistResult.previousTotalScore);
-    } else {
-      extraCoins = await addReward(doubled, originalScore);
-    }
+    // Award additional coins for watching the ad
+    let extraCoins = await addReward(5);
 
     if (extraCoins > 0) {
       setEarnedCoins(prev => prev + extraCoins);
