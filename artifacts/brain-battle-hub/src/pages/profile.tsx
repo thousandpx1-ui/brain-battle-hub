@@ -133,7 +133,7 @@ export default function Profile() {
 
   // Calculate stats
   const userScores = scores.filter(score => score.username === username);
-  const totalScore = userScores.reduce((sum, score) => sum + score.score, 0);
+  // totalScore is now managed by state
 
   return (
     <Layout>
