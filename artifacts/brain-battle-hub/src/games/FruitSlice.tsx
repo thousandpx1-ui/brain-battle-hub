@@ -361,7 +361,7 @@ export function FruitSlice({ onGameOver, onScoreChange }: Props) {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className={`text-2xl ${i < lives ? "text-red-500" : "text-gray-600"}`}
+            className={`text-2xl transition-all duration-300 ${i < lives ? "opacity-100 scale-100" : "opacity-30 scale-75 grayscale"}`}
           >
             ❤️
           </div>
