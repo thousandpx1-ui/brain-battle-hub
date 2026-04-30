@@ -57,7 +57,9 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           // Fallback to cache if network fails
-          return caches.match(event.request);
+          return caches.match(event.request).then((cachedResponse) => {
+            return cachedResponse || new Response('Offline or not found', { status: 503, statusText: 'Service Unavailable' });
+          });
         })
     );
     return;
@@ -67,8 +69,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
-        if (response.ok) {
+        // Cache successful GET responses
+        if (response.ok && event.request.method === 'GET' && event.request.url.startsWith('http')) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
@@ -78,7 +80,9 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(() => {
         // Fallback to cache if network fails
-        return caches.match(event.request);
+        return caches.match(event.request).then((cachedResponse) => {
+          return cachedResponse || new Response('Offline or not found', { status: 503, statusText: 'Service Unavailable' });
+        });
       })
   );
 });
