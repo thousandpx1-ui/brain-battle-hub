@@ -84,7 +84,7 @@ export async function saveScoreRealtime(
 }
 
 export async function loadLeaderboardRealtime() {
-  const res = await fetch(`${API_URL}/leaderboard`, { cache: "no-store" });
+  const res = await fetch(`${API_URL}/api/leaderboard`, { cache: "no-store" });
 
   if (!res.ok) {
     throw new Error(`Failed to load realtime leaderboard: ${res.status}`);

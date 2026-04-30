@@ -77,7 +77,7 @@ async function saveScore(
 // Get all-time leaderboard
 async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/leaderboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/leaderboard`, {
       cache: "no-store",
     });
     if (!response.ok) {
@@ -108,7 +108,7 @@ async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
 // Get today's leaderboard
 async function getTodayLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/leaderboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/leaderboard`, {
       cache: "no-store",
     });
     if (!response.ok) {
