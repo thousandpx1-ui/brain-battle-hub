@@ -28,7 +28,9 @@ export function IllusionFinder({
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      onGameOver(Math.max(score, 100));
+      const finalScore = Math.max(score, 100);
+      onScoreChange?.(finalScore);
+      onGameOver(finalScore);
       return;
     }
     const t = setInterval(() => setTimeLeft(l => l - 1), 1000);
@@ -53,13 +55,17 @@ export function IllusionFinder({
       if (currentIdx + 1 >= RIDDLES.length) {
         // Completed all riddles - bonus for remaining time
         const timeBonus = timeLeft * 2;
-        onGameOver(score + earned + timeBonus);
+        const finalScore = score + earned + timeBonus;
+        onScoreChange?.(finalScore);
+        onGameOver(finalScore);
       } else {
         setCurrentIdx(i => i + 1);
         setTimeLeft(15);
       }
     } else {
-      onGameOver(Math.max(score, 100));
+      const finalScore = Math.max(score, 100);
+      onScoreChange?.(finalScore);
+      onGameOver(finalScore);
     }
   };
 

@@ -25,47 +25,27 @@ export default {
           .first();
 
         if (existing) {
-          // Only update if new score is higher
-          if (score > existing.score) {
-            await env.DB.prepare(
-              `UPDATE leaderboard SET 
-                score = ?, 
-                profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
-                profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END, 
-                created_at = ? 
-               WHERE user_id = ?`,
+          // Accumulate the score
+          await env.DB.prepare(
+            `UPDATE leaderboard SET 
+              score = score + ?, 
+              profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
+              profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END, 
+              created_at = ? 
+             WHERE user_id = ?`,
+          )
+            .bind(
+              score,
+              profileFrame || null,
+              profileFrame || null,
+              profileFrame || null,
+              profileImage || null,
+              profileImage || null,
+              profileImage || null,
+              new Date().toISOString(),
+              userId,
             )
-              .bind(
-                score,
-                profileFrame || null,
-                profileFrame || null,
-                profileFrame || null,
-                profileImage || null,
-                profileImage || null,
-                profileImage || null,
-                new Date().toISOString(),
-                userId,
-              )
-              .run();
-          } else {
-            // Even if score is not higher, update profile settings if provided
-            await env.DB.prepare(
-              `UPDATE leaderboard SET 
-                profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
-                profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END 
-               WHERE user_id = ?`,
-            )
-              .bind(
-                profileFrame || null,
-                profileFrame || null,
-                profileFrame || null,
-                profileImage || null,
-                profileImage || null,
-                profileImage || null,
-                userId,
-              )
-              .run();
-          }
+            .run();
         } else {
           await env.DB.prepare(
             "INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins) VALUES (?, ?, ?, ?, ?, ?, 0)",

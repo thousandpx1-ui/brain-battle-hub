@@ -42,22 +42,8 @@ export async function saveScoreRealtime(
     return null;
   }
 
-  let currentScore = 0;
-  try {
-    const leaderboard = await loadLeaderboardRealtime();
-    const existingEntry = leaderboard.find(
-      (e) => e.userId === normalizedUsername,
-    );
-    currentScore = existingEntry?.score || 0;
-  } catch (e) {
-    console.warn(
-      "Could not fetch current score, proceeding with new score only",
-    );
-  }
-
-  const newTotalScore = currentScore + score;
   console.log(
-    `Score update for ${normalizedUsername}: ${currentScore} + ${score} = ${newTotalScore}`,
+    `Score update for ${normalizedUsername}: sending +${score} points`,
   );
 
   const response = await fetch(`${API_URL}/save-score`, {
@@ -67,7 +53,7 @@ export async function saveScoreRealtime(
     },
     body: JSON.stringify({
       userId: normalizedUsername,
-      score: newTotalScore,
+      score: score,
       profileFrame: profileFrame || null,
       profileImage: profileImage || null,
       frame: profileFrame || null,
@@ -80,7 +66,7 @@ export async function saveScoreRealtime(
   }
 
   const responseData = await response.json();
-  return { ...responseData, newTotalScore, previousTotalScore: currentScore };
+  return { ...responseData, scoreAdded: score };
 }
 
 export async function loadLeaderboardRealtime() {
