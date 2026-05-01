@@ -20,4 +20,13 @@ models:
 # MCP Servers that Continue can access
 # https://docs.continue.dev/customization/mcp-tools
 mcpServers:
-  - uses: anthropic/memory-mcp
+  filesystem:
+    command: npx
+    args:
+      - "@modelcontextprotocol/server-filesystem"
+      - "."
+
+  shell:
+    command: npx
+    args:
+      - "@modelcontextprotocol/server-shell"
