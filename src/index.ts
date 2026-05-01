@@ -195,7 +195,7 @@ export default {
       }
 
       // 🏆 GET LEADERBOARD (deduplicated with MAX score)
-      if (url.pathname === "/leaderboard") {
+      if (url.pathname === "/api/leaderboard" || url.pathname === "/leaderboard") {
         const { results } = await env.DB.prepare(
           "SELECT user_id as userId, username, MAX(score) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50",
         ).all();
@@ -207,7 +207,9 @@ export default {
 
       // root test
       if (url.pathname === "/") {
-        return new Response("API running 🚀", { headers: corsHeaders });
+        return new Response(JSON.stringify({ message: "Unified API running 🚀" }), { 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
+        });
       }
 
       // Service Worker for Monetag
