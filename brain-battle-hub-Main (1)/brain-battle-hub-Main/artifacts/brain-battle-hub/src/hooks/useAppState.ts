@@ -18,6 +18,9 @@ interface AppState {
   profileFrame: string | null;
   setProfileFrame: (frame: string | null) => void;
 
+  purchasedFrames: string[];
+  addPurchasedFrame: (frameId: string) => void;
+
   streak: number;
   lastPlayedDate: string | null;
   updateStreak: () => void;
@@ -63,6 +66,9 @@ export const useAppState = create<AppState>()(
 
       profileFrame: null,
       setProfileFrame: (frame) => set({ profileFrame: frame }),
+
+      purchasedFrames: [],
+      addPurchasedFrame: (frameId) => set((state) => ({ purchasedFrames: [...state.purchasedFrames, frameId] })),
 
       streak: 0,
       lastPlayedDate: null,
