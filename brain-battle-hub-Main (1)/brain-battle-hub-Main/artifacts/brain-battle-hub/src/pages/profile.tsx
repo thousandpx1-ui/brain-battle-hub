@@ -1,4 +1,5 @@
 import { purchaseFrame } from "@/lib/realtime-leaderboard";
+import { useCoins } from "@/hooks/useCoins";
 
 const frames = [
   { id: 'none', name: 'None', style: '' },
@@ -33,6 +34,7 @@ function formatScore(score: number): string {
 export default function Profile() {
   const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame, purchasedFrames, addPurchasedFrame } = useAppState();
   const { scores, updateUsername } = useLocalLeaderboard();
+  const { coins, refreshCoins } = useCoins();
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
   const [selectedFrame, setSelectedFrame] = useState(profileFrame);
@@ -70,6 +72,7 @@ export default function Profile() {
       if (result.success) {
         addPurchasedFrame(frameId);
         setProfileFrame(frameId);
+        refreshCoins();
       } else {
         alert(result.message);
       }
@@ -88,6 +91,9 @@ export default function Profile() {
       <div className="flex-1 bg-gray-50 flex flex-col">
         <div className="bg-white px-6 pt-10 pb-6 rounded-b-[32px] shadow-sm z-10 relative">
           <h1 className="text-3xl font-black text-gray-900 mb-6">Profile</h1>
+          <div className="absolute top-4 right-4 bg-yellow-400 text-white font-bold py-1 px-3 rounded-full">
+            {coins} Coins
+          </div>
         </div>
 
         <div className="flex-1 p-6">
@@ -150,12 +156,19 @@ export default function Profile() {
                           setSelectedFrame(frame.id === 'none' ? null : frame.id)
                         }
                       }}
-                      className={`h-16 p-2 rounded-lg border-2 flex flex-col items-center justify-center ${
+                      className={`h-16 p-2 rounded-lg border-2 flex flex-col items-center justify-center relative ${
                         (selectedFrame === frame.id || (frame.id === 'none' && !selectedFrame))
                           ? 'border-primary bg-primary/10'
                           : 'border-gray-200 hover:border-gray-300'
                       } ${!isPurchased ? 'cursor-not-allowed' : ''} transition-colors`}
                     >
+                      {isPurchased && frame.cost && (
+                        <div className="absolute top-1 right-1 bg-green-500 text-white rounded-full p-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
                       <div className={`w-8 h-8 mx-auto ${frame.style}`}></div>
                       <div className="text-xs mt-1 text-center">{frame.name}</div>
                       {!isPurchased && (
@@ -166,7 +179,7 @@ export default function Profile() {
                 })}
               </div>
               {selectedFrame !== profileFrame && frames.find(f => f.id === selectedFrame)?.cost && !purchasedFrames.includes(selectedFrame) ? (
-                <Button onClick={() => handlePurchase(selectedFrame)} className="w-full">
+                <Button onClick={() => handlePurchase(selectedFrame)} className="w-full" disabled={coins < (frames.find(f => f.id === selectedFrame)?.cost || 0)}>
                   Purchase for {frames.find(f => f.id === selectedFrame)?.cost} coins
                 </Button>
               ) : selectedFrame !== profileFrame ? (
