@@ -1,4 +1,4 @@
-const API_URL = "https://users.thousandpx1.workers.dev";
+const API_URL = "https://leaderboard.thousandpx1.workers.dev";
 
 const INVALID_USERNAMES = new Set([
   "Memory Collapse",
