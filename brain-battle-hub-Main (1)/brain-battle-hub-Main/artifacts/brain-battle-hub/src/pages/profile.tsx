@@ -1,11 +1,4 @@
-import { useState } from "react";
-import { Layout } from "@/components/layout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useAppState } from "@/hooks/useAppState";
-import { useLocalLeaderboard } from "@/lib/local-leaderboard";
-import { Camera, User } from "lucide-react";
+import { purchaseFrame } from "@/lib/realtime-leaderboard";
 
 const frames = [
   { id: 'none', name: 'None', style: '' },
@@ -18,6 +11,7 @@ const frames = [
   { id: 'purple', name: 'Purple', style: 'border-4 border-purple-500 rounded-full' },
   { id: 'rainbow', name: 'Prismatic', style: 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 rounded-full p-1' },
   { id: 'black', name: 'Black', style: 'border-4 border-black rounded-full' },
+  { id: 'metallic', name: 'Metallic', style: 'border-4 border-gray-300 bg-gray-100 rounded-full', cost: 25 },
 ];
 
 function formatScore(score: number): string {
@@ -37,7 +31,7 @@ function formatScore(score: number): string {
 }
 
 export default function Profile() {
-  const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame } = useAppState();
+  const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame, purchasedFrames, addPurchasedFrame } = useAppState();
   const { scores, updateUsername } = useLocalLeaderboard();
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
@@ -67,6 +61,22 @@ export default function Profile() {
 
   const removeImage = () => {
     setProfileImage(null);
+  };
+
+  const handlePurchase = async (frameId: string) => {
+    if (!username) return;
+    try {
+      const result = await purchaseFrame(username, frameId);
+      if (result.success) {
+        addPurchasedFrame(frameId);
+        setProfileFrame(frameId);
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Purchase failed", error);
+      alert("Purchase failed. Please try again.");
+    }
   };
 
   // Calculate stats
@@ -130,26 +140,40 @@ export default function Profile() {
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Profile Frame</label>
               <div className="grid grid-cols-5 gap-2">
-                {frames.map((frame) => (
-                  <button
-                    key={frame.id}
-                    onClick={() => setSelectedFrame(frame.id === 'none' ? null : frame.id)}
-                    className={`h-16 p-2 rounded-lg border-2 flex flex-col items-center justify-center ${
-                      (selectedFrame === frame.id || (frame.id === 'none' && !selectedFrame))
-                        ? 'border-primary bg-primary/10'
-                        : 'border-gray-200 hover:border-gray-300'
-                    } transition-colors`}
-                  >
-                    <div className={`w-8 h-8 mx-auto ${frame.style}`}></div>
-                    <div className="text-xs mt-1 text-center">{frame.name}</div>
-                  </button>
-                ))}
+                {frames.map((frame) => {
+                  const isPurchased = frame.cost ? purchasedFrames.includes(frame.id) : true;
+                  return (
+                    <button
+                      key={frame.id}
+                      onClick={() => {
+                        if (isPurchased) {
+                          setSelectedFrame(frame.id === 'none' ? null : frame.id)
+                        }
+                      }}
+                      className={`h-16 p-2 rounded-lg border-2 flex flex-col items-center justify-center ${
+                        (selectedFrame === frame.id || (frame.id === 'none' && !selectedFrame))
+                          ? 'border-primary bg-primary/10'
+                          : 'border-gray-200 hover:border-gray-300'
+                      } ${!isPurchased ? 'cursor-not-allowed' : ''} transition-colors`}
+                    >
+                      <div className={`w-8 h-8 mx-auto ${frame.style}`}></div>
+                      <div className="text-xs mt-1 text-center">{frame.name}</div>
+                      {!isPurchased && (
+                        <div className="text-xs font-bold text-primary">{frame.cost} coins</div>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
-              {selectedFrame !== profileFrame && (
+              {selectedFrame !== profileFrame && frames.find(f => f.id === selectedFrame)?.cost && !purchasedFrames.includes(selectedFrame) ? (
+                <Button onClick={() => handlePurchase(selectedFrame)} className="w-full">
+                  Purchase for {frames.find(f => f.id === selectedFrame)?.cost} coins
+                </Button>
+              ) : selectedFrame !== profileFrame ? (
                 <Button onClick={() => setProfileFrame(selectedFrame)} className="w-full">
                   Save Frame Changes
                 </Button>
-              )}
+              ) : null}
             </div>
 
             {/* Username Section */}

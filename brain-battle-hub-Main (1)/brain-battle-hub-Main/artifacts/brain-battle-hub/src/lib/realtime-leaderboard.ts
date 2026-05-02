@@ -17,7 +17,17 @@ export async function saveScoreRealtime(score: number, username: string, profile
   });
 }
 
-export async function loadLeaderboardRealtime() {
-  const res = await fetch(API_URL, { cache: "no-store", mode: 'cors' });
+export async function purchaseFrame(userId: string, frame: string) {
+  const res = await fetch(`${API_URL}/purchase-frame`, {
+    method: "POST",
+    mode: 'cors',
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      userId,
+      frame
+    })
+  });
   return await res.json();
 }

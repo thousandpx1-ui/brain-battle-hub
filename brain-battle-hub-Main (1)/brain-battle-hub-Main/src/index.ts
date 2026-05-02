@@ -23,6 +23,9 @@ export default {
       if (url.pathname === "/balance") {
         return await handleGetBalance(request, env);
       }
+      if (url.pathname === "/purchase-frame") {
+        return await handlePurchaseFrame(request, env);
+      }
 
       // Handle root and other paths
       if (url.pathname === "/") {
@@ -112,6 +115,46 @@ async function handleGetBalance(request, env) {
   });
 }
 
+
+async function handlePurchaseFrame(request, env) {
+  if (request.method !== 'POST') {
+    return new Response('Expected POST', { status: 405 });
+  }
+  const { userId, frame } = await request.json();
+
+  if (!userId || !frame) {
+    return new Response("Missing required fields: userId and frame.", { status: 400 });
+  }
+
+  // Check user's balance
+  const user = await env.DB.prepare(
+    "SELECT score FROM leaderboard WHERE user_id = ? ORDER BY score DESC LIMIT 1"
+  ).bind(userId).first();
+
+  const balance = user ? user.score : 0;
+  const frameCost = 25;
+
+  if (balance < frameCost) {
+    return new Response(JSON.stringify({ success: false, message: "Insufficient balance." }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  // Deduct cost and update frame
+  const newBalance = balance - frameCost;
+  const { success } = await env.DB.prepare(
+    "UPDATE leaderboard SET score = ?, profile_frame = ? WHERE user_id = ?"
+  ).bind(newBalance, frame, userId).run();
+
+  if (!success) {
+    throw new Error("Database error: Failed to update purchase.");
+  }
+
+  return new Response(JSON.stringify({ success: true, newBalance }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  });
+}
 
 // --- CORS ---
 
