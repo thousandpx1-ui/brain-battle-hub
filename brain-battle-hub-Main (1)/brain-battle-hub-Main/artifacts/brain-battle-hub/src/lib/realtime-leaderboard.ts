@@ -1,4 +1,4 @@
-const API_URL = "https://leaderboard.thousandpx1.workers.dev";
+const API_URL = "https://users.thousandpx1.workers.dev";
 
 export async function saveScoreRealtime(score: number, username: string, profileFrame?: string | null, profileImage?: string | null) {
   const res = await fetch(`${API_URL}/save-score`, {

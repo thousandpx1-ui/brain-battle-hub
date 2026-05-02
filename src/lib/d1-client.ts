@@ -9,39 +9,58 @@ interface LeaderboardEntry {
   profileFrame?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://leaderboard.thousandpx1.workers.dev';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://users.thousandpx1.workers.dev";
 
-// Get or create persistent user ID
-function getUserId(): string {
-  let userId = localStorage.getItem("userId");
-  if (!userId) {
-    userId = "user_" + Math.random().toString(36).substring(2, 8);
-    localStorage.setItem("userId", userId);
-  }
-  return userId;
+// Known game names to filter out from leaderboard
+const GAME_NAMES = [
+  "Memory Collapse",
+  "DontBlink",
+  "FakeTapTrap",
+  "IllusionFinder",
+  "Illusion Finder",
+];
+
+function isValidUsername(username: string): boolean {
+  // Filter out known game names
+  if (GAME_NAMES.includes(username)) return false;
+
+  // Filter out usernames that look like game IDs or test entries
+  if (username.startsWith("guest_")) return false;
+  if (username.includes("test")) return false;
+
+  // Filter out empty or very short usernames
+  if (!username || username.length < 2) return false;
+
+  return true;
 }
 
-
-
 // Save score to D1 database
-async function saveScore(score: number, username?: string | null, profileFrame?: string | null): Promise<any> {
-
+async function saveScore(
+  score: number,
+  username?: string | null,
+  profileFrame?: string | null,
+): Promise<any> {
   try {
-    const userId = username || getUserId();
-    const finalUsername = username || userId;
+    let finalUsername = username || "player";
 
-    const response = await fetch(`${API_BASE_URL}/api/scores`, {
-      method: 'POST',
+    // Validate username - don't save if it looks like a game name
+    if (!isValidUsername(finalUsername)) {
+      return null;
+    }
+
+    // Note: Scores should be cumulative - the caller should handle adding to existing score
+    const response = await fetch(`${API_BASE_URL}/save-score`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        user_id: userId,
-        username: finalUsername,
-        score: score,
-        game_id: 'unknown',
-        profile_frame: profileFrame || null
-      })
+        userId: finalUsername,
+        score,
+        profileFrame: profileFrame || null,
+      }),
     });
 
     if (!response.ok) {
@@ -58,15 +77,30 @@ async function saveScore(score: number, username?: string | null, profileFrame?:
 // Get all-time leaderboard
 async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/leaderboard/all-time`);
+    const response = await fetch(`${API_BASE_URL}/api/leaderboard`, {
+      cache: "no-store",
+    });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('All-time leaderboard:', data.length, 'entries');
-    return data;
+    console.log("All-time leaderboard:", data.length, "entries");
+
+    // Filter out invalid usernames (game names, test entries, etc.)
+    const filteredData = data.filter((entry: any) =>
+      isValidUsername(entry.username || entry.userId),
+    );
+
+    // Transform the response to match expected format
+    return filteredData.map((entry: any, index: number) => ({
+      rank: index + 1,
+      username: entry.username || entry.userId,
+      score: entry.score,
+      gameId: "unknown",
+      createdAt: entry.createdAt,
+    }));
   } catch (error) {
-    console.error('Error fetching all-time leaderboard:', error);
+    console.error("Error fetching all-time leaderboard:", error);
     return [];
   }
 }
@@ -74,21 +108,42 @@ async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
 // Get today's leaderboard
 async function getTodayLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/leaderboard/today`);
+    const response = await fetch(`${API_BASE_URL}/api/leaderboard`, {
+      cache: "no-store",
+    });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data = await response.json();
-    console.log('Today leaderboard:', data.length, 'entries');
-    return data;
+    const allData = await response.json();
+
+    // Filter for today's entries and valid usernames
+    const today = new Date().toDateString();
+    const todayData = allData.filter(
+      (entry: any) =>
+        new Date(entry.createdAt).toDateString() === today &&
+        isValidUsername(entry.username || entry.userId),
+    );
+
+    console.log("Today leaderboard:", todayData.length, "entries");
+
+    // Transform the response to match expected format
+    return todayData.map((entry: any, index: number) => ({
+      rank: index + 1,
+      username: entry.username || entry.userId,
+      score: entry.score,
+      gameId: "unknown",
+      createdAt: entry.createdAt,
+    }));
   } catch (error) {
-    console.error('Error fetching today leaderboard:', error);
+    console.error("Error fetching today leaderboard:", error);
     return [];
   }
 }
 
 // Unified leaderboard function (backward compatible)
-async function getFullLeaderboard(period) {
+async function getFullLeaderboard(
+  period?: string,
+): Promise<LeaderboardEntry[]> {
   if (period === "daily") {
     return getTodayLeaderboard();
   }
@@ -96,12 +151,12 @@ async function getFullLeaderboard(period) {
 }
 
 // Backward compatible alias
-async function getLeaderboard() {
+async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   return getAllTimeLeaderboard();
 }
 
 // Medal helper
-function getMedal(index) {
+function getMedal(index: number): string {
   if (index === 0) return "🥇";
   if (index === 1) return "🥈";
   if (index === 2) return "🥉";
@@ -114,5 +169,5 @@ export {
   getFullLeaderboard,
   getAllTimeLeaderboard,
   getTodayLeaderboard,
-  getMedal
+  getMedal,
 };
