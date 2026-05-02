@@ -18,7 +18,7 @@ import { useAppState } from "@/hooks/useAppState";
 import { useCoins } from "@/hooks/useCoins";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 import { InterstitialAd } from "@/components/interstitial-ad";
-import { Trophy, RotateCcw, Play, ChevronLeft } from "lucide-react";
+import { Trophy, RotateCcw, Play, ChevronLeft, Share2 } from "lucide-react";
 
 type GameState = "start" | "playing" | "gameover";
 
@@ -49,6 +49,7 @@ export default function Game() {
   const [hasDoubled, setHasDoubled] = useState(false);
   const [scoreSavedInPlay, setScoreSavedInPlay] = useState(false);
   const [earnedCoins, setEarnedCoins] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const latestScoreRef = useRef(0);
   const lastPersistedScoreRef = useRef(0);
@@ -234,6 +235,13 @@ export default function Game() {
     if (extraCoins > 0) {
       setEarnedCoins(prev => prev + extraCoins);
     }
+  };
+
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${gameId}/${score}`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const persistScoreOnDisconnect = useCallback(() => {
@@ -471,13 +479,21 @@ export default function Game() {
                     <RotateCcw className="w-5 h-5 mr-2" />
                     Retry
                   </Button>
-                  <Link href="/leaderboard" className="contents">
-                    <Button className="h-14 rounded-2xl text-lg font-bold">
-                      <Trophy className="w-5 h-5 mr-2" />
-                      Rank
-                    </Button>
-                  </Link>
+                  <Button
+                    onClick={handleShare}
+                    variant="outline"
+                    className="h-14 rounded-2xl text-lg font-bold"
+                  >
+                    <Share2 className="w-5 h-5 mr-2" />
+                    {copied ? "Copied!" : "Share"}
+                  </Button>
                 </div>
+                <Link href="/leaderboard" className="contents">
+                  <Button className="h-14 rounded-2xl text-lg font-bold">
+                    <Trophy className="w-5 h-5 mr-2" />
+                    Rank
+                  </Button>
+                </Link>
               </div>
             </div>
           )}

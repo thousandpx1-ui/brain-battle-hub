@@ -54,5 +54,3 @@ export async function getCoinBalance(userId: string) {
   
   return localCoins;
 }
-
-

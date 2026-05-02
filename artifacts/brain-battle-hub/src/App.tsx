@@ -11,6 +11,7 @@ import Leaderboard from "@/pages/leaderboard";
 import Profile from "@/pages/profile";
 import Game from "@/pages/game";
 import Games from "@/pages/games";
+import Share from "@/pages/share";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/profile" component={Profile} />
       <Route path="/game/:gameId" component={Game} />
+      <Route path="/share/:gameId/:score" component={Share} />
       <Route component={NotFound} />
     </Switch>
   );
