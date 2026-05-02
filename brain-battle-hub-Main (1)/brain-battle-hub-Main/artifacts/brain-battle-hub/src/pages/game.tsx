@@ -25,7 +25,7 @@ export default function Game() {
   const game = getGameById(gameId || "");
   const [gameState, setGameState] = useState<GameState>("start");
   const [score, setScore] = useState(0);
-  const { username, profileFrame, gamesPlayedSession, incrementGamesPlayed, resetGamesPlayedSession, userId } = useAppState();
+  const { username, profileFrame, gamesPlayedSession, incrementGamesPlayed, resetGamesPlayedSession, userId, triggerRefetch } = useAppState();
   const addLocalScore = useLocalLeaderboard((s) => s.addScore);
 
   const [showInterstitial, setShowInterstitial] = useState(false);
@@ -54,6 +54,7 @@ export default function Game() {
       console.log('💾 Saving to real-time leaderboard:', { userId: saveName, score: finalScore, profileFrame });
       await saveScoreRealtime(finalScore, saveName, profileFrame);
       console.log('✅ Score saved to real-time leaderboard');
+      triggerRefetch();
     } catch (error) {
       console.error('❌ Failed to save to real-time leaderboard:', error);
     }

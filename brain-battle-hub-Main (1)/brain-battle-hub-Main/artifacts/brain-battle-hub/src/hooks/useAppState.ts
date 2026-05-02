@@ -25,6 +25,9 @@ interface AppState {
   gamesPlayedSession: number;
   incrementGamesPlayed: () => void;
   resetGamesPlayedSession: () => void;
+
+  refetchLeaderboard: number;
+  triggerRefetch: () => void;
 }
 
 export const useAppState = create<AppState>()(
@@ -86,6 +89,9 @@ export const useAppState = create<AppState>()(
       gamesPlayedSession: 0,
       incrementGamesPlayed: () => set((state) => ({ gamesPlayedSession: state.gamesPlayedSession + 1 })),
       resetGamesPlayedSession: () => set({ gamesPlayedSession: 0 }),
+
+      refetchLeaderboard: 0,
+      triggerRefetch: () => set((state) => ({ refetchLeaderboard: state.refetchLeaderboard + 1 })),
     }),
     {
       name: "brain-battle-hub-storage",

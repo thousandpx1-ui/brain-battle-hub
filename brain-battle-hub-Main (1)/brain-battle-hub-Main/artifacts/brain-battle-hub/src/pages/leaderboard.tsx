@@ -23,7 +23,7 @@ function formatScore(score: number): string {
 }
 
 export default function Leaderboard() {
-  const { username, profileImage, profileFrame, oldUsernames, userId } = useAppState();
+  const { username, profileImage, profileFrame, oldUsernames, userId, refetchLeaderboard } = useAppState();
   const [leaderboard, setLeaderboard] = useState<Array<{userId: string; score: number; profileFrame?: string | null}>>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,19 +40,10 @@ export default function Leaderboard() {
     }
   };
 
-  // Initial load
+  // Initial load and refetch on event
   useEffect(() => {
     loadLeaderboard();
-  }, []);
-
-  // Auto-refresh every 2 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadLeaderboard();
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [refetchLeaderboard]);
 
 
 
