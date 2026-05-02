@@ -1,6 +1,6 @@
-const API_URL = "/api";
+const API_URL = "https://users.thousandpx1.workers.dev";
 
-export async function saveScoreRealtime(score: number, username: string, profileFrame?: string | null) {
+export async function saveScoreRealtime(score: number, username: string, profileFrame?: string | null, profileImage?: string | null) {
   await fetch(`${API_URL}/save-score`, {
     method: "POST",
     mode: 'cors',
@@ -10,7 +10,8 @@ export async function saveScoreRealtime(score: number, username: string, profile
     body: JSON.stringify({
       userId: username,
       score: score,
-      profileFrame: profileFrame || null
+      profileFrame: profileFrame || null,
+      profileImage: profileImage || null
     })
   });
 }
