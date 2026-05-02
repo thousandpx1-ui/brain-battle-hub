@@ -69,8 +69,8 @@ async function handleSaveScore(request, env) {
     }
   } else {
     const { success } = await env.DB.prepare(
-      "INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at) VALUES (?, ?, ?, ?, ?, ?)"
-    ).bind(userId, userId, score, profileFrame || null, profileImage || null, new Date().toISOString()).run();
+      "INSERT INTO leaderboard (user_id, score, profile_frame, profile_image, created_at) VALUES (?, ?, ?, ?, ?)"
+    ).bind(userId, score, profileFrame || null, profileImage || null, new Date().toISOString()).run();
     if (!success) {
       throw new Error("Database error: Failed to insert new score.");
     }
