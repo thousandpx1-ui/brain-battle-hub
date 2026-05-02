@@ -1,4 +1,5 @@
-const CACHE_NAME = 'brain-battle-hub-cache-v1';
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `brain-battle-hub-cache-${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
   '/index.html',
@@ -15,6 +16,20 @@ self.addEventListener('install', event => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
   );
 });
 
