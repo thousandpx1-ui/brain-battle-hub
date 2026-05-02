@@ -3,6 +3,8 @@ import App from "./App";
 import "./index.css";
 import { ErrorBoundary } from "./components/error-boundary";
 
+console.log("API:", import.meta.env.VITE_API_BASE_URL);
+
 // Register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
