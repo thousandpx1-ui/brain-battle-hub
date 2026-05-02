@@ -1,7 +1,7 @@
-const API_URL = "https://users.thousandpx1.workers.dev";
+const API_URL = "https://leaderboard.thousandpx1.workers.dev/";
 
 export async function saveScoreRealtime(score: number, username: string, profileFrame?: string | null, profileImage?: string | null) {
-  await fetch(`${API_URL}/save-score`, {
+  await fetch(API_URL, {
     method: "POST",
     mode: 'cors',
     headers: {
@@ -9,6 +9,7 @@ export async function saveScoreRealtime(score: number, username: string, profile
     },
     body: JSON.stringify({
       userId: username,
+      username: username,
       score: score,
       profileFrame: profileFrame || null,
       profileImage: profileImage || null
@@ -17,6 +18,6 @@ export async function saveScoreRealtime(score: number, username: string, profile
 }
 
 export async function loadLeaderboardRealtime() {
-  const res = await fetch(`${API_URL}/leaderboard`, { cache: "no-store", mode: 'cors' });
+  const res = await fetch(API_URL, { cache: "no-store", mode: 'cors' });
   return await res.json();
 }
