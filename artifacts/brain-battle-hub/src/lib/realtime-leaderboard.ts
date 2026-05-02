@@ -1,4 +1,4 @@
-const API_URL = "https://leaderboard.thousandpx1.workers.dev";
+﻿const API_URL = "https://leaderboard.thousandpx1.workers.dev";
 
 const INVALID_USERNAMES = new Set([
   "Memory Collapse",
@@ -21,7 +21,6 @@ function isValidRealtimeUsername(username?: string | null): boolean {
   if (!normalized || normalized.length < 2) return false;
   if (INVALID_USERNAMES.has(normalized)) return false;
   if (normalized.startsWith("guest_")) return false;
-  if (normalized.toLowerCase().includes("test")) return false;
 
   return true;
 }
@@ -84,8 +83,10 @@ export async function loadLeaderboardRealtime() {
   }
 
   const data = await res.json();
+  // Handle API response format: { value: [...] } or direct array
+  const entries = Array.isArray(data) ? data : (data?.value || []);
 
-  return (Array.isArray(data) ? data : [])
+  return entries
     .map((entry) => {
       const pFrame = entry.profileFrame || entry.frame || null;
       const pImage = entry.profileImage || entry.avatar || null;

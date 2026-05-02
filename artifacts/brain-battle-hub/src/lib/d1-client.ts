@@ -1,4 +1,4 @@
-// Cloudflare D1 Client for Leaderboard functionality
+﻿// Cloudflare D1 Client for Leaderboard functionality
 
 interface LeaderboardEntry {
   rank: number;
@@ -26,9 +26,8 @@ function isValidUsername(username: string): boolean {
   // Filter out known game names
   if (GAME_NAMES.includes(username)) return false;
 
-  // Filter out usernames that look like game IDs or test entries
+  // Filter out usernames that look like game IDs
   if (username.startsWith("guest_")) return false;
-  if (username.includes("test")) return false;
 
   // Filter out empty or very short usernames
   if (!username || username.length < 2) return false;
@@ -83,7 +82,9 @@ async function getAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data = await response.json();
+    const responseData = await response.json();
+    // Handle API response format: { value: [...] } or direct array
+    const data = Array.isArray(responseData) ? responseData : (responseData?.value || []);
     console.log("All-time leaderboard:", data.length, "entries");
 
     // Filter out invalid usernames (game names, test entries, etc.)
@@ -114,7 +115,9 @@ async function getTodayLeaderboard(): Promise<LeaderboardEntry[]> {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const allData = await response.json();
+    const responseData = await response.json();
+    // Handle API response format: { value: [...] } or direct array
+    const allData = Array.isArray(responseData) ? responseData : (responseData?.value || []);
 
     // Filter for today's entries and valid usernames
     const today = new Date().toDateString();
