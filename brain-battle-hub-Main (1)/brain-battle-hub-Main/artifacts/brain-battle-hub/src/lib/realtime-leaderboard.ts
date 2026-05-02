@@ -5,8 +5,7 @@ export async function saveScoreRealtime(score: number, username: string, profile
     method: "POST",
     mode: 'cors',
     headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": "brain_battle_hub_natural-brain@battle#game$nhkvp$"
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       userId: username,

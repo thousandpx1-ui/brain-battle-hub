@@ -14,9 +14,6 @@ export default {
 
     // 🟢 SAVE SCORE (update if higher, prevent duplicates)
     if (url.pathname === "/save-score") {
-      if (request.headers.get('X-API-Key') !== env.API_KEY) {
-        return new Response("Unauthorized", { status: 401 });
-      }
       const { userId, score, profileFrame } = await request.json();
 
       const existing = await env.DB.prepare(
