@@ -101,7 +101,7 @@ async function handleReward(request, env) {
 async function handleGetBalance(request, env) {
   const userId = new URL(request.url).searchParams.get("userId");
   if (!userId) {
-    return new Response("Missing userId parameter.", { status: 400 });
+    return new Response("Missing userId parameter.", { status: 400, headers: corsHeaders });
   }
 
   const user = await env.DB.prepare(
@@ -118,12 +118,12 @@ async function handleGetBalance(request, env) {
 
 async function handlePurchaseFrame(request, env) {
   if (request.method !== 'POST') {
-    return new Response('Expected POST', { status: 405 });
+    return new Response('Expected POST', { status: 405, headers: corsHeaders });
   }
   const { userId, frame } = await request.json();
 
   if (!userId || !frame) {
-    return new Response("Missing required fields: userId and frame.", { status: 400 });
+    return new Response("Missing required fields: userId and frame.", { status: 400, headers: corsHeaders });
   }
 
   // Check user's balance
