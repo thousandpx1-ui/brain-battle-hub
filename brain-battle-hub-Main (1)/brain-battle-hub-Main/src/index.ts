@@ -13,7 +13,7 @@ export default {
     }
 
     // 🟢 SAVE SCORE (update if higher, prevent duplicates)
-    if (url.pathname === "/api/save-score") {
+    if (url.pathname === "/save-score") {
       if (request.headers.get('X-API-Key') !== env.API_KEY) {
         return new Response("Unauthorized", { status: 401 });
       }
@@ -46,7 +46,7 @@ export default {
     }
 
     // 🏆 GET LEADERBOARD (deduplicated with MAX score)
-    if (url.pathname === "/api/leaderboard") {
+    if (url.pathname === "/leaderboard") {
       const { results } = await env.DB.prepare(
         "SELECT user_id as userId, MAX(score) as score, profile_frame as profileFrame FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50"
       ).all();
