@@ -5,3 +5,4 @@ pages_build_output_dir = "artifacts/brain-battle-hub/dist/public"
 
 [vars]
 NODE_VERSION = "24"
+API_KEY = "brain_battle_hub_natural-brain@battle#game$nhkvp$"
