@@ -70,6 +70,26 @@ export default {
       if (url.pathname === "/init" && request.method === "POST") {
         try {
           await env.DB.prepare(
+            "CREATE TABLE IF NOT EXISTS leaderboard (user_id TEXT, username TEXT, score INTEGER)",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "CREATE TABLE IF NOT EXISTS users (id TEXT, username TEXT, score INTEGER)",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "ALTER TABLE leaderboard ADD COLUMN score INTEGER DEFAULT 0",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "ALTER TABLE users ADD COLUMN score INTEGER DEFAULT 0",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
             "ALTER TABLE leaderboard ADD COLUMN profile_image TEXT",
           ).run();
         } catch (e) {}
