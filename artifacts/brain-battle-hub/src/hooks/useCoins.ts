@@ -35,13 +35,33 @@ export function useCoins() {
          localStorage.setItem(newLocalKey, Math.max(oldCoins, newCoins).toString());
       }
 
-      // Migrate backend leaderboard row
+      // Migrate backend leaderboard row (using dedicated endpoint if available)
       const API_URL = import.meta.env.VITE_API_BASE_URL || "https://leaderboard.thousandpx1.workers.dev";
       fetch(`${API_URL}/migrate-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ oldId: lastKnownId, newId: activeId })
       }).catch(console.error);
+
+      // FALLBACK: Manually copy the old score to the new user via /save-score just in case /migrate-user is not deployed yet
+      fetch(`${API_URL}/api/leaderboard`)
+        .then(res => (res.ok ? res.json() : fetch(`${API_URL}/leaderboard`).then(r => r.json())))
+        .then(data => {
+          const entries = Array.isArray(data) ? data : (data?.value || []);
+          const oldEntry = entries.find((e: any) => (e.userId === lastKnownId || e.username === lastKnownId));
+          if (oldEntry && oldEntry.score > 0) {
+            fetch(`${API_URL}/save-score`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: activeId,
+                score: Number(oldEntry.score),
+                profileFrame: oldEntry.profileFrame || oldEntry.frame || null,
+                profileImage: oldEntry.profileImage || oldEntry.avatar || null,
+              })
+            }).catch(console.error);
+          }
+        }).catch(console.error);
     }
     
     localStorage.setItem("bb_last_known_id", activeId);

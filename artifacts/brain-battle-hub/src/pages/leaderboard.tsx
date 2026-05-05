@@ -32,7 +32,11 @@ export default function Leaderboard() {
     setLoading(true);
     try {
       const players = await loadLeaderboardRealtime();
-      setLeaderboard(players);
+      
+      // Filter out old usernames to avoid showing duplicates for the same local player
+      const filteredPlayers = players.filter(p => !oldUsernames.includes(p.userId));
+      
+      setLeaderboard(filteredPlayers);
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
     } finally {
@@ -47,12 +51,28 @@ export default function Leaderboard() {
 
   // Auto-refresh every 2 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
-      loadLeaderboard();
-    }, 2000);
+    let isMounted = true;
+    
+    const fetchInterval = async () => {
+      if (!isMounted) return;
+      try {
+        const players = await loadLeaderboardRealtime();
+        const filteredPlayers = players.filter(p => !oldUsernames.includes(p.userId));
+        if (isMounted) {
+           setLeaderboard(filteredPlayers);
+        }
+      } catch (error) {
+        console.error('Failed to load leaderboard in interval:', error);
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(fetchInterval, 2000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [oldUsernames]);
 
 
 
