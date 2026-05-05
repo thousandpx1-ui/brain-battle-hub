@@ -15,7 +15,7 @@ export default {
 
       // 🟢 SAVE SCORE (update if higher, prevent duplicates)
       if (url.pathname === "/save-score") {
-        const { userId, score, profileFrame, profileImage } =
+        const { userId, username, score, profileFrame, profileImage } =
           await request.json();
 
         const existing = await env.DB.prepare(
@@ -29,6 +29,7 @@ export default {
           await env.DB.prepare(
             `UPDATE leaderboard SET 
               score = MAX(score, ?), 
+              username = CASE WHEN ? IS NOT NULL THEN ? ELSE username END,
               profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
               profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END, 
               created_at = ? 
@@ -36,6 +37,8 @@ export default {
           )
             .bind(
               score,
+              username || null,
+              username || null,
               profileFrame || null,
               profileFrame || null,
               profileFrame || null,
@@ -52,7 +55,7 @@ export default {
           )
             .bind(
               userId,
-              userId,
+              username || userId,
               score,
               profileFrame || null,
               profileImage || null,

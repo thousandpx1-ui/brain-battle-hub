@@ -55,6 +55,7 @@ export function useCoins() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 userId: activeId,
+                username: oldEntry.username || activeId,
                 score: Number(oldEntry.score),
                 profileFrame: oldEntry.profileFrame || oldEntry.frame || null,
                 profileImage: oldEntry.profileImage || oldEntry.avatar || null,

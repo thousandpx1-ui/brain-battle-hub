@@ -110,7 +110,7 @@ export default function Profile() {
     if (username || userId) {
       const saveName = username || userId || "player";
       try {
-        await saveScoreRealtime(0, saveName, selectedFrame, avatarUrl);
+        await saveScoreRealtime(0, userId, saveName, selectedFrame, avatarUrl);
       } catch (err) {
         console.error("Failed to sync profile image to realtime leaderboard", err);
       }

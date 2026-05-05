@@ -93,7 +93,7 @@ export default function Game() {
           score: scoreToPersist,
           profileFrame,
         });
-        const result = await saveScoreRealtime(scoreToPersist, saveName, profileFrame, profileImage);
+        const result = await saveScoreRealtime(scoreToPersist, userId, saveName, profileFrame, profileImage);
         console.log("✅ Score saved to real-time leaderboard");
         
         lastPersistedScoreRef.current = scoreToPersist;
@@ -118,7 +118,7 @@ export default function Game() {
 
       try {
         const saveName = username || userId || "player";
-        saveScoreRealtime(scoreToPersist, saveName, profileFrame, profileImage).catch((err) =>
+        saveScoreRealtime(scoreToPersist, userId, saveName, profileFrame, profileImage).catch((err) =>
           console.error("Failed to save realtime score on back:", err),
         );
       } catch (error) {

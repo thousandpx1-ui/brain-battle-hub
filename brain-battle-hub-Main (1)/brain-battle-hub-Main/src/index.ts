@@ -1,224 +1,299 @@
-// A single, consolidated worker to handle all API requests.
-
 export default {
   async fetch(request, env) {
-    // Handle CORS preflight requests
-    if (request.method === 'OPTIONS') {
-      return handleOptions(request);
-    }
-
-    const url = new URL(request.url);
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
 
     try {
-      // Route requests to the appropriate handler
+      const url = new URL(request.url);
+
+      if (request.method === "OPTIONS") {
+        return new Response(null, { headers: corsHeaders });
+      }
+
+      // 🟢 SAVE SCORE (update if higher, prevent duplicates)
       if (url.pathname === "/save-score") {
-        return await handleSaveScore(request, env);
+        const { userId, username, score, profileFrame, profileImage } =
+          await request.json();
+
+        const existing = await env.DB.prepare(
+          "SELECT score FROM leaderboard WHERE user_id = ?",
+        )
+          .bind(userId)
+          .first();
+
+        if (existing) {
+          // Accumulate the score
+          await env.DB.prepare(
+            `UPDATE leaderboard SET 
+              score = MAX(score, ?), 
+              username = CASE WHEN ? IS NOT NULL THEN ? ELSE username END,
+              profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
+              profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END, 
+              created_at = ? 
+             WHERE user_id = ?`,
+          )
+            .bind(
+              score,
+              username || null,
+              username || null,
+              profileFrame || null,
+              profileFrame || null,
+              profileFrame || null,
+              profileImage || null,
+              profileImage || null,
+              profileImage || null,
+              new Date().toISOString(),
+              userId,
+            )
+            .run();
+        } else {
+          await env.DB.prepare(
+            "INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins) VALUES (?, ?, ?, ?, ?, ?, 0)",
+          )
+            .bind(
+              userId,
+              username || userId,
+              score,
+              profileFrame || null,
+              profileImage || null,
+              new Date().toISOString(),
+            )
+            .run();
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
       }
-      if (url.pathname === "/leaderboard") {
-        return await handleGetLeaderboard(request, env);
+
+      // 🛠️ INIT DATABASE (Run once to create columns)
+      if (url.pathname === "/init" && request.method === "POST") {
+        try {
+          await env.DB.prepare(
+            "CREATE TABLE IF NOT EXISTS leaderboard (user_id TEXT, username TEXT, score INTEGER)",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "CREATE TABLE IF NOT EXISTS users (id TEXT, username TEXT, score INTEGER)",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "ALTER TABLE leaderboard ADD COLUMN score INTEGER DEFAULT 0",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "ALTER TABLE users ADD COLUMN score INTEGER DEFAULT 0",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "ALTER TABLE leaderboard ADD COLUMN profile_image TEXT",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "ALTER TABLE leaderboard ADD COLUMN profile_frame TEXT",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0",
+          ).run();
+        } catch (e) {}
+        return new Response(
+          JSON.stringify({ success: true, message: "Database initialized" }),
+          {
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          },
+        );
       }
-      if (url.pathname === "/reward") {
-        return await handleReward(request, env);
+
+      // 🔄 MIGRATE USER
+      if (url.pathname === "/migrate-user" && request.method === "POST") {
+        const { oldId, newId } = await request.json();
+        if (!oldId || !newId) {
+          return new Response("Missing oldId or newId", {
+            status: 400,
+            headers: corsHeaders,
+          });
+        }
+
+        const oldRecord = await env.DB.prepare(
+          "SELECT * FROM leaderboard WHERE user_id = ?"
+        ).bind(oldId).first();
+
+        if (oldRecord) {
+          const newRecord = await env.DB.prepare(
+            "SELECT * FROM leaderboard WHERE user_id = ?"
+          ).bind(newId).first();
+
+          if (newRecord) {
+            // Merge into newId, delete oldId
+            await env.DB.prepare(
+              `UPDATE leaderboard SET 
+                score = MAX(COALESCE(score, 0), ?),
+                coins = COALESCE(coins, 0) + ?,
+                profile_frame = COALESCE(profile_frame, ?),
+                profile_image = COALESCE(profile_image, ?)
+               WHERE user_id = ?`
+            ).bind(
+              oldRecord.score || 0,
+              oldRecord.coins || 0,
+              oldRecord.profile_frame || null,
+              oldRecord.profile_image || null,
+              newId
+            ).run();
+
+            await env.DB.prepare(
+              "DELETE FROM leaderboard WHERE user_id = ?"
+            ).bind(oldId).run();
+          } else {
+            // Just update oldId to newId
+            await env.DB.prepare(
+              "UPDATE leaderboard SET user_id = ?, username = ? WHERE user_id = ?"
+            ).bind(newId, newId, oldId).run();
+          }
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
       }
+
+      // 🪙 GET BALANCE
       if (url.pathname === "/balance") {
-        return await handleGetBalance(request, env);
-      }
-      if (url.pathname === "/purchase-frame") {
-        return await handlePurchaseFrame(request, env);
-      }
-      if (url.pathname === "/migrate-user") {
-        return await handleMigrateUser(request, env);
+        const userId = url.searchParams.get("userId");
+        if (!userId)
+          return new Response("Missing userId", {
+            status: 400,
+            headers: corsHeaders,
+          });
+
+        const user = await env.DB.prepare(
+          "SELECT coins FROM leaderboard WHERE user_id = ?",
+        )
+          .bind(userId)
+          .first();
+        return new Response(
+          JSON.stringify({ coins: user ? user.coins || 0 : 0 }),
+          {
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          },
+        );
       }
 
-      // Handle root and other paths
+      // 🪙 ADD REWARD
+      if (url.pathname === "/reward" && request.method === "POST") {
+        const { userId, amount } = await request.json();
+        if (!userId || typeof amount !== "number")
+          return new Response("Invalid input", {
+            status: 400,
+            headers: corsHeaders,
+          });
+
+        const existing = await env.DB.prepare(
+          "SELECT user_id FROM leaderboard WHERE user_id = ?",
+        )
+          .bind(userId)
+          .first();
+
+        if (existing) {
+          await env.DB.prepare(
+            "UPDATE leaderboard SET coins = COALESCE(coins, 0) + ? WHERE user_id = ?",
+          )
+            .bind(amount, userId)
+            .run();
+        } else {
+          await env.DB.prepare(
+            "INSERT INTO leaderboard (user_id, username, score, coins, created_at) VALUES (?, ?, 0, ?, ?)",
+          )
+            .bind(userId, userId, amount, new Date().toISOString())
+            .run();
+        }
+
+        return new Response(JSON.stringify({ success: true, amount }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // 👤 CREATE USER
+      if (url.pathname === "/create-user" && request.method === "POST") {
+        const { id, username } = await request.json();
+        if (!id)
+          return new Response("Missing id", {
+            status: 400,
+            headers: corsHeaders,
+          });
+
+        const existing = await env.DB.prepare(
+          "SELECT user_id FROM leaderboard WHERE user_id = ?",
+        )
+          .bind(id)
+          .first();
+        if (!existing) {
+          await env.DB.prepare(
+            "INSERT INTO leaderboard (user_id, username, score, coins, created_at) VALUES (?, ?, 0, 0, ?)",
+          )
+            .bind(id, username || id, new Date().toISOString())
+            .run();
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // 🏆 GET LEADERBOARD (deduplicated with MAX score)
+      if (url.pathname === "/api/leaderboard" || url.pathname === "/leaderboard") {
+        const { results } = await env.DB.prepare(
+          "SELECT user_id as userId, username, MAX(score) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50",
+        ).all();
+
+        return new Response(JSON.stringify(results), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // root test
       if (url.pathname === "/") {
-        return new Response("✅ API worker is running", { status: 200 });
+        return new Response(JSON.stringify({ message: "Unified API running 🚀" }), { 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
+        });
       }
 
-      return new Response("Endpoint not found.", { status: 404 });
-
-    } catch (e) {
-      // General error handler
-      console.error("Unhandled error:", e);
-      return new Response("An internal server error occurred.", { status: 500 });
-    }
+      // Service Worker for Monetag
+      if (url.pathname === "/sw.js") {
+        const swContent = `self.options = {
+      "domain": "3nbf4.com",
+      "zoneId": 10900395
   }
-};
-
-// --- Handlers ---
-
-async function handleSaveScore(request, env) {
-  if (request.method !== 'POST') {
-    return new Response('Expected POST', { status: 405 });
-  }
-  const { userId, score, profileFrame, profileImage } = await request.json();
-
-  if (!userId || typeof score === 'undefined') {
-    return new Response("Missing required fields: userId and score.", { status: 400 });
-  }
-
-  const existing = await env.DB.prepare(
-    "SELECT score FROM leaderboard WHERE user_id = ?"
-  ).bind(userId).first();
-
-  if (existing) {
-    if (score > existing.score) {
-      const { success } = await env.DB.prepare(
-        "UPDATE leaderboard SET score = ?, profile_frame = ?, profile_image = ?, created_at = ? WHERE user_id = ?"
-      ).bind(score, profileFrame || null, profileImage || null, new Date().toISOString(), userId).run();
-      if (!success) {
-        throw new Error("Database error: Failed to update score.");
+  self.lary = ""
+  importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw')`;
+        return new Response(swContent, {
+          headers: {
+            "Content-Type": "application/javascript",
+            "Cache-Control": "public, max-age=3600",
+            ...corsHeaders,
+          },
+        });
       }
+
+      return new Response("Not found", { status: 404, headers: corsHeaders });
+    } catch (error) {
+      console.error("Worker error:", error);
+      return new Response(
+        JSON.stringify({ error: error.message || "Internal Server Error" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        },
+      );
     }
-  } else {
-    const { success } = await env.DB.prepare(
-      "INSERT INTO leaderboard (user_id, score, profile_frame, profile_image, created_at) VALUES (?, ?, ?, ?, ?)"
-    ).bind(userId, score, profileFrame || null, profileImage || null, new Date().toISOString()).run();
-    if (!success) {
-      throw new Error("Database error: Failed to insert new score.");
-    }
-  }
-
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" }
-  });
-}
-
-async function handleGetLeaderboard(request, env) {
-  const { results } = await env.DB.prepare(
-    "SELECT user_id as userId, username, MAX(score) as score, profile_frame as profileFrame, profile_image as profileImage FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50"
-  ).all();
-
-  return new Response(JSON.stringify(results), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" }
-  });
-}
-
-async function handleReward(request, env) {
-  // Placeholder for reward logic
-  return new Response(JSON.stringify({ success: true, message: "Reward processed." }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" }
-  });
-}
-
-async function handleGetBalance(request, env) {
-  const userId = new URL(request.url).searchParams.get("userId");
-  if (!userId) {
-    return new Response("Missing userId parameter.", { status: 400, headers: corsHeaders });
-  }
-
-  const user = await env.DB.prepare(
-    "SELECT score FROM leaderboard WHERE user_id = ? ORDER BY score DESC LIMIT 1"
-  ).bind(userId).first();
-
-  const balance = user ? user.score : 0;
-
-  return new Response(JSON.stringify({ userId, balance }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" }
-  });
-}
-
-
-async function handlePurchaseFrame(request, env) {
-  if (request.method !== 'POST') {
-    return new Response('Expected POST', { status: 405, headers: corsHeaders });
-  }
-  const { userId, frame } = await request.json();
-
-  if (!userId || !frame) {
-    return new Response("Missing required fields: userId and frame.", { status: 400, headers: corsHeaders });
-  }
-
-  // Check user's balance
-  const user = await env.DB.prepare(
-    "SELECT score FROM leaderboard WHERE user_id = ? ORDER BY score DESC LIMIT 1"
-  ).bind(userId).first();
-
-  const balance = user ? user.score : 0;
-  const frameCost = 25;
-
-  if (balance < frameCost) {
-    return new Response(JSON.stringify({ success: false, message: "Insufficient balance." }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
-  }
-
-  // Deduct cost and update frame
-  const newBalance = balance - frameCost;
-  const { success } = await env.DB.prepare(
-    "UPDATE leaderboard SET score = ?, profile_frame = ? WHERE user_id = ?"
-  ).bind(newBalance, frame, userId).run();
-
-  if (!success) {
-    throw new Error("Database error: Failed to update purchase.");
-  }
-
-  return new Response(JSON.stringify({ success: true, newBalance }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" }
-  });
-}
-
-async function handleMigrateUser(request, env) {
-  if (request.method !== 'POST') {
-    return new Response('Expected POST', { status: 405, headers: corsHeaders });
-  }
-  const { oldId, newId } = await request.json();
-
-  if (!oldId || !newId) {
-    return new Response("Missing required fields: oldId and newId.", { status: 400, headers: corsHeaders });
-  }
-
-  const oldRecord = await env.DB.prepare(
-    "SELECT * FROM leaderboard WHERE user_id = ?"
-  ).bind(oldId).first();
-
-  if (oldRecord) {
-    const newRecord = await env.DB.prepare(
-      "SELECT * FROM leaderboard WHERE user_id = ?"
-    ).bind(newId).first();
-
-    if (newRecord) {
-      // Merge into newId, delete oldId
-      await env.DB.prepare(
-        `UPDATE leaderboard SET 
-          score = MAX(COALESCE(score, 0), ?),
-          profile_frame = COALESCE(profile_frame, ?),
-          profile_image = COALESCE(profile_image, ?)
-         WHERE user_id = ?`
-      ).bind(
-        oldRecord.score || 0,
-        oldRecord.profile_frame || null,
-        oldRecord.profile_image || null,
-        newId
-      ).run();
-
-      await env.DB.prepare(
-        "DELETE FROM leaderboard WHERE user_id = ?"
-      ).bind(oldId).run();
-    } else {
-      // Just update oldId to newId
-      await env.DB.prepare(
-        "UPDATE leaderboard SET user_id = ?, username = ? WHERE user_id = ?"
-      ).bind(newId, newId, oldId).run();
-    }
-  }
-
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" }
-  });
-}
-
-// --- CORS ---
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, Authorization',
+  },
 };
-
-function handleOptions(request) {
-  return new Response(null, {
-    headers: corsHeaders,
-  });
-}

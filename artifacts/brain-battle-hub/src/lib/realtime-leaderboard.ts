@@ -27,6 +27,7 @@ function isValidRealtimeUsername(username?: string | null): boolean {
 
 export async function saveScoreRealtime(
   score: number,
+  userId: string,
   username: string,
   profileFrame?: string | null,
   profileImage?: string | null,
@@ -51,7 +52,8 @@ export async function saveScoreRealtime(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      userId: normalizedUsername,
+      userId: userId || normalizedUsername,
+      username: normalizedUsername,
       score: score,
       profileFrame: profileFrame || null,
       profileImage: profileImage || null,
