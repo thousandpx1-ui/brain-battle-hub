@@ -111,6 +111,58 @@ export default {
         );
       }
 
+      // 🔄 MIGRATE USER
+      if (url.pathname === "/migrate-user" && request.method === "POST") {
+        const { oldId, newId } = await request.json();
+        if (!oldId || !newId) {
+          return new Response("Missing oldId or newId", {
+            status: 400,
+            headers: corsHeaders,
+          });
+        }
+
+        const oldRecord = await env.DB.prepare(
+          "SELECT * FROM leaderboard WHERE user_id = ?"
+        ).bind(oldId).first();
+
+        if (oldRecord) {
+          const newRecord = await env.DB.prepare(
+            "SELECT * FROM leaderboard WHERE user_id = ?"
+          ).bind(newId).first();
+
+          if (newRecord) {
+            // Merge into newId, delete oldId
+            await env.DB.prepare(
+              `UPDATE leaderboard SET 
+                score = MAX(COALESCE(score, 0), ?),
+                coins = COALESCE(coins, 0) + ?,
+                profile_frame = COALESCE(profile_frame, ?),
+                profile_image = COALESCE(profile_image, ?)
+               WHERE user_id = ?`
+            ).bind(
+              oldRecord.score || 0,
+              oldRecord.coins || 0,
+              oldRecord.profile_frame || null,
+              oldRecord.profile_image || null,
+              newId
+            ).run();
+
+            await env.DB.prepare(
+              "DELETE FROM leaderboard WHERE user_id = ?"
+            ).bind(oldId).run();
+          } else {
+            // Just update oldId to newId
+            await env.DB.prepare(
+              "UPDATE leaderboard SET user_id = ?, username = ? WHERE user_id = ?"
+            ).bind(newId, newId, oldId).run();
+          }
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
       // 🪙 GET BALANCE
       if (url.pathname === "/balance") {
         const userId = url.searchParams.get("userId");
