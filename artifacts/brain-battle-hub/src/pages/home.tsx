@@ -5,84 +5,17 @@ import { Layout } from "@/components/layout";
 import { GAMES } from "@/lib/games";
 import { useAppState } from "@/hooks/useAppState";
 import { useCoins } from "@/hooks/useCoins";
-import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
+import { Flame, Play, Sparkles } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
 import { AdBanner } from "@/components/ad-banner";
 
-import { loadLeaderboardRealtime } from "@/lib/realtime-leaderboard";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
-
-function formatScore(score: number): string {
-  const num = Math.floor(score);
-
-  if (num >= 1000000000) {
-    return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
-  }
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-  }
-
-  return num.toString();
-}
 
 export default function Home() {
   const { username, streak, updateStreak } = useAppState();
   const { coins } = useCoins();
   const [showUsername, setShowUsername] = useState(false);
-  const [dailyLeaderboard, setDailyLeaderboard] = useState<Array<{username: string; score: number; createdAt?: string}>>([]);
-  const [dailyLoading, setDailyLoading] = useState(true);
   const localScores = useLocalLeaderboard((s) => s.scores);
-  const _version = useLocalLeaderboard((s) => s.version);
-  
-  // Force re-render check - v2.0.1
-  console.log("Home loaded with", GAMES.length, "games");
-
-  // Fetch daily leaderboard
-  const fetchDailyLeaderboard = async () => {
-    setDailyLoading(true);
-    try {
-      const players = await loadLeaderboardRealtime();
-      
-      const top5 = players
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5)
-        .map(p => ({ username: p.username || p.userId, score: p.score }));
-
-      setDailyLeaderboard(top5);
-    } catch (error) {
-      console.error("Failed to load leaderboard on home", error);
-      const today = new Date().toDateString();
-      const todayScores = localScores.filter(entry =>
-        new Date(entry.createdAt).toDateString() === today
-      );
-
-      const totalScoreMap = new Map();
-      for (const entry of todayScores) {
-        const existing = totalScoreMap.get(entry.username);
-        if (existing) {
-          existing.score += entry.score;
-        } else {
-          totalScoreMap.set(entry.username, { ...entry });
-        }
-      }
-      const localData = Array.from(totalScoreMap.values()).sort((a, b) => b.score - a.score);
-      const top5 = localData.slice(0, 5);
-      setDailyLeaderboard(top5);
-    } finally {
-      setDailyLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDailyLeaderboard();
-
-    // Auto-refresh daily leaderboard every 3 seconds
-    const refreshTimer = setInterval(fetchDailyLeaderboard, 3000);
-    return () => clearInterval(refreshTimer);
-  }, [username, _version]); // Refetch when user changes or scores update
 
   useEffect(() => {
     updateStreak();
@@ -157,51 +90,6 @@ export default function Home() {
         </div>
 
 
-
-        {dailyLeaderboard.length > 0 ? (
-          <div className="mt-4 bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                Today's Top Players
-              </h3>
-              <Link href="/leaderboard?period=daily" className="text-sm font-bold text-primary">View All</Link>
-            </div>
-            <div className="flex flex-col gap-3">
-              {dailyLeaderboard.map((entry, i) => {
-                const medal = i === 0 ? <Trophy className="w-4 h-4 text-yellow-500 fill-yellow-500" /> :
-                              i === 1 ? <Medal className="w-4 h-4 text-gray-400" /> :
-                              i === 2 ? <Medal className="w-4 h-4 text-amber-600" /> : null;
-                return (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        i === 0 ? 'bg-yellow-100' :
-                        i === 1 ? 'bg-gray-100' :
-                        i === 2 ? 'bg-amber-100' :
-                        'bg-gray-50'
-                      }`}>
-                        {medal || (
-                          <span className="font-black text-xs text-gray-400">{i + 1}</span>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm text-gray-900">{entry.username}</p>
-                      </div>
-                    </div>
-                    <div className="font-black text-sm">{formatScore(entry.score)}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="mt-4 bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-center">
-            <Trophy className="w-8 h-8 text-primary mx-auto mb-2 opacity-50" />
-            <p className="text-gray-500 font-medium">No games played today yet</p>
-            <p className="text-gray-400 text-sm mt-1">Top players will appear here after games are completed</p>
-          </div>
-        )}
 
         <div className="mt-4 -mx-6">
           <AdBanner />
