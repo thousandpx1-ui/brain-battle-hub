@@ -137,7 +137,7 @@ export default function Leaderboard() {
               const displayFrame = isMe ? profileFrame : entry.profileFrame;
               const displayImage = isMe ? profileImage : entry.profileImage;
               const frameClass = displayFrame ? frameStyles[displayFrame] || '' : '';
-              const borderColor = isMe ? 'border-primary' : (frameClass ? '' : 'border-gray-200');
+              const borderColor = isMe ? 'border-primary' : (frameClass ? '' : 'border-transparent');
 
               return (
                 <div
