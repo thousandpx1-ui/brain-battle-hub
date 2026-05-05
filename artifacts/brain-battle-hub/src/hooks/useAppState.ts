@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { differenceInDays, startOfDay } from "date-fns";
-import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 interface AppState {
   username: string | null;

@@ -71,7 +71,6 @@ export async function saveScoreRealtime(
   const normalizedUsername = normalizeUsername(username);
 
   if (!isValidRealtimeUsername(normalizedUsername)) {
-    console.warn("Skipping realtime leaderboard save for invalid username:", username);
     return null;
   }
 

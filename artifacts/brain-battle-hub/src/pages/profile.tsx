@@ -89,7 +89,7 @@ export default function Profile() {
     fetchScore();
   }, [username, scores]);
 
-  const handleNameSubmit = (e: React.FormEvent) => {
+  const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (tempName.trim().length > 2) {
       const newName = tempName.trim();
@@ -98,6 +98,14 @@ export default function Profile() {
         updateUsername(username, newName);
       }
       setEditingName(false);
+
+      if (userId) {
+        try {
+          await updateProfileRealtime(userId, newName, selectedFrame, profileImage);
+        } catch (err) {
+          console.error("Failed to sync username to backend", err);
+        }
+      }
     }
   };
 

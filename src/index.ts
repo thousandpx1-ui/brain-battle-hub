@@ -294,17 +294,11 @@ export default {
         });
       }
 
-      // 🏆 GET LEADERBOARD (top 50 by highest score per user)
+      // 🏆 GET LEADERBOARD (top 50 by highest score)
+      // With unique index on user_id, each user has exactly one row
       if (url.pathname === "/api/leaderboard" || url.pathname === "/leaderboard") {
         const { results } = await env.DB.prepare(
-          `SELECT user_id as userId, username, score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt
-           FROM leaderboard
-           WHERE user_id IN (
-             SELECT user_id FROM leaderboard GROUP BY user_id ORDER BY MAX(score) DESC LIMIT 50
-           )
-           AND score = (SELECT MAX(score) FROM leaderboard lb2 WHERE lb2.user_id = leaderboard.user_id)
-           ORDER BY score DESC
-           LIMIT 50`,
+          "SELECT user_id as userId, username, score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard ORDER BY score DESC LIMIT 50",
         ).all();
 
         return new Response(JSON.stringify(results), {
