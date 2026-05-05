@@ -140,6 +140,7 @@ export default function Leaderboard() {
                 'purple': 'border-4 border-purple-500',
                 'rainbow': 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 p-0.5',
                 'black': 'border-4 border-black',
+                'premium-metallic': '',
               };
               
               const displayFrame = isMe ? profileFrame : entry.profileFrame;

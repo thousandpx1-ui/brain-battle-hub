@@ -90,8 +90,8 @@ export async function loadLeaderboardRealtime() {
 
   return entries
     .map((entry) => {
-      const pFrame = entry.profileFrame || entry.frame || null;
-      const pImage = entry.profileImage || entry.avatar || null;
+      const pFrame = entry.profileFrame || entry.profile_frame || entry.profileframe || entry.frame || null;
+      const pImage = entry.profileImage || entry.profile_image || entry.profileimage || entry.avatar || null;
       return {
         userId: normalizeUsername(entry.userId || entry.username),
         score: Number(entry.score) || 0,
