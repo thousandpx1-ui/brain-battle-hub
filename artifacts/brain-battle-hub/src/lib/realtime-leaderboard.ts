@@ -1,7 +1,4 @@
-﻿import { generateMockLeaderboard } from "./mock-leaderboard";
-import { useLocalLeaderboard, mergeLocalWithMock } from "./local-leaderboard";
-
-const API_URL = "https://leaderboard.thousandpx1.workers.dev";
+﻿const API_URL = "https://leaderboard.thousandpx1.workers.dev";
 
 const INVALID_USERNAMES = new Set([
   "Memory Collapse",
@@ -81,17 +78,8 @@ export async function loadLeaderboardRealtime() {
   }
 
   if (!res.ok) {
-    console.warn(`Leaderboard API failed with status ${res.status}, using mock fallback`);
-    const mockData = generateMockLeaderboard(50);
-    const localData = useLocalLeaderboard.getState().scores;
-    const merged = mergeLocalWithMock(mockData, localData);
-    
-    return merged.map(m => ({
-      userId: m.username,
-      score: m.score,
-      profileFrame: null,
-      profileImage: null
-    }));
+    console.warn(`Leaderboard API failed with status ${res.status}, returning empty array`);
+    return [];
   }
 
   const data = await res.json();
