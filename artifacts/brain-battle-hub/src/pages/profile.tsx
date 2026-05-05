@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAppState } from "@/hooks/useAppState";
 import { useCoins } from "@/hooks/useCoins";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
-import { saveScoreRealtime } from "@/lib/realtime-leaderboard";
+import { saveScoreRealtime, updateProfileRealtime, loadLeaderboardRealtime } from "@/lib/realtime-leaderboard";
 import { User } from "lucide-react";
 
 const customAvatars = [
@@ -72,13 +72,11 @@ export default function Profile() {
     async function fetchScore() {
       if (!username) return;
       try {
-        const { loadLeaderboardRealtime } = await import("@/lib/realtime-leaderboard");
         const players = await loadLeaderboardRealtime();
         const player = players.find(p => p.userId === username);
         if (player) {
           setTotalScore(player.score);
         } else {
-          // Fallback to local
           const userScores = scores.filter(score => score.username === username);
           setTotalScore(userScores.reduce((sum, score) => sum + score.score, 0));
         }
@@ -106,13 +104,12 @@ export default function Profile() {
   const handleSaveAvatar = async (avatarUrl: string) => {
     setProfileImage(avatarUrl);
 
-    // Sync to backend
     if (username || userId) {
       const saveName = username || userId || "player";
       try {
-        await saveScoreRealtime(0, userId, saveName, selectedFrame, avatarUrl);
+        await updateProfileRealtime(userId, saveName, selectedFrame, avatarUrl);
       } catch (err) {
-        console.error("Failed to sync profile image to realtime leaderboard", err);
+        console.error("Failed to sync profile image to backend", err);
       }
     }
   };
@@ -120,13 +117,12 @@ export default function Profile() {
   const handleSaveFrame = async () => {
     setProfileFrame(selectedFrame);
 
-    // Sync to backend
     if (username || userId) {
       const saveName = username || userId || "player";
       try {
-        await saveScoreRealtime(0, saveName, selectedFrame, profileImage);
+        await updateProfileRealtime(userId, saveName, selectedFrame, profileImage);
       } catch (err) {
-        console.error("Failed to sync profile frame to realtime leaderboard", err);
+        console.error("Failed to sync profile frame to backend", err);
       }
     }
   };

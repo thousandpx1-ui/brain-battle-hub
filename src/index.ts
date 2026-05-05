@@ -13,58 +13,48 @@ export default {
         return new Response(null, { headers: corsHeaders });
       }
 
-      // 🟢 SAVE SCORE (update if higher, prevent duplicates)
+      // 🟢 SAVE SCORE (upsert: insert or update keeping highest score)
       if (url.pathname === "/save-score") {
         const { userId, username, score, profileFrame, profileImage } =
           await request.json();
 
-        const existing = await env.DB.prepare(
-          "SELECT score FROM leaderboard WHERE user_id = ?",
-        )
-          .bind(userId)
-          .first();
-
-        if (existing) {
-          // Accumulate the score
-          await env.DB.prepare(
-            `UPDATE leaderboard SET 
-              score = MAX(score, ?), 
-              username = CASE WHEN ? IS NOT NULL THEN ? ELSE username END,
-              profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
-              profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END, 
-              created_at = ? 
-             WHERE user_id = ?`,
-          )
-            .bind(
-              score,
-              username || null,
-              username || null,
-              profileFrame || null,
-              profileFrame || null,
-              profileFrame || null,
-              profileImage || null,
-              profileImage || null,
-              profileImage || null,
-              new Date().toISOString(),
-              userId,
-            )
-            .run();
-        } else {
-          await env.DB.prepare(
-            "INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins) VALUES (?, ?, ?, ?, ?, ?, 0)",
-          )
-            .bind(
-              userId,
-              username || userId,
-              score,
-              profileFrame || null,
-              profileImage || null,
-              new Date().toISOString(),
-            )
-            .run();
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Missing userId" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
         }
 
-        return new Response(JSON.stringify({ success: true }), {
+        const newScore = typeof score === "number" ? score : 0;
+        const now = new Date().toISOString();
+
+        // Use INSERT ... ON CONFLICT for atomic upsert
+        // First, ensure we have a unique index
+        await env.DB.prepare(
+          "CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_user_id ON leaderboard(user_id)",
+        ).run();
+
+        await env.DB.prepare(
+          `INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins)
+           VALUES (?, ?, ?, ?, ?, ?, 0)
+           ON CONFLICT(user_id) DO UPDATE SET
+             score = MAX(leaderboard.score, excluded.score),
+             username = CASE WHEN excluded.username IS NOT NULL THEN excluded.username ELSE leaderboard.username END,
+             profile_frame = CASE WHEN excluded.profile_frame = 'none' THEN NULL WHEN excluded.profile_frame IS NOT NULL THEN excluded.profile_frame ELSE leaderboard.profile_frame END,
+             profile_image = CASE WHEN excluded.profile_image = 'none' THEN NULL WHEN excluded.profile_image IS NOT NULL THEN excluded.profile_image ELSE leaderboard.profile_image END,
+             created_at = excluded.created_at`,
+        )
+          .bind(
+            userId,
+            username || userId,
+            newScore,
+            profileFrame || null,
+            profileImage || null,
+            now,
+          )
+          .run();
+
+        return new Response(JSON.stringify({ success: true, userId, score: newScore }), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
@@ -222,6 +212,51 @@ export default {
         });
       }
 
+      // 👤 UPDATE PROFILE (frame/image only, no score change)
+      if (url.pathname === "/update-profile" && request.method === "POST") {
+        const { userId, username, profileFrame, profileImage } =
+          await request.json();
+
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Missing userId" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        const existing = await env.DB.prepare(
+          "SELECT user_id FROM leaderboard WHERE user_id = ?",
+        )
+          .bind(userId)
+          .first();
+
+        if (existing) {
+          await env.DB.prepare(
+            `UPDATE leaderboard SET
+              username = CASE WHEN ? IS NOT NULL THEN ? ELSE username END,
+              profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END,
+              profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END
+             WHERE user_id = ?`,
+          )
+            .bind(
+              username || null,
+              username || null,
+              profileFrame || null,
+              profileFrame || null,
+              profileFrame || null,
+              profileImage || null,
+              profileImage || null,
+              profileImage || null,
+              userId,
+            )
+            .run();
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
       // 👤 CREATE USER
       if (url.pathname === "/create-user" && request.method === "POST") {
         const { id, username } = await request.json();
@@ -249,10 +284,17 @@ export default {
         });
       }
 
-      // 🏆 GET LEADERBOARD (deduplicated with MAX score)
+      // 🏆 GET LEADERBOARD (top 50 by highest score per user)
       if (url.pathname === "/api/leaderboard" || url.pathname === "/leaderboard") {
         const { results } = await env.DB.prepare(
-          "SELECT user_id as userId, username, MAX(score) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50",
+          `SELECT user_id as userId, username, score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt
+           FROM leaderboard
+           WHERE user_id IN (
+             SELECT user_id FROM leaderboard GROUP BY user_id ORDER BY MAX(score) DESC LIMIT 50
+           )
+           AND score = (SELECT MAX(score) FROM leaderboard lb2 WHERE lb2.user_id = leaderboard.user_id)
+           ORDER BY score DESC
+           LIMIT 50`,
         ).all();
 
         return new Response(JSON.stringify(results), {

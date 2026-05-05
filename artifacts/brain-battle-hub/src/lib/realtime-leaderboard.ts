@@ -11,18 +11,54 @@ const INVALID_USERNAMES = new Set([
   "colorblast",
 ]);
 
+export interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  score: number;
+  profileFrame: string | null;
+  profileImage: string | null;
+}
+
 function normalizeUsername(username?: string | null): string {
   return (username || "").trim();
 }
 
 function isValidRealtimeUsername(username?: string | null): boolean {
   const normalized = normalizeUsername(username);
-
   if (!normalized || normalized.length < 2) return false;
   if (INVALID_USERNAMES.has(normalized)) return false;
   if (normalized.startsWith("guest_")) return false;
-
   return true;
+}
+
+function getProfileFrame(entry: any): string | null {
+  const val = entry.profileFrame || entry.profile_frame || entry.profileframe || entry.frame || null;
+  return val === 'none' ? null : val;
+}
+
+function getProfileImage(entry: any): string | null {
+  const val = entry.profileImage || entry.profile_image || entry.profileimage || entry.avatar || null;
+  return val === 'none' ? null : val;
+}
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok) return res;
+      if (res.status >= 500) {
+        lastError = new Error(`Server error: ${res.status}`);
+        await new Promise(r => setTimeout(r, 500 * (i + 1)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      await new Promise(r => setTimeout(r, 500 * (i + 1)));
+    }
+  }
+  throw lastError || new Error("Fetch failed after retries");
 }
 
 export async function saveScoreRealtime(
@@ -31,74 +67,117 @@ export async function saveScoreRealtime(
   username: string,
   profileFrame?: string | null,
   profileImage?: string | null,
-) {
+): Promise<{ success: boolean; scoreAdded: number } | null> {
   const normalizedUsername = normalizeUsername(username);
 
   if (!isValidRealtimeUsername(normalizedUsername)) {
-    console.warn(
-      "Skipping realtime leaderboard save for invalid username:",
-      username,
-    );
+    console.warn("Skipping realtime leaderboard save for invalid username:", username);
     return null;
   }
 
-  console.log(
-    `Score update for ${normalizedUsername}: sending +${score} points`,
-  );
+  try {
+    const response = await fetchWithRetry(`${API_URL}/save-score`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: userId || normalizedUsername,
+        username: normalizedUsername,
+        score,
+        profileFrame: profileFrame || null,
+        profileImage: profileImage || null,
+      }),
+    });
 
-  const response = await fetch(`${API_URL}/save-score`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      userId: userId || normalizedUsername,
-      username: normalizedUsername,
-      score: score,
-      profileFrame: profileFrame || null,
-      profileImage: profileImage || null,
-      frame: profileFrame || null,
-      avatar: profileImage || null,
-    }),
-  });
+    if (!response.ok) {
+      throw new Error(`Failed to save realtime score: ${response.status}`);
+    }
 
-  if (!response.ok) {
-    throw new Error(`Failed to save realtime score: ${response.status}`);
+    const responseData = await response.json();
+    return { ...responseData, scoreAdded: score };
+  } catch (error) {
+    console.error("Failed to save realtime score:", error);
+    throw error;
   }
-
-  const responseData = await response.json();
-  return { ...responseData, scoreAdded: score };
 }
 
-export async function loadLeaderboardRealtime() {
-  // Try primary endpoint first
-  let res = await fetch(`${API_URL}/api/leaderboard`, { cache: "no-store" });
-  
-  // If 404, try alternative endpoint
-  if (!res.ok && res.status === 404) {
-    res = await fetch(`${API_URL}/leaderboard`, { cache: "no-store" });
+export async function updateProfileRealtime(
+  userId: string,
+  username?: string | null,
+  profileFrame?: string | null,
+  profileImage?: string | null,
+): Promise<boolean> {
+  if (!userId) return false;
+
+  try {
+    const response = await fetchWithRetry(`${API_URL}/update-profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        username: username || null,
+        profileFrame: profileFrame || null,
+        profileImage: profileImage || null,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update profile: ${response.status}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Failed to update profile:", error);
+    return false;
+  }
+}
+
+let leaderboardCache: LeaderboardEntry[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION_MS = 1500;
+
+export async function loadLeaderboardRealtime(): Promise<LeaderboardEntry[]> {
+  const now = Date.now();
+  if (leaderboardCache && now - cacheTimestamp < CACHE_DURATION_MS) {
+    return leaderboardCache;
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/leaderboard`, { cache: "no-store" });
+    if (!res.ok && res.status === 404) {
+      res = await fetch(`${API_URL}/leaderboard`, { cache: "no-store" });
+    }
+  } catch (error) {
+    console.warn("Leaderboard fetch failed:", error);
+    return leaderboardCache || [];
   }
 
   if (!res.ok) {
-    console.warn(`Leaderboard API failed with status ${res.status}, returning empty array`);
-    return [];
+    console.warn(`Leaderboard API failed with status ${res.status}`);
+    return leaderboardCache || [];
   }
 
   const data = await res.json();
-  // Handle API response format: { value: [...] } or direct array
-  const entries = Array.isArray(data) ? data : (data?.value || []);
+  const entries = Array.isArray(data) ? data : (data?.value || data?.results || []);
 
-  return entries
-    .map((entry) => {
-      const pFrame = entry.profileFrame || entry.profile_frame || entry.profileframe || entry.frame || null;
-      const pImage = entry.profileImage || entry.profile_image || entry.profileimage || entry.avatar || null;
-      return {
-        userId: normalizeUsername(entry.userId || entry.username),
-        score: Number(entry.score) || 0,
-        profileFrame: pFrame === 'none' ? null : pFrame,
-        profileImage: pImage === 'none' ? null : pImage,
-      };
-    })
-    .filter((entry) => isValidRealtimeUsername(entry.userId))
-    .sort((a, b) => b.score - a.score);
+  const parsed = entries
+    .map((entry: any) => ({
+      userId: normalizeUsername(entry.userId || entry.username || entry.user_id || ""),
+      username: normalizeUsername(entry.username || entry.userId || entry.user_id || ""),
+      score: Number(entry.score) || 0,
+      profileFrame: getProfileFrame(entry),
+      profileImage: getProfileImage(entry),
+    }))
+    .filter((entry: LeaderboardEntry) => isValidRealtimeUsername(entry.userId))
+    .sort((a: LeaderboardEntry, b: LeaderboardEntry) => b.score - a.score);
+
+  leaderboardCache = parsed;
+  cacheTimestamp = now;
+
+  return parsed;
+}
+
+export function invalidateLeaderboardCache() {
+  leaderboardCache = null;
+  cacheTimestamp = 0;
 }

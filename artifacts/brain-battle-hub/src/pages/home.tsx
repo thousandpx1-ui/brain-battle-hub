@@ -9,7 +9,7 @@ import { Flame, Play, Sparkles, Trophy, Medal } from "lucide-react";
 import { UsernameModal } from "@/components/username-modal";
 import { AdBanner } from "@/components/ad-banner";
 
-import { getFullLeaderboard } from "@/lib/d1-client";
+import { loadLeaderboardRealtime } from "@/lib/realtime-leaderboard";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
 
 function formatScore(score: number): string {
@@ -44,18 +44,16 @@ export default function Home() {
   const fetchDailyLeaderboard = async () => {
     setDailyLoading(true);
     try {
-      const { loadLeaderboardRealtime } = await import("@/lib/realtime-leaderboard");
       const players = await loadLeaderboardRealtime();
       
       const top5 = players
         .sort((a, b) => b.score - a.score)
         .slice(0, 5)
-        .map(p => ({ username: p.userId, score: p.score }));
+        .map(p => ({ username: p.username || p.userId, score: p.score }));
 
       setDailyLeaderboard(top5);
     } catch (error) {
       console.error("Failed to load leaderboard on home", error);
-      // Fallback to local only if database completely fails
       const today = new Date().toDateString();
       const todayScores = localScores.filter(entry =>
         new Date(entry.createdAt).toDateString() === today
