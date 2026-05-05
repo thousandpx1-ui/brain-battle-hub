@@ -259,11 +259,21 @@ export default {
 
       // 👤 CREATE USER
       if (url.pathname === "/create-user" && request.method === "POST") {
-        const { id, username } = await request.json();
-        if (!id)
-          return new Response("Missing id", {
+        let requestBody;
+        try {
+          requestBody = await request.json();
+        } catch (e) {
+          return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
             status: 400,
-            headers: corsHeaders,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        const { id, username } = requestBody;
+        if (!id)
+          return new Response(JSON.stringify({ error: "Missing id" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
           });
 
         const existing = await env.DB.prepare(
