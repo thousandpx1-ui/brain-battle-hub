@@ -57,8 +57,8 @@ export function useCoins() {
                 userId: activeId,
                 username: oldEntry.username || activeId,
                 score: Number(oldEntry.score),
-                profileFrame: oldEntry.profileFrame || oldEntry.frame || null,
-                profileImage: oldEntry.profileImage || oldEntry.avatar || null,
+                frame: oldEntry.profileFrame || oldEntry.frame || "",
+                avatar: oldEntry.profileImage || oldEntry.avatar || "",
               })
             }).catch(console.error);
           }

@@ -26,7 +26,7 @@ async function coinsApi(path: string, method = "GET", body: any = null) {
 }
 
 async function createCoinUser(userId: string, username: string) {
-  return await coinsApi("/create-user", "POST", { id: userId, username });
+  return await coinsApi("/create-user", "POST", { userId, username });
 }
 
 async function rewardCoins(userId: string, amount: number) {

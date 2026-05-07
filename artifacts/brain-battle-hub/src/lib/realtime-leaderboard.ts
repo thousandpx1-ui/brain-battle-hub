@@ -82,8 +82,8 @@ export async function saveScoreRealtime(
         userId: userId || normalizedUsername,
         username: normalizedUsername,
         score,
-        profileFrame: profileFrame || null,
-        profileImage: profileImage || null,
+        frame: profileFrame || "",
+        avatar: profileImage || "",
       }),
     });
 
@@ -157,8 +157,8 @@ export async function updateProfileRealtime(
       body: JSON.stringify({
         userId,
         username: username || null,
-        profileFrame: profileFrame || null,
-        profileImage: profileImage || null,
+        frame: profileFrame || "",
+        avatar: profileImage || "",
         previousUsernames: aliasesToMigrate,
       }),
     });
