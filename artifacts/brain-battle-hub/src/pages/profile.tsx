@@ -113,7 +113,7 @@ export default function Profile() {
     setProfileImage(avatarUrl);
 
     if (username || userId) {
-      const saveName = username || userId || "player";
+      const saveName = username || "player";
       try {
         await updateProfileRealtime(userId, saveName, selectedFrame, avatarUrl);
       } catch (err) {
@@ -126,7 +126,7 @@ export default function Profile() {
     setProfileFrame(selectedFrame);
 
     if (username || userId) {
-      const saveName = username || userId || "player";
+      const saveName = username || "player";
       try {
         await updateProfileRealtime(userId, saveName, selectedFrame, profileImage);
       } catch (err) {

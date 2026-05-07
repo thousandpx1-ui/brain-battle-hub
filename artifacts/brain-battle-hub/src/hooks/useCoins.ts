@@ -9,7 +9,7 @@ const coinListeners = new Set<Dispatch<SetStateAction<number>>>();
 
 export function useCoins() {
   const { userId, username } = useAppState();
-  const activeId = username || userId || "player"; // Tie coins back to username to sync with the backend leaderboard row
+  const activeId = userId; // ALWAYS use the robust userId!
   
   const [coins, setCoins] = useState<number>(globalCoins);
   const [loading, setLoading] = useState(false);

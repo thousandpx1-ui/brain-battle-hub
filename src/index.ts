@@ -146,8 +146,8 @@ export default {
           } else {
             // Just update oldId to newId
             await env.DB.prepare(
-              "UPDATE leaderboard SET user_id = ?, username = ? WHERE user_id = ?"
-            ).bind(newId, newId, oldId).run();
+              "UPDATE leaderboard SET user_id = ? WHERE user_id = ?"
+            ).bind(newId, oldId).run();
           }
         }
 

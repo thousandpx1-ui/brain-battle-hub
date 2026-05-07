@@ -87,9 +87,9 @@ export default function Game() {
       }
 
       try {
-        const saveName = username || userId || "player";
+        const saveName = username || "player";
         console.log("💾 Saving to real-time leaderboard:", {
-          userId: saveName,
+          userId: userId,
           score: scoreToPersist,
           profileFrame,
         });
@@ -117,7 +117,7 @@ export default function Game() {
       }
 
       try {
-        const saveName = username || userId || "player";
+        const saveName = username || "player";
         saveScoreRealtime(scoreToPersist, userId, saveName, profileFrame, profileImage).catch((err) =>
           console.error("Failed to save realtime score on back:", err),
         );
