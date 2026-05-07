@@ -224,33 +224,27 @@ export default {
           });
         }
 
-        const existing = await env.DB.prepare(
-          "SELECT user_id FROM leaderboard WHERE user_id = ?",
-        )
-          .bind(userId)
-          .first();
+        await env.DB.prepare(
+          "CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_user_id ON leaderboard(user_id)",
+        ).run();
 
-        if (existing) {
-          await env.DB.prepare(
-            `UPDATE leaderboard SET
-              username = CASE WHEN ? IS NOT NULL THEN ? ELSE username END,
-              profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END,
-              profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END
-             WHERE user_id = ?`,
+        await env.DB.prepare(
+          `INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins)
+           VALUES (?, ?, 0, ?, ?, ?, 0)
+           ON CONFLICT(user_id) DO UPDATE SET
+             username = CASE WHEN ? IS NOT NULL THEN excluded.username ELSE leaderboard.username END,
+             profile_frame = CASE WHEN excluded.profile_frame = 'none' THEN NULL WHEN excluded.profile_frame IS NOT NULL THEN excluded.profile_frame ELSE leaderboard.profile_frame END,
+             profile_image = CASE WHEN excluded.profile_image = 'none' THEN NULL WHEN excluded.profile_image IS NOT NULL THEN excluded.profile_image ELSE leaderboard.profile_image END`,
+        )
+          .bind(
+            userId,
+            username || userId,
+            profileFrame || null,
+            profileImage || null,
+            new Date().toISOString(),
+            username || null,
           )
-            .bind(
-              username || null,
-              username || null,
-              profileFrame || null,
-              profileFrame || null,
-              profileFrame || null,
-              profileImage || null,
-              profileImage || null,
-              profileImage || null,
-              userId,
-            )
-            .run();
-        }
+          .run();
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { "Content-Type": "application/json", ...corsHeaders },

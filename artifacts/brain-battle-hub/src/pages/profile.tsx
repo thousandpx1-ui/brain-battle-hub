@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAppState } from "@/hooks/useAppState";
 import { useCoins } from "@/hooks/useCoins";
 import { useLocalLeaderboard } from "@/lib/local-leaderboard";
-import { saveScoreRealtime, updateProfileRealtime, loadLeaderboardRealtime } from "@/lib/realtime-leaderboard";
+import { updateProfileRealtime, loadLeaderboardRealtime } from "@/lib/realtime-leaderboard";
 import { User } from "lucide-react";
 
 const customAvatars = [
@@ -70,10 +70,10 @@ export default function Profile() {
 
   useEffect(() => {
     async function fetchScore() {
-      if (!username) return;
+      if (!username && !userId) return;
       try {
         const players = await loadLeaderboardRealtime();
-        const player = players.find(p => p.userId === username);
+        const player = players.find(p => p.userId === userId || p.username === username);
         if (player) {
           setTotalScore(player.score);
         } else {
@@ -87,7 +87,7 @@ export default function Profile() {
       }
     }
     fetchScore();
-  }, [username, scores]);
+  }, [username, userId, scores]);
 
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
