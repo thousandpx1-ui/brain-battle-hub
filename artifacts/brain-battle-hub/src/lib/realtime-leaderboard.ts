@@ -1,4 +1,4 @@
-﻿const API_URL = "https://leaderboard.thousandpx1.workers.dev";
+﻿const API_URL = import.meta.env.VITE_API_BASE_URL || "https://leaderboard.thousandpx1.workers.dev";
 
 const INVALID_USERNAMES = new Set([
   "Memory Collapse",
@@ -99,15 +99,58 @@ export async function saveScoreRealtime(
   }
 }
 
+export async function migrateUserRealtime(oldId?: string | null, newId?: string | null): Promise<boolean> {
+  const normalizedOldId = normalizeUsername(oldId);
+  const normalizedNewId = normalizeUsername(newId);
+
+  if (!normalizedOldId || !normalizedNewId || normalizedOldId === normalizedNewId) {
+    return false;
+  }
+
+  try {
+    const response = await fetchWithRetry(`${API_URL}/migrate-user`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        oldId: normalizedOldId,
+        newId: normalizedNewId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to migrate user: ${response.status}`);
+    }
+
+    invalidateLeaderboardCache();
+    return true;
+  } catch (error) {
+    console.error("Failed to migrate leaderboard user:", error);
+    return false;
+  }
+}
+
 export async function updateProfileRealtime(
   userId: string,
   username?: string | null,
   profileFrame?: string | null,
   profileImage?: string | null,
+  previousUsernames: Array<string | null | undefined> = [],
 ): Promise<boolean> {
   if (!userId) return false;
 
   try {
+    const aliasesToMigrate = Array.from(
+      new Set(
+        previousUsernames
+          .map((name) => normalizeUsername(name))
+          .filter((name) => name && name !== userId),
+      ),
+    );
+
+    for (const oldId of aliasesToMigrate) {
+      await migrateUserRealtime(oldId, userId);
+    }
+
     const response = await fetchWithRetry(`${API_URL}/update-profile`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -116,6 +159,7 @@ export async function updateProfileRealtime(
         username: username || null,
         profileFrame: profileFrame || null,
         profileImage: profileImage || null,
+        previousUsernames: aliasesToMigrate,
       }),
     });
 
@@ -123,6 +167,7 @@ export async function updateProfileRealtime(
       throw new Error(`Failed to update profile: ${response.status}`);
     }
 
+    invalidateLeaderboardCache();
     return true;
   } catch (error) {
     console.error("Failed to update profile:", error);

@@ -214,7 +214,7 @@ export default {
 
       // 👤 UPDATE PROFILE (frame/image only, no score change)
       if (url.pathname === "/update-profile" && request.method === "POST") {
-        const { userId, username, profileFrame, profileImage } =
+        const { userId, username, profileFrame, profileImage, previousUsernames } =
           await request.json();
 
         if (!userId) {
@@ -227,6 +227,47 @@ export default {
         await env.DB.prepare(
           "CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_user_id ON leaderboard(user_id)",
         ).run();
+
+        const aliasesToMigrate = Array.isArray(previousUsernames)
+          ? [...new Set(previousUsernames.filter((name) => name && name !== userId))]
+          : [];
+
+        for (const oldId of aliasesToMigrate) {
+          const oldRecord = await env.DB.prepare(
+            "SELECT * FROM leaderboard WHERE user_id = ?"
+          ).bind(oldId).first();
+
+          if (!oldRecord) continue;
+
+          const newRecord = await env.DB.prepare(
+            "SELECT * FROM leaderboard WHERE user_id = ?"
+          ).bind(userId).first();
+
+          if (newRecord) {
+            await env.DB.prepare(
+              `UPDATE leaderboard SET
+                score = MAX(COALESCE(score, 0), ?),
+                coins = COALESCE(coins, 0) + ?,
+                profile_frame = COALESCE(profile_frame, ?),
+                profile_image = COALESCE(profile_image, ?)
+               WHERE user_id = ?`
+            ).bind(
+              oldRecord.score || 0,
+              oldRecord.coins || 0,
+              oldRecord.profile_frame || null,
+              oldRecord.profile_image || null,
+              userId
+            ).run();
+
+            await env.DB.prepare(
+              "DELETE FROM leaderboard WHERE user_id = ?"
+            ).bind(oldId).run();
+          } else {
+            await env.DB.prepare(
+              "UPDATE leaderboard SET user_id = ? WHERE user_id = ?"
+            ).bind(userId, oldId).run();
+          }
+        }
 
         await env.DB.prepare(
           `INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins)
@@ -280,6 +321,12 @@ export default {
             "INSERT INTO leaderboard (user_id, username, score, coins, created_at) VALUES (?, ?, 0, 0, ?)",
           )
             .bind(id, username || id, new Date().toISOString())
+            .run();
+        } else if (username) {
+          await env.DB.prepare(
+            "UPDATE leaderboard SET username = ? WHERE user_id = ?",
+          )
+            .bind(username, id)
             .run();
         }
 

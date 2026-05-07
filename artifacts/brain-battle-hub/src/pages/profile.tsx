@@ -60,13 +60,18 @@ function formatScore(score: number): string {
 }
 
 export default function Profile() {
-  const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame, userId } = useAppState();
+  const { username, setUsername, profileImage, setProfileImage, profileFrame, setProfileFrame, oldUsernames, userId } = useAppState();
   const { scores, updateUsername } = useLocalLeaderboard();
   const { coins } = useCoins();
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(username || "");
   const [selectedFrame, setSelectedFrame] = useState(profileFrame);
   const [totalScore, setTotalScore] = useState(0);
+  const usernameAliases = [username, ...oldUsernames].filter(Boolean);
+
+  useEffect(() => {
+    setSelectedFrame(profileFrame);
+  }, [profileFrame]);
 
   useEffect(() => {
     async function fetchScore() {
@@ -92,16 +97,20 @@ export default function Profile() {
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (tempName.trim().length > 2) {
+      const oldName = username;
       const newName = tempName.trim();
       setUsername(newName);
-      if (username) {
-        updateUsername(username, newName);
+      if (oldName) {
+        updateUsername(oldName, newName);
       }
       setEditingName(false);
 
       if (userId) {
         try {
-          await updateProfileRealtime(userId, newName, selectedFrame, profileImage);
+          await updateProfileRealtime(userId, newName, selectedFrame, profileImage, [
+            oldName,
+            ...oldUsernames,
+          ]);
         } catch (err) {
           console.error("Failed to sync username to backend", err);
         }
@@ -115,7 +124,7 @@ export default function Profile() {
     if (username || userId) {
       const saveName = username || "player";
       try {
-        await updateProfileRealtime(userId, saveName, selectedFrame, avatarUrl);
+        await updateProfileRealtime(userId, saveName, selectedFrame, avatarUrl, usernameAliases);
       } catch (err) {
         console.error("Failed to sync profile image to backend", err);
       }
@@ -128,7 +137,7 @@ export default function Profile() {
     if (username || userId) {
       const saveName = username || "player";
       try {
-        await updateProfileRealtime(userId, saveName, selectedFrame, profileImage);
+        await updateProfileRealtime(userId, saveName, selectedFrame, profileImage, usernameAliases);
       } catch (err) {
         console.error("Failed to sync profile frame to backend", err);
       }

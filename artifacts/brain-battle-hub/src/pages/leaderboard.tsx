@@ -73,7 +73,7 @@ export default function Leaderboard() {
   }, [fetchLeaderboard]);
 
   const playerEntry = leaderboard.find(
-    entry => entry.userId === username || entry.userId === userId
+    entry => entry.userId === userId || entry.userId === username || entry.username === username
   );
   const playerTotalScore = playerEntry?.score || 0;
   const playerRank = playerEntry ? leaderboard.indexOf(playerEntry) + 1 : 0;
@@ -130,8 +130,8 @@ export default function Leaderboard() {
         <div className="flex-1 p-6 overflow-y-auto">
           <div className="flex flex-col gap-3 pb-8">
             {leaderboard.map((entry, i) => {
-              const isMe = entry.userId === username || entry.userId === userId;
-              const displayName = entry.username || entry.userId;
+              const isMe = entry.userId === userId || entry.userId === username || entry.username === username;
+              const displayName = isMe ? (username || entry.username || entry.userId) : (entry.username || entry.userId);
               const medalEmoji = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
 
               const displayFrame = isMe ? profileFrame : entry.profileFrame;
