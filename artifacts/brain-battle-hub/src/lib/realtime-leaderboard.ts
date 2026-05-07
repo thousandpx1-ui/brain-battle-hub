@@ -177,7 +177,14 @@ export async function updateProfileRealtime(
     return true;
   } catch (error) {
     console.error("Failed to update profile:", error);
-    return false;
+    try {
+      await saveScoreRealtime(0, userId, username || userId, profileFrame, profileImage);
+      invalidateLeaderboardCache();
+      return true;
+    } catch (fallbackError) {
+      console.error("Profile fallback save failed:", fallbackError);
+      return false;
+    }
   }
 }
 

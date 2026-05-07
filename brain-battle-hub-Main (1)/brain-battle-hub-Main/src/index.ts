@@ -6,6 +6,34 @@ export default {
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
+    const ensureLeaderboardSchema = async () => {
+      try {
+        await env.DB.prepare(
+          "CREATE TABLE IF NOT EXISTS leaderboard (user_id TEXT, username TEXT, score INTEGER)",
+        ).run();
+      } catch (e) {}
+      try {
+        await env.DB.prepare(
+          "ALTER TABLE leaderboard ADD COLUMN profile_image TEXT",
+        ).run();
+      } catch (e) {}
+      try {
+        await env.DB.prepare(
+          "ALTER TABLE leaderboard ADD COLUMN profile_frame TEXT",
+        ).run();
+      } catch (e) {}
+      try {
+        await env.DB.prepare(
+          "ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0",
+        ).run();
+      } catch (e) {}
+      try {
+        await env.DB.prepare(
+          "CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_user_id ON leaderboard(user_id)",
+        ).run();
+      } catch (e) {}
+    };
+
     try {
       const url = new URL(request.url);
 
@@ -17,6 +45,8 @@ export default {
       if (url.pathname === "/save-score") {
         const { userId, username, score, profileFrame, profileImage } =
           await request.json();
+
+        await ensureLeaderboardSchema();
 
         const existing = await env.DB.prepare(
           "SELECT score FROM leaderboard WHERE user_id = ?",
@@ -267,9 +297,7 @@ export default {
           });
         }
 
-        await env.DB.prepare(
-          "CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_user_id ON leaderboard(user_id)",
-        ).run();
+        await ensureLeaderboardSchema();
 
         const aliasesToMigrate = Array.isArray(previousUsernames)
           ? [...new Set(previousUsernames.filter((name) => name && name !== userId))]
@@ -312,23 +340,44 @@ export default {
           }
         }
 
-        await env.DB.prepare(
-          `INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins)
-           VALUES (?, ?, 0, ?, ?, ?, 0)
-           ON CONFLICT(user_id) DO UPDATE SET
-             username = CASE WHEN ? IS NOT NULL THEN excluded.username ELSE leaderboard.username END,
-             profile_frame = CASE WHEN excluded.profile_frame = 'none' THEN NULL WHEN excluded.profile_frame IS NOT NULL THEN excluded.profile_frame ELSE leaderboard.profile_frame END,
-             profile_image = CASE WHEN excluded.profile_image = 'none' THEN NULL WHEN excluded.profile_image IS NOT NULL THEN excluded.profile_image ELSE leaderboard.profile_image END`,
-        )
-          .bind(
-            userId,
-            username || userId,
-            profileFrame || null,
-            profileImage || null,
-            new Date().toISOString(),
-            username || null,
+        const currentRecord = await env.DB.prepare(
+          "SELECT user_id FROM leaderboard WHERE user_id = ?",
+        ).bind(userId).first();
+
+        if (currentRecord) {
+          await env.DB.prepare(
+            `UPDATE leaderboard SET
+              username = CASE WHEN ? IS NOT NULL THEN ? ELSE username END,
+              profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END,
+              profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END
+             WHERE user_id = ?`,
           )
-          .run();
+            .bind(
+              username || null,
+              username || null,
+              profileFrame || null,
+              profileFrame || null,
+              profileFrame || null,
+              profileImage || null,
+              profileImage || null,
+              profileImage || null,
+              userId,
+            )
+            .run();
+        } else {
+          await env.DB.prepare(
+            `INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins)
+             VALUES (?, ?, 0, ?, ?, ?, 0)`,
+          )
+            .bind(
+              userId,
+              username || userId,
+              profileFrame || null,
+              profileImage || null,
+              new Date().toISOString(),
+            )
+            .run();
+        }
 
         const updated = await env.DB.prepare(
           "SELECT user_id as userId, username, score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard WHERE user_id = ?",
@@ -341,6 +390,8 @@ export default {
 
       // 🏆 GET LEADERBOARD (deduplicated with MAX score)
       if (url.pathname === "/api/leaderboard" || url.pathname === "/leaderboard") {
+        await ensureLeaderboardSchema();
+
         const { results } = await env.DB.prepare(
           "SELECT user_id as userId, username, MAX(score) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50",
         ).all();

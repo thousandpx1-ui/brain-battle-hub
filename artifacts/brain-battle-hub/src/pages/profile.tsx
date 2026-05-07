@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,11 +67,28 @@ export default function Profile() {
   const [tempName, setTempName] = useState(username || "");
   const [selectedFrame, setSelectedFrame] = useState(profileFrame);
   const [totalScore, setTotalScore] = useState(0);
-  const usernameAliases = [username, ...oldUsernames].filter(Boolean);
+  const usernameAliases = useMemo(
+    () => [username, ...oldUsernames].filter(Boolean),
+    [username, oldUsernames],
+  );
 
   useEffect(() => {
     setSelectedFrame(profileFrame);
   }, [profileFrame]);
+
+  useEffect(() => {
+    if (!userId || !username) return;
+
+    updateProfileRealtime(
+      userId,
+      username,
+      profileFrame,
+      profileImage,
+      usernameAliases,
+    ).catch((err) => {
+      console.error("Failed to sync profile to backend", err);
+    });
+  }, [userId, username, profileFrame, profileImage, usernameAliases]);
 
   useEffect(() => {
     async function fetchScore() {

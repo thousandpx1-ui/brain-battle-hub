@@ -3,7 +3,7 @@ import { Layout } from "@/components/layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy, Star, RefreshCw } from "lucide-react";
 import { useAppState } from "@/hooks/useAppState";
-import { loadLeaderboardRealtime, invalidateLeaderboardCache } from "@/lib/realtime-leaderboard";
+import { loadLeaderboardRealtime, invalidateLeaderboardCache, updateProfileRealtime } from "@/lib/realtime-leaderboard";
 import type { LeaderboardEntry } from "@/lib/realtime-leaderboard";
 
 function formatScore(score: number): string {
@@ -71,6 +71,22 @@ export default function Leaderboard() {
       clearInterval(interval);
     };
   }, [fetchLeaderboard]);
+
+  useEffect(() => {
+    if (!userId || !username) return;
+
+    updateProfileRealtime(
+      userId,
+      username,
+      profileFrame,
+      profileImage,
+      [username, ...oldUsernames],
+    )
+      .then(() => fetchLeaderboard(true))
+      .catch((err) => {
+        console.error("Failed to sync profile before leaderboard refresh:", err);
+      });
+  }, [fetchLeaderboard, oldUsernames, profileFrame, profileImage, userId, username]);
 
   const playerEntry = leaderboard.find(
     entry => entry.userId === userId || entry.userId === username || entry.username === username
