@@ -131,11 +131,11 @@ export default function Leaderboard() {
           <div className="flex flex-col gap-3 pb-8">
             {leaderboard.map((entry, i) => {
               const isMe = entry.userId === userId || entry.userId === username || entry.username === username;
-              const displayName = isMe ? (username || entry.username || entry.userId) : (entry.username || entry.userId);
+              const displayName = entry.username || (isMe ? username : null) || entry.userId;
               const medalEmoji = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
 
-              const displayFrame = isMe ? profileFrame : entry.profileFrame;
-              const displayImage = isMe ? profileImage : entry.profileImage;
+              const displayFrame = entry.profileFrame || (isMe ? profileFrame : null);
+              const displayImage = entry.profileImage || (isMe ? profileImage : null);
               const frameClass = displayFrame ? frameStyles[displayFrame] || '' : '';
               const borderColor = isMe ? 'border-primary' : (frameClass ? '' : 'border-transparent');
 

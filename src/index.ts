@@ -287,7 +287,11 @@ export default {
           )
           .run();
 
-        return new Response(JSON.stringify({ success: true }), {
+        const updated = await env.DB.prepare(
+          "SELECT user_id as userId, username, score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard WHERE user_id = ?",
+        ).bind(userId).first();
+
+        return new Response(JSON.stringify({ success: true, user: updated }), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
@@ -341,8 +345,16 @@ export default {
         const { results } = await env.DB.prepare(
           "SELECT user_id as userId, username, score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard ORDER BY score DESC LIMIT 50",
         ).all();
+        const entries = results.map((entry) => ({
+          userId: entry.userId,
+          username: entry.username,
+          score: entry.score,
+          profileFrame: entry.profileFrame || null,
+          profileImage: entry.profileImage || null,
+          createdAt: entry.createdAt || null,
+        }));
 
-        return new Response(JSON.stringify(results), {
+        return new Response(JSON.stringify(entries), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }

@@ -242,9 +242,99 @@ export default {
           )
             .bind(id, username || id, new Date().toISOString())
             .run();
+        } else if (username) {
+          await env.DB.prepare(
+            "UPDATE leaderboard SET username = ? WHERE user_id = ?",
+          )
+            .bind(username, id)
+            .run();
         }
 
         return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // 👤 UPDATE PROFILE (name, frame, image without changing score)
+      if (url.pathname === "/update-profile" && request.method === "POST") {
+        const { userId, username, profileFrame, profileImage, previousUsernames } =
+          await request.json();
+
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Missing userId" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        await env.DB.prepare(
+          "CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_user_id ON leaderboard(user_id)",
+        ).run();
+
+        const aliasesToMigrate = Array.isArray(previousUsernames)
+          ? [...new Set(previousUsernames.filter((name) => name && name !== userId))]
+          : [];
+
+        for (const oldId of aliasesToMigrate) {
+          const oldRecord = await env.DB.prepare(
+            "SELECT * FROM leaderboard WHERE user_id = ?",
+          ).bind(oldId).first();
+
+          if (!oldRecord) continue;
+
+          const newRecord = await env.DB.prepare(
+            "SELECT * FROM leaderboard WHERE user_id = ?",
+          ).bind(userId).first();
+
+          if (newRecord) {
+            await env.DB.prepare(
+              `UPDATE leaderboard SET
+                score = MAX(COALESCE(score, 0), ?),
+                coins = COALESCE(coins, 0) + ?,
+                profile_frame = COALESCE(profile_frame, ?),
+                profile_image = COALESCE(profile_image, ?)
+               WHERE user_id = ?`,
+            ).bind(
+              oldRecord.score || 0,
+              oldRecord.coins || 0,
+              oldRecord.profile_frame || null,
+              oldRecord.profile_image || null,
+              userId,
+            ).run();
+
+            await env.DB.prepare(
+              "DELETE FROM leaderboard WHERE user_id = ?",
+            ).bind(oldId).run();
+          } else {
+            await env.DB.prepare(
+              "UPDATE leaderboard SET user_id = ? WHERE user_id = ?",
+            ).bind(userId, oldId).run();
+          }
+        }
+
+        await env.DB.prepare(
+          `INSERT INTO leaderboard (user_id, username, score, profile_frame, profile_image, created_at, coins)
+           VALUES (?, ?, 0, ?, ?, ?, 0)
+           ON CONFLICT(user_id) DO UPDATE SET
+             username = CASE WHEN ? IS NOT NULL THEN excluded.username ELSE leaderboard.username END,
+             profile_frame = CASE WHEN excluded.profile_frame = 'none' THEN NULL WHEN excluded.profile_frame IS NOT NULL THEN excluded.profile_frame ELSE leaderboard.profile_frame END,
+             profile_image = CASE WHEN excluded.profile_image = 'none' THEN NULL WHEN excluded.profile_image IS NOT NULL THEN excluded.profile_image ELSE leaderboard.profile_image END`,
+        )
+          .bind(
+            userId,
+            username || userId,
+            profileFrame || null,
+            profileImage || null,
+            new Date().toISOString(),
+            username || null,
+          )
+          .run();
+
+        const updated = await env.DB.prepare(
+          "SELECT user_id as userId, username, score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard WHERE user_id = ?",
+        ).bind(userId).first();
+
+        return new Response(JSON.stringify({ success: true, user: updated }), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
@@ -254,8 +344,16 @@ export default {
         const { results } = await env.DB.prepare(
           "SELECT user_id as userId, username, MAX(score) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50",
         ).all();
+        const entries = results.map((entry) => ({
+          userId: entry.userId,
+          username: entry.username,
+          score: entry.score,
+          profileFrame: entry.profileFrame || null,
+          profileImage: entry.profileImage || null,
+          createdAt: entry.createdAt || null,
+        }));
 
-        return new Response(JSON.stringify(results), {
+        return new Response(JSON.stringify(entries), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
