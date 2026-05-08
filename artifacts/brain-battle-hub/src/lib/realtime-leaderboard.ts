@@ -82,6 +82,8 @@ export async function saveScoreRealtime(
         userId: userId || normalizedUsername,
         username: normalizedUsername,
         score,
+        profileFrame: profileFrame || null,
+        profileImage: profileImage || null,
         frame: profileFrame || "",
         avatar: profileImage || "",
       }),
@@ -92,6 +94,7 @@ export async function saveScoreRealtime(
     }
 
     const responseData = await response.json();
+    invalidateLeaderboardCache();
     return { ...responseData, scoreAdded: score };
   } catch (error) {
     console.error("Failed to save realtime score:", error);
@@ -157,6 +160,8 @@ export async function updateProfileRealtime(
       body: JSON.stringify({
         userId,
         username: username || null,
+        profileFrame: profileFrame || null,
+        profileImage: profileImage || null,
         frame: profileFrame || "",
         avatar: profileImage || "",
         previousUsernames: aliasesToMigrate,

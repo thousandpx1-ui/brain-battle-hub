@@ -29,6 +29,11 @@ export default {
       } catch (e) {}
       try {
         await env.DB.prepare(
+          "ALTER TABLE leaderboard ADD COLUMN created_at TEXT",
+        ).run();
+      } catch (e) {}
+      try {
+        await env.DB.prepare(
           "CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_user_id ON leaderboard(user_id)",
         ).run();
       } catch (e) {}
@@ -43,39 +48,57 @@ export default {
 
       // 🟢 SAVE SCORE (update if higher, prevent duplicates)
       if (url.pathname === "/save-score") {
-        const { userId, username, score, profileFrame, profileImage } =
-          await request.json();
+        const {
+          userId,
+          username,
+          score,
+          profileFrame,
+          profileImage,
+          frame,
+          avatar,
+        } = await request.json();
+
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Missing userId" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        const newScore = typeof score === "number" ? score : 0;
+        const now = new Date().toISOString();
+        const nextProfileFrame = profileFrame ?? frame ?? null;
+        const nextProfileImage = profileImage ?? avatar ?? null;
 
         await ensureLeaderboardSchema();
 
         const existing = await env.DB.prepare(
-          "SELECT score FROM leaderboard WHERE user_id = ?",
+          "SELECT user_id FROM leaderboard WHERE user_id = ? LIMIT 1",
         )
           .bind(userId)
           .first();
 
         if (existing) {
-          // Accumulate the score
           await env.DB.prepare(
             `UPDATE leaderboard SET 
-              score = MAX(score, ?), 
+              score = MAX(COALESCE(score, 0), ?),
               username = CASE WHEN ? IS NOT NULL THEN ? ELSE username END,
               profile_frame = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_frame END, 
               profile_image = CASE WHEN ? = 'none' THEN NULL WHEN ? IS NOT NULL THEN ? ELSE profile_image END, 
               created_at = ? 
              WHERE user_id = ?`,
-          )
+            )
             .bind(
-              score,
+              newScore,
               username || null,
               username || null,
-              profileFrame || null,
-              profileFrame || null,
-              profileFrame || null,
-              profileImage || null,
-              profileImage || null,
-              profileImage || null,
-              new Date().toISOString(),
+              nextProfileFrame || null,
+              nextProfileFrame || null,
+              nextProfileFrame || null,
+              nextProfileImage || null,
+              nextProfileImage || null,
+              nextProfileImage || null,
+              now,
               userId,
             )
             .run();
@@ -86,15 +109,15 @@ export default {
             .bind(
               userId,
               username || userId,
-              score,
-              profileFrame || null,
-              profileImage || null,
-              new Date().toISOString(),
+              newScore,
+              nextProfileFrame || null,
+              nextProfileImage || null,
+              now,
             )
             .run();
         }
 
-        return new Response(JSON.stringify({ success: true }), {
+        return new Response(JSON.stringify({ success: true, userId, score: newScore }), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
@@ -134,6 +157,11 @@ export default {
         try {
           await env.DB.prepare(
             "ALTER TABLE leaderboard ADD COLUMN coins INTEGER DEFAULT 0",
+          ).run();
+        } catch (e) {}
+        try {
+          await env.DB.prepare(
+            "ALTER TABLE leaderboard ADD COLUMN created_at TEXT",
           ).run();
         } catch (e) {}
         return new Response(
@@ -287,7 +315,7 @@ export default {
 
       // 👤 UPDATE PROFILE (name, frame, image without changing score)
       if (url.pathname === "/update-profile" && request.method === "POST") {
-        const { userId, username, profileFrame, profileImage, previousUsernames } =
+        const { userId, username, profileFrame, profileImage, frame, avatar, previousUsernames } =
           await request.json();
 
         if (!userId) {
@@ -298,6 +326,8 @@ export default {
         }
 
         await ensureLeaderboardSchema();
+        const nextProfileFrame = profileFrame ?? frame ?? null;
+        const nextProfileImage = profileImage ?? avatar ?? null;
 
         const aliasesToMigrate = Array.isArray(previousUsernames)
           ? [...new Set(previousUsernames.filter((name) => name && name !== userId))]
@@ -355,12 +385,12 @@ export default {
             .bind(
               username || null,
               username || null,
-              profileFrame || null,
-              profileFrame || null,
-              profileFrame || null,
-              profileImage || null,
-              profileImage || null,
-              profileImage || null,
+              nextProfileFrame || null,
+              nextProfileFrame || null,
+              nextProfileFrame || null,
+              nextProfileImage || null,
+              nextProfileImage || null,
+              nextProfileImage || null,
               userId,
             )
             .run();
@@ -372,8 +402,8 @@ export default {
             .bind(
               userId,
               username || userId,
-              profileFrame || null,
-              profileImage || null,
+              nextProfileFrame || null,
+              nextProfileImage || null,
               new Date().toISOString(),
             )
             .run();
