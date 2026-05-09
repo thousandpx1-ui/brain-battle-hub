@@ -197,9 +197,9 @@ let leaderboardCache: LeaderboardEntry[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION_MS = 1500;
 
-export async function loadLeaderboardRealtime(): Promise<LeaderboardEntry[]> {
+export async function loadLeaderboardRealtime(forceRefresh = false): Promise<LeaderboardEntry[]> {
   const now = Date.now();
-  if (leaderboardCache && now - cacheTimestamp < CACHE_DURATION_MS) {
+  if (!forceRefresh && leaderboardCache && now - cacheTimestamp < CACHE_DURATION_MS) {
     return leaderboardCache;
   }
 
@@ -230,7 +230,13 @@ export async function loadLeaderboardRealtime(): Promise<LeaderboardEntry[]> {
       profileFrame: getProfileFrame(entry),
       profileImage: getProfileImage(entry),
     }))
-    .filter((entry: LeaderboardEntry) => isValidRealtimeUsername(entry.userId))
+    .filter((entry: LeaderboardEntry) => {
+      // Only filter out system-generated names, allow all real users
+      const normalized = entry.userId;
+      if (!normalized || normalized.length < 1) return false;
+      if (INVALID_USERNAMES.has(normalized)) return false;
+      return true;
+    })
     .sort((a: LeaderboardEntry, b: LeaderboardEntry) => b.score - a.score);
 
   leaderboardCache = parsed;
