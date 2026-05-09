@@ -427,14 +427,23 @@ export default {
         });
       }
 
+<<<<<<< HEAD
       // 🏆 GET LEADERBOARD (all users by highest score)
+=======
+      // 🏆 GET LEADERBOARD (top 1000 by highest score)
+>>>>>>> a4724f5 (update)
       if (url.pathname === "/api/leaderboard" || url.pathname === "/leaderboard") {
         await ensureLeaderboardSchema();
 
         const limit = parseInt(url.searchParams.get("limit") || "1000", 10);
         const { results } = await env.DB.prepare(
+<<<<<<< HEAD
           `SELECT user_id as userId, username, MAX(COALESCE(score, 0)) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT ?`,
         ).bind(limit).all();
+=======
+          "SELECT user_id as userId, username, MAX(COALESCE(score, 0)) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 1000",
+        ).all();
+>>>>>>> a4724f5 (update)
         const entries = results.map((entry) => ({
           userId: entry.userId,
           username: entry.username,
