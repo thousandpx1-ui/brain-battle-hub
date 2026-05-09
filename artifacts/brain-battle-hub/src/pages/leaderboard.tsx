@@ -108,6 +108,7 @@ export default function Leaderboard() {
   const playerTotalScore = userRankInfo?.score || 0;
   const playerRank = userRankInfo?.rank || 0;
   const totalPlayers = userRankInfo?.totalPlayers || leaderboard.length;
+  const isBeyondTop1000 = playerRank > 1000;
   const percentile = totalPlayers > 0 && playerRank > 0
     ? ((totalPlayers - playerRank) / totalPlayers) * 100
     : 0;
@@ -130,17 +131,24 @@ export default function Leaderboard() {
           </div>
 
           <div className="text-center text-sm text-gray-500 font-medium mb-4">
-            Real-time Leaderboard
+            Real-time Leaderboard (Top {Math.min(totalPlayers, 1000)} of {totalPlayers} players)
           </div>
 
           {username && playerTotalScore > 0 && (
-            <div className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-4 text-white shadow-lg shadow-purple-200">
+            <div className={`mt-4 rounded-2xl p-4 text-white shadow-lg ${
+              isBeyondTop1000 
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-purple-200' 
+                : 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-purple-200'
+            }`}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Your Rank</p>
                   <div className="flex items-end gap-2">
                     <span className="text-3xl font-black">#{playerRank}</span>
                     <span className="text-sm text-purple-100 mb-1.5">/ {totalPlayers}</span>
+                    {isBeyondTop1000 && (
+                      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Beyond Top 1000</span>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
