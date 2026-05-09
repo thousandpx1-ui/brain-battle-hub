@@ -195,11 +195,12 @@ export async function updateProfileRealtime(
 
 let leaderboardCache: LeaderboardEntry[] | null = null;
 let cacheTimestamp = 0;
-const CACHE_DURATION_MS = 1500;
+const CACHE_DURATION_MS = 0; // Disabled cache for real-time updates
 
 export async function loadLeaderboardRealtime(forceRefresh = false): Promise<LeaderboardEntry[]> {
   const now = Date.now();
-  if (!forceRefresh && leaderboardCache && now - cacheTimestamp < CACHE_DURATION_MS) {
+  // Always fetch fresh data for real-time updates
+  if (!forceRefresh && leaderboardCache && CACHE_DURATION_MS > 0 && now - cacheTimestamp < CACHE_DURATION_MS) {
     return leaderboardCache;
   }
 
