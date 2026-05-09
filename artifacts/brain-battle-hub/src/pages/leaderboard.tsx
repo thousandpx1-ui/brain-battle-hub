@@ -47,25 +47,25 @@ export default function Leaderboard() {
     try {
       invalidateLeaderboardCache();
       // Fetch up to 1000 users for the visible list
-      const players = await loadLeaderboardRealtime(false, 1000);
-      const filtered = players.filter(p => !oldUsernames.includes(p.userId));
+      const players = await loadLeaderboardRealtime(false, 10000);
+      // Don't filter by oldUsernames here - that was blocking new users
+      // The backend already handles deduplication by userId
       if (isMountedRef.current) {
-        setLeaderboard(filtered);
+        setLeaderboard(players);
       }
       
-      // If user is not in top 1000, fetch their specific rank
-      const playerEntry = filtered.find(
-        entry => entry.userId === userId || entry.userId === username || entry.username === username
+      // Find current user's rank info
+      const playerEntry = players.find(
+        entry => entry.userId === userId || entry.username === username
       );
       
       if (!playerEntry && userId) {
-        // User not in top 1000, we need to get their actual rank
+        // User not in top list, we need to get their actual rank
         // For now, we'll just note they're beyond the visible list
-        // The backend would need a separate endpoint to get exact rank for users beyond top 1000
-        setUserRankInfo({ rank: filtered.length + 1, totalPlayers: filtered.length, score: 0 });
+        setUserRankInfo({ rank: players.length + 1, totalPlayers: players.length, score: 0 });
       } else if (playerEntry) {
-        const rank = filtered.indexOf(playerEntry) + 1;
-        setUserRankInfo({ rank, totalPlayers: filtered.length, score: playerEntry.score });
+        const rank = players.indexOf(playerEntry) + 1;
+        setUserRankInfo({ rank, totalPlayers: players.length, score: playerEntry.score });
       }
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
@@ -131,7 +131,7 @@ export default function Leaderboard() {
           </div>
 
           <div className="text-center text-sm text-gray-500 font-medium mb-4">
-            Real-time Leaderboard (Top {Math.min(totalPlayers, 1000)} of {totalPlayers} players)
+            Real-time Leaderboard ({totalPlayers} players)
           </div>
 
           {username && playerTotalScore > 0 && (
