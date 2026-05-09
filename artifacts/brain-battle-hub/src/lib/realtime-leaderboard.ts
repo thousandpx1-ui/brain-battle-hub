@@ -197,7 +197,7 @@ let leaderboardCache: LeaderboardEntry[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION_MS = 0; // Disabled cache for real-time updates
 
-export async function loadLeaderboardRealtime(forceRefresh = false): Promise<LeaderboardEntry[]> {
+export async function loadLeaderboardRealtime(forceRefresh = false, limit = 1000): Promise<LeaderboardEntry[]> {
   const now = Date.now();
   // Always fetch fresh data for real-time updates
   if (!forceRefresh && leaderboardCache && CACHE_DURATION_MS > 0 && now - cacheTimestamp < CACHE_DURATION_MS) {
@@ -206,9 +206,9 @@ export async function loadLeaderboardRealtime(forceRefresh = false): Promise<Lea
 
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/api/leaderboard`, { cache: "no-store" });
+    res = await fetch(`${API_URL}/api/leaderboard?limit=${limit}`, { cache: "no-store" });
     if (!res.ok && res.status === 404) {
-      res = await fetch(`${API_URL}/leaderboard`, { cache: "no-store" });
+      res = await fetch(`${API_URL}/leaderboard?limit=${limit}`, { cache: "no-store" });
     }
   } catch (error) {
     console.warn("Leaderboard fetch failed:", error);

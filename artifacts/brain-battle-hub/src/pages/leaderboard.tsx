@@ -38,6 +38,7 @@ export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [userRankInfo, setUserRankInfo] = useState<{ rank: number; totalPlayers: number; score: number } | null>(null);
   const isMountedRef = useRef(true);
 
   const fetchLeaderboard = useCallback(async (isRefresh = false) => {
@@ -45,10 +46,26 @@ export default function Leaderboard() {
     else setLoading(true);
     try {
       invalidateLeaderboardCache();
-      const players = await loadLeaderboardRealtime();
+      // Fetch up to 1000 users for the visible list
+      const players = await loadLeaderboardRealtime(false, 1000);
       const filtered = players.filter(p => !oldUsernames.includes(p.userId));
       if (isMountedRef.current) {
         setLeaderboard(filtered);
+      }
+      
+      // If user is not in top 1000, fetch their specific rank
+      const playerEntry = filtered.find(
+        entry => entry.userId === userId || entry.userId === username || entry.username === username
+      );
+      
+      if (!playerEntry && userId) {
+        // User not in top 1000, we need to get their actual rank
+        // For now, we'll just note they're beyond the visible list
+        // The backend would need a separate endpoint to get exact rank for users beyond top 1000
+        setUserRankInfo({ rank: filtered.length + 1, totalPlayers: filtered.length, score: 0 });
+      } else if (playerEntry) {
+        const rank = filtered.indexOf(playerEntry) + 1;
+        setUserRankInfo({ rank, totalPlayers: filtered.length, score: playerEntry.score });
       }
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
@@ -58,7 +75,7 @@ export default function Leaderboard() {
         setRefreshing(false);
       }
     }
-  }, [oldUsernames]);
+  }, [oldUsernames, userId, username]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -88,12 +105,9 @@ export default function Leaderboard() {
       });
   }, [fetchLeaderboard, oldUsernames, profileFrame, profileImage, userId, username]);
 
-  const playerEntry = leaderboard.find(
-    entry => entry.userId === userId || entry.userId === username || entry.username === username
-  );
-  const playerTotalScore = playerEntry?.score || 0;
-  const playerRank = playerEntry ? leaderboard.indexOf(playerEntry) + 1 : 0;
-  const totalPlayers = leaderboard.length;
+  const playerTotalScore = userRankInfo?.score || 0;
+  const playerRank = userRankInfo?.rank || 0;
+  const totalPlayers = userRankInfo?.totalPlayers || leaderboard.length;
   const percentile = totalPlayers > 0 && playerRank > 0
     ? ((totalPlayers - playerRank) / totalPlayers) * 100
     : 0;
