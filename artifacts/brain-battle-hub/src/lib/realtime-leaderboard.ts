@@ -120,7 +120,8 @@ export async function migrateUserRealtime(oldId?: string | null, newId?: string 
       }),
     });
 
-    if (!response.ok) {
+    // 404 means the old user doesn't exist, which is fine - nothing to migrate
+    if (!response.ok && response.status !== 404) {
       throw new Error(`Failed to migrate user: ${response.status}`);
     }
 
