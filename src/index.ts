@@ -427,13 +427,14 @@ export default {
         });
       }
 
-      // 🏆 GET LEADERBOARD (top 50 by highest score)
+      // 🏆 GET LEADERBOARD (all users by highest score)
       if (url.pathname === "/api/leaderboard" || url.pathname === "/leaderboard") {
         await ensureLeaderboardSchema();
 
+        const limit = parseInt(url.searchParams.get("limit") || "1000", 10);
         const { results } = await env.DB.prepare(
-          "SELECT user_id as userId, username, MAX(COALESCE(score, 0)) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT 50",
-        ).all();
+          `SELECT user_id as userId, username, MAX(COALESCE(score, 0)) as score, profile_frame as profileFrame, profile_image as profileImage, created_at as createdAt FROM leaderboard GROUP BY user_id ORDER BY score DESC LIMIT ?`,
+        ).bind(limit).all();
         const entries = results.map((entry) => ({
           userId: entry.userId,
           username: entry.username,
