@@ -20,14 +20,14 @@ export interface LeaderboardEntry {
 }
 
 function normalizeUsername(username?: string | null): string {
-  return (username || "").trim();
+  return (username || "").trim().replace(/\n/g, '').replace(/\r/g, '');
 }
 
 function isValidRealtimeUsername(username?: string | null): boolean {
   const normalized = normalizeUsername(username);
-  if (!normalized || normalized.length < 2) return false;
+  if (!normalized || normalized.length < 1) return false;
   if (INVALID_USERNAMES.has(normalized)) return false;
-  if (normalized.startsWith("guest_")) return false;
+  // Allow guest_ prefix for new users - they should be visible
   return true;
 }
 
@@ -232,7 +232,7 @@ export async function loadLeaderboardRealtime(forceRefresh = false): Promise<Lea
       profileImage: getProfileImage(entry),
     }))
     .filter((entry: LeaderboardEntry) => {
-      // Only filter out system-generated names, allow all real users
+      // Only filter out empty names and system-generated names, allow all real users including guests
       const normalized = entry.userId;
       if (!normalized || normalized.length < 1) return false;
       if (INVALID_USERNAMES.has(normalized)) return false;
